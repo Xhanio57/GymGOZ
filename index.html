@@ -29,7 +29,7 @@
     display: flex; align-items: center; justify-content: space-between;
     padding: 0 28px;
     transition: all 0.3s ease;
-    background: transparent; /* Anasayfa için şeffaf başlangıç */
+    background: transparent;
     border-bottom: 1px solid rgba(255,255,255,0.1);
   }
   nav.scrolled {
@@ -65,6 +65,7 @@
     font-size: 12px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase;
     color: #ccc; text-decoration: none;
     transition: all .15s;
+    cursor: pointer;
   }
   .dropdown a:hover { color: var(--accent); padding-left: 26px; }
   .dropdown a .dot { width: 5px; height: 5px; background: var(--accent); border-radius: 50%; flex-shrink: 0; }
@@ -76,6 +77,44 @@
     border: none; cursor: pointer; transition: background 0.2s;
   }
   .nav-cta:hover { background: #e3ff4d; }
+
+  /* Mobile Hamburger */
+  .hamburger-icon {
+    display: none;
+    font-size: 28px;
+    color: var(--white);
+    cursor: pointer;
+    background: none;
+    border: none;
+  }
+
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+    .hamburger-icon { display: block; }
+    .nav-links.active { 
+      display: flex; 
+      position: absolute;
+      top: var(--nav-h);
+      left: 0;
+      right: 0;
+      flex-direction: column;
+      background: var(--black);
+      border-bottom: 1px solid #222;
+      gap: 0;
+    }
+    .nav-links.active .nav-item > a {
+      padding: 16px 28px;
+      border-bottom: 1px solid #222;
+    }
+    .dropdown {
+      position: static;
+      display: none;
+      box-shadow: none;
+      background: #111;
+    }
+    .nav-item:hover .dropdown { display: none; }
+    .dropdown.mobile-active { display: flex; flex-direction: column; }
+  }
 
   /* ===== HERO SECTION ===== */
   .home-hero {
@@ -143,9 +182,9 @@
   }
   .filter-tab.active, .filter-tab:hover { background: var(--black); color: var(--white); }
 
-  /* Product Grid Styles (Ürünler sayfasıyla birebir aynı) */
+  /* Product Grid Styles */
   .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
-  .product-card { background: var(--white); border: 1px solid var(--gray-200); position: relative; transition: box-shadow .25s, transform .25s; }
+  .product-card { background: var(--white); border: 1px solid var(--gray-200); position: relative; transition: box-shadow .25s, transform .25s; cursor: pointer; }
   .product-card:hover { box-shadow: 0 12px 40px rgba(0,0,0,.12); transform: translateY(-3px); }
   .product-img-wrap { height: 300px; overflow: hidden; background: var(--gray-100); }
   .product-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
@@ -156,7 +195,7 @@
   .product-desc { font-size: 13px; color: var(--gray-600); font-style: italic; margin-bottom: 16px; }
   .product-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .product-price { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 1px; }
-  .btn-detail { background: var(--black); color: var(--white); padding: 8px 16px; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; text-decoration: none; transition: background .15s; }
+  .btn-detail { background: var(--black); color: var(--white); padding: 8px 16px; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; text-decoration: none; border: none; cursor: pointer; transition: all .15s; }
   .btn-detail:hover { background: var(--gray-600); }
 
   /* ===== FOOTER ===== */
@@ -168,13 +207,12 @@
   .footer-desc { color: var(--gray-400); font-size: 14px; line-height: 1.6; max-width: 400px; }
   .footer-heading { font-size: 12px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px; color: var(--white); }
   .footer-text { color: var(--gray-400); font-size: 13px; margin-bottom: 8px; }
-  .shopier-badge { display: inline-block; border: 1px solid var(--gray-600); padding: 6px 12px; font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--gray-400); margin-top: 10px; }
+  .shopier-badge { display: inline-block; border: 1px solid var(--gray-600); padding: 6px 12px; font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--gray-400); }
   .footer-bottom { text-align: center; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--gray-600); }
 
   /* Mobile Adjustments */
   @media (max-width: 768px) {
     .featured-grid { grid-template-columns: 1fr; }
-    .nav-links { display: none; /* Mobil menü ikonuna basınca açılacak şekilde JS eklenebilir */ }
   }
 </style>
 </head>
@@ -182,15 +220,16 @@
 
 <nav id="navbar">
   <a href="index.html" class="nav-logo">Öz Spor <span>&</span> Outdoor</a>
-  <div class="nav-links">
+  <button class="hamburger-icon" onclick="toggleMobileMenu()">☰</button>
+  <div class="nav-links" id="navLinks">
     <div class="nav-item"><a href="index.html" class="active">Anasayfa</a></div>
     <div class="nav-item">
-      <a href="urunler.html">Ürünler ▾</a>
-      <div class="dropdown">
-        <a href="urunler.html"><span class="dot"></span>Branş Ürünleri</a>
-        <a href="urunler.html"><span class="dot"></span>Outdoor Giyim</a>
-        <a href="urunler.html"><span class="dot"></span>Kamp Ekipmanları</a>
-        <a href="urunler.html"><span class="dot"></span>Aksesuarlar</a>
+      <a href="products.html">Ürünler ▾</a>
+      <div class="dropdown" id="productsDropdown">
+        <a onclick="filterFromNav('brans')"><span class="dot"></span>Branş Ürünleri</a>
+        <a onclick="filterFromNav('giyim')"><span class="dot"></span>Outdoor Giyim</a>
+        <a onclick="filterFromNav('kamp')"><span class="dot"></span>Kamp Ekipmanları</a>
+        <a onclick="filterFromNav('aksesuar')"><span class="dot"></span>Aksesuarlar</a>
       </div>
     </div>
     <div class="nav-item"><a href="#featured">Koleksiyon</a></div>
@@ -204,27 +243,27 @@
   <div class="home-hero-text">
     <h1>Sınırlarını <span>Zorla</span></h1>
     <p>Profesyonel Ekipman & Outdoor Performans</p>
-    <a href="urunler.html" class="btn-hero">Koleksiyonu Keşfet</a>
+    <a href="products.html" class="btn-hero">Koleksiyonu Keşfet</a>
   </div>
 </section>
 
 <section id="featured" class="featured-section">
   <div class="featured-grid">
-    <div class="featured-card" onclick="window.location.href='urunler.html'">
+    <div class="featured-card" onclick="goToProductsWithCategory('kamp')">
       <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1000&auto=format&fit=crop" alt="Outdoor">
       <div class="featured-text">
         <h3>Outdoor</h3>
         <span>İncele</span>
       </div>
     </div>
-    <div class="featured-card" onclick="window.location.href='urunler.html'">
+    <div class="featured-card" onclick="goToProductsWithCategory('giyim')">
       <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1000&auto=format&fit=crop" alt="Teknik Giyim">
       <div class="featured-text">
         <h3>Teknik Giyim</h3>
         <span>İncele</span>
       </div>
     </div>
-    <div class="featured-card" onclick="window.location.href='urunler.html'">
+    <div class="featured-card" onclick="goToProductsWithCategory('brans')">
       <img src="https://images.unsplash.com/photo-1555597673-b21d5c935865?q=80&w=1000&auto=format&fit=crop" alt="Judo">
       <div class="featured-text">
         <h3>Judo Ekipmanları</h3>
@@ -241,15 +280,15 @@
       <p>Performansın için en iyisini seç.</p>
     </div>
     <div class="filter-tabs">
-      <button class="filter-tab active" data-category="all">Hepsi</button>
-      <button class="filter-tab" data-category="outdoor">Outdoor</button>
-      <button class="filter-tab" data-category="giyim">Teknik Giyim</button>
-      <button class="filter-tab" data-category="judo">Judo</button>
+      <button class="filter-tab active" data-category="all" onclick="filterHomeProducts('all', this)">Hepsi</button>
+      <button class="filter-tab" data-category="kamp" onclick="filterHomeProducts('kamp', this)">Outdoor</button>
+      <button class="filter-tab" data-category="giyim" onclick="filterHomeProducts('giyim', this)">Teknik Giyim</button>
+      <button class="filter-tab" data-category="brans" onclick="filterHomeProducts('brans', this)">Judo</button>
     </div>
   </div>
 
   <div class="product-grid" id="featured-products">
-    <div class="product-card" data-category="judo">
+    <div class="product-card" data-category="brans" onclick="goToProductsWithCategory('brans')">
       <div class="product-img-wrap">
         <img src="https://images.unsplash.com/photo-1555597673-b21d5c935865?q=80&w=600" alt="Judo Gi">
       </div>
@@ -259,12 +298,12 @@
         <div class="product-desc">750 GSM Teknik Kumaş</div>
         <div class="product-footer">
           <span class="product-price">2.499 TL</span>
-          <a href="urunler.html" class="btn-detail">İncele</a>
+          <a href="products.html" class="btn-detail">İncele</a>
         </div>
       </div>
     </div>
 
-    <div class="product-card" data-category="outdoor">
+    <div class="product-card" data-category="kamp" onclick="goToProductsWithCategory('kamp')">
       <div class="product-img-wrap">
         <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=600" alt="Outdoor Shoe">
       </div>
@@ -274,12 +313,12 @@
         <div class="product-desc">Su Geçirmez & Vibram Taban</div>
         <div class="product-footer">
           <span class="product-price">4.150 TL</span>
-          <a href="urunler.html" class="btn-detail">İncele</a>
+          <a href="products.html" class="btn-detail">İncele</a>
         </div>
       </div>
     </div>
 
-    <div class="product-card" data-category="giyim">
+    <div class="product-card" data-category="giyim" onclick="goToProductsWithCategory('giyim')">
       <div class="product-img-wrap">
         <img src="https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=600" alt="T-shirt">
       </div>
@@ -289,12 +328,12 @@
         <div class="product-desc">Hızlı Kuruyan Özel Doku</div>
         <div class="product-footer">
           <span class="product-price">850 TL</span>
-          <a href="urunler.html" class="btn-detail">İncele</a>
+          <a href="products.html" class="btn-detail">İncele</a>
         </div>
       </div>
     </div>
 
-    <div class="product-card" data-category="outdoor">
+    <div class="product-card" data-category="kamp" onclick="goToProductsWithCategory('kamp')">
       <div class="product-img-wrap">
         <img src="https://images.unsplash.com/photo-1533659091351-893fee143d49?q=80&w=600" alt="Mat">
       </div>
@@ -304,7 +343,7 @@
         <div class="product-desc">Polyethylene Yüksek Dansite</div>
         <div class="product-footer">
           <span class="product-price">1.100 TL</span>
-          <a href="urunler.html" class="btn-detail">İncele</a>
+          <a href="products.html" class="btn-detail">İncele</a>
         </div>
       </div>
     </div>
@@ -343,19 +382,35 @@
     }
   });
 
-  // Anasayfa Kategori Filtreleme
+  // Mobile Menu Toggle
+  function toggleMobileMenu() {
+    const nav = document.getElementById('navLinks');
+    nav.classList.toggle('active');
+  }
+
+  // Navigation from navbar to products page with filter
+  function filterFromNav(category) {
+    localStorage.setItem('selectedCategory', category);
+    window.location.href = 'products.html';
+  }
+
+  // Featured card to products page
+  function goToProductsWithCategory(category) {
+    localStorage.setItem('selectedCategory', category);
+    window.location.href = 'products.html';
+  }
+
+  // Home page filter tabs
   const filterTabs = document.querySelectorAll('.filter-tab');
-  const productCards = document.querySelectorAll('.product-card');
+  const productCards = document.querySelectorAll('[data-category]');
 
   filterTabs.forEach(tab => {
     tab.addEventListener('click', () => {
-      // Aktif tab'i değiştir
       filterTabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
 
       const category = tab.getAttribute('data-category');
 
-      // Ürünleri filtrele
       productCards.forEach(card => {
         if (category === 'all' || card.getAttribute('data-category') === category) {
           card.style.display = 'block';
@@ -367,6 +422,21 @@
       });
     });
   });
+
+  function filterHomeProducts(category, element) {
+    filterTabs.forEach(tab => tab.classList.remove('active'));
+    element.classList.add('active');
+
+    productCards.forEach(card => {
+      if (category === 'all' || card.getAttribute('data-category') === category) {
+        card.style.display = 'block';
+        setTimeout(() => card.style.opacity = '1', 10);
+      } else {
+        card.style.opacity = '0';
+        setTimeout(() => card.style.display = 'none', 250);
+      }
+    });
+  }
 </script>
 
 </body>

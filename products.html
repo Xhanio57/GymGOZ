@@ -65,6 +65,7 @@
     font-size: 12px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase;
     color: #ccc; text-decoration: none;
     transition: all .15s;
+    cursor: pointer;
   }
   .dropdown a:hover { color: var(--accent); padding-left: 26px; }
   .dropdown a .dot { width: 5px; height: 5px; background: var(--accent); border-radius: 50%; flex-shrink: 0; }
@@ -208,6 +209,19 @@
     cursor: pointer;
   }
   .filter-tag .x { color: var(--accent); font-size: 13px; line-height: 1; cursor: pointer; }
+
+  .search-wrap {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .search-input {
+    padding: 8px 14px; border: 1px solid var(--gray-200);
+    background: var(--white); color: var(--black);
+    font-family: 'Barlow', sans-serif; font-size: 12px;
+    outline: none;
+  }
+  .search-input:focus { border-color: var(--black); }
+  .search-input::placeholder { color: var(--gray-400); }
+
   .sort-wrap { display: flex; align-items: center; gap: 10px; }
   .sort-label { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gray-400); }
   .sort-select {
@@ -244,6 +258,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 20px;
+    min-height: 400px;
   }
   .product-card {
     background: var(--white); border: 1px solid var(--gray-200);
@@ -276,7 +291,7 @@
   .btn-detail:hover { background: var(--black); color: var(--white); }
 
   /* ===== PAGINATION ===== */
-  .pagination { display: flex; justify-content: center; gap: 4px; margin-top: 40px; align-items: center; }
+  .pagination { display: flex; justify-content: center; gap: 4px; margin-top: 40px; align-items: center; flex-wrap: wrap; }
   .page-btn {
     width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
     border: 1px solid var(--gray-200); font-size: 12px; font-weight: 700; cursor: pointer;
@@ -437,6 +452,7 @@
     .popup-name { font-size: 28px; }
     .sidebar { display: none; }
     .product-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+    .sort-tags-row { flex-direction: column; align-items: flex-start; }
   }
 
   /* Scrollbar */
@@ -455,12 +471,12 @@
       <a href="index.html">Anasayfa</a>
     </div>
     <div class="nav-item">
-      <a href="urunler.html" class="active">Ürünler ▾</a>
+      <a href="products.html" class="active">Ürünler ▾</a>
       <div class="dropdown">
-        <a href="#" onclick="filterByNav('brans'); return false;"><span class="dot"></span>Branş Ürünleri</a>
-        <a href="#" onclick="filterByNav('giyim'); return false;"><span class="dot"></span>Outdoor Giyim</a>
-        <a href="#" onclick="filterByNav('kamp'); return false;"><span class="dot"></span>Kamp Ekipmanları</a>
-        <a href="#" onclick="filterByNav('aksesuar'); return false;"><span class="dot"></span>Aksesuarlar</a>
+        <a onclick="filterByNav('brans')"><span class="dot"></span>Branş Ürünleri</a>
+        <a onclick="filterByNav('giyim')"><span class="dot"></span>Outdoor Giyim</a>
+        <a onclick="filterByNav('kamp')"><span class="dot"></span>Kamp Ekipmanları</a>
+        <a onclick="filterByNav('aksesuar')"><span class="dot"></span>Aksesuarlar</a>
       </div>
     </div>
     <div class="nav-item">
@@ -547,17 +563,22 @@
     <!-- Sort Bar -->
     <div class="sort-tags-row">
       <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
-        <span class="results-count" id="results-count">12 ürün listeleniyor</span>
+        <span class="results-count" id="results-count"></span>
         <div class="active-filters" id="active-filters"></div>
       </div>
-      <div class="sort-wrap">
-        <span class="sort-label">Sırala:</span>
-        <select class="sort-select" onchange="sortProducts(this.value)">
-          <option value="featured">Öne Çıkan</option>
-          <option value="price-asc">Fiyat: Düşükten Yükseğe</option>
-          <option value="price-desc">Fiyat: Yüksekten Düşeğe</option>
-          <option value="newest">En Yeni</option>
-        </select>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <div class="search-wrap">
+          <input type="text" class="search-input" id="searchInput" placeholder="Ürün ara..." onkeyup="applyFilters()">
+        </div>
+        <div class="sort-wrap">
+          <span class="sort-label">Sırala:</span>
+          <select class="sort-select" onchange="sortProducts(this.value)">
+            <option value="featured">Öne Çıkan</option>
+            <option value="price-asc">Fiyat: Düşükten Yükseğe</option>
+            <option value="price-desc">Fiyat: Yüksekten Düşeğe</option>
+            <option value="newest">En Yeni</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -682,7 +703,7 @@ const products = [
   {
     id: 6, cat: 'giyim', subcat: 'mont', brand: 'The North Face',
     name: 'Trail Yağmurluk', desc: 'Su Geçirmez – Packable',
-    longDesc: '20.000mm su geçirmezlik değeriyle en zorlu hava koşullarına dayanıklı, yapışık dikişli ve katlanabilir ultra hafif yağmurluk.',
+    longDesc: '20.000mm su geçirmezlik değeriyle en zorlu hava koşullarına dayanıklı, yapı��ık dikişli ve katlanabilir ultra hafif yağmurluk.',
     features: ['20.000mm Su Geçirmezlik', 'Yapışık Dikiş Teknolojisi', 'Packable – 280gr', '2.5 Katman Membran', 'Ayarlanabilir Kapüşon'],
     sizes: ['S', 'M', 'L', 'XL'],
     price: 3200, badge: 'YENİ', stock: true,
@@ -748,6 +769,16 @@ const products = [
     price: 680, badge: '', stock: true,
     img: 'https://images.unsplash.com/photo-1473188588951-666fce8e7c68?q=80&w=800',
     link: 'https://shopier.com/link12'
+  },
+  {
+    id: 13, cat: 'brans', subcat: 'judo', brand: 'Nike',
+    name: 'Premium Judo Gi (Siyah)', desc: 'Uluslararası Turnuva Kalitesi',
+    longDesc: 'Profesyonel judocu için tasarlanmış siyah renkli yüksek kaliteli Judo Gi. IJF standartlarına uygun, maksimum dayanıklılık ve hareket özg��rlüğü.',
+    features: ['IJF Sertifikalı', '800 GSM Kalite', 'Siyah Renk', 'Çift Dikiş Sistemi', 'Uluslararası Standar'],
+    sizes: ['140', '150', '160', '170', '180', '190', '200'],
+    price: 3499, badge: '', stock: true,
+    img: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?q=80&w=800',
+    link: 'https://shopier.com/link13'
   }
 ];
 
@@ -759,7 +790,25 @@ let selectedFilters = {
   priceMax: 10000
 };
 let currentPage = 1;
-const itemsPerPage = 6;
+const itemsPerPage = 12;
+
+// Count kategorileri güncelle
+function updateCategoryCounts() {
+  const categories = {
+    'all': products.length,
+    'brans': products.filter(p => p.cat === 'brans').length,
+    'giyim': products.filter(p => p.cat === 'giyim').length,
+    'kamp': products.filter(p => p.cat === 'kamp').length,
+    'aksesuar': products.filter(p => p.cat === 'aksesuar').length
+  };
+
+  Object.keys(categories).forEach(cat => {
+    const countEl = document.getElementById(`count-${cat}`);
+    if (countEl) {
+      countEl.textContent = categories[cat];
+    }
+  });
+}
 
 const heroMap = {
   all:      { img: 'https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=1200&auto=format&fit=crop', title: 'Tüm <span>Ürünler</span>' },
@@ -800,6 +849,8 @@ function initializeFilters() {
     label.innerHTML = `<input type="checkbox" value="${size}" onchange="applyFilters()"><label>${size}</label>`;
     sizeContainer.appendChild(label);
   });
+
+  updateCategoryCounts();
 }
 
 /* =====================
@@ -847,20 +898,25 @@ function renderPagination(items) {
   const container = document.getElementById('pagination-container');
   const totalPages = Math.ceil(items.length / itemsPerPage);
   
+  // 12 den fazla ürün varsa pagination göster
   if (totalPages <= 1) {
     container.innerHTML = '';
     return;
   }
 
   let html = '';
+  
+  // Önceki sayfa butonu
   if (currentPage > 1) {
     html += `<button class="page-btn" onclick="goToPage(${currentPage - 1})">←</button>`;
   }
 
+  // Sayfa numaraları
   for (let i = 1; i <= totalPages; i++) {
     html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
   }
 
+  // Sonraki sayfa butonu
   if (currentPage < totalPages) {
     html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})">→</button>`;
   }
@@ -870,20 +926,14 @@ function renderPagination(items) {
 
 function goToPage(page) {
   currentPage = page;
-  applyFilters();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-/* =====================
-   FILTERING
-===================== */
-function applyFilters() {
-  currentPage = 1;
   
+  // Filtrelenmiş ürünleri tekrar al
   selectedFilters.brands = Array.from(document.querySelectorAll('#brand-filters input:checked')).map(el => el.value);
   selectedFilters.sizes = Array.from(document.querySelectorAll('#size-filters input:checked')).map(el => el.value);
   selectedFilters.priceMin = parseInt(document.getElementById('priceMin').value) || 0;
   selectedFilters.priceMax = parseInt(document.getElementById('priceMax').value) || 10000;
+
+  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
 
   let items = [...products];
 
@@ -900,6 +950,88 @@ function applyFilters() {
   }
 
   items = items.filter(p => p.price >= selectedFilters.priceMin && p.price <= selectedFilters.priceMax);
+
+  if (searchTerm) {
+    items = items.filter(p => p.name.toLowerCase().includes(searchTerm) || p.desc.toLowerCase().includes(searchTerm));
+  }
+
+  renderProducts(items);
+  window.scrollTo({ top: document.getElementById('product-grid').offsetTop - 100, behavior: 'smooth' });
+}
+
+/* =====================
+   FILTERING
+===================== */
+function applyFilters() {
+  currentPage = 1;
+  
+  selectedFilters.brands = Array.from(document.querySelectorAll('#brand-filters input:checked')).map(el => el.value);
+  selectedFilters.sizes = Array.from(document.querySelectorAll('#size-filters input:checked')).map(el => el.value);
+  selectedFilters.priceMin = parseInt(document.getElementById('priceMin').value) || 0;
+  selectedFilters.priceMax = parseInt(document.getElementById('priceMax').value) || 10000;
+
+  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+  let items = [...products];
+
+  // Kategori filtresi
+  if (currentCat !== 'all') {
+    items = items.filter(p => p.cat === currentCat || p.subcat === currentCat);
+  }
+
+  // Marka filtresi
+  if (selectedFilters.brands.length > 0) {
+    items = items.filter(p => selectedFilters.brands.includes(p.brand));
+  }
+
+  // Beden filtresi
+  if (selectedFilters.sizes.length > 0) {
+    items = items.filter(p => p.sizes.some(size => selectedFilters.sizes.some(selected => size.includes(selected) || selected.includes(size))));
+  }
+
+  // Fiyat filtresi
+  items = items.filter(p => p.price >= selectedFilters.priceMin && p.price <= selectedFilters.priceMax);
+
+  // Arama filtresi
+  if (searchTerm) {
+    items = items.filter(p => p.name.toLowerCase().includes(searchTerm) || p.desc.toLowerCase().includes(searchTerm));
+  }
+
+  updateActiveFilters();
+  renderProducts(items);
+}
+/* =====================
+   FILTERING
+===================== */
+function applyFilters() {
+  currentPage = 1;
+  
+  selectedFilters.brands = Array.from(document.querySelectorAll('#brand-filters input:checked')).map(el => el.value);
+  selectedFilters.sizes = Array.from(document.querySelectorAll('#size-filters input:checked')).map(el => el.value);
+  selectedFilters.priceMin = parseInt(document.getElementById('priceMin').value) || 0;
+  selectedFilters.priceMax = parseInt(document.getElementById('priceMax').value) || 10000;
+
+  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+  let items = [...products];
+
+  if (currentCat !== 'all') {
+    items = items.filter(p => p.cat === currentCat || p.subcat === currentCat);
+  }
+
+  if (selectedFilters.brands.length > 0) {
+    items = items.filter(p => selectedFilters.brands.includes(p.brand));
+  }
+
+  if (selectedFilters.sizes.length > 0) {
+    items = items.filter(p => p.sizes.some(size => selectedFilters.sizes.some(selected => size.includes(selected) || selected.includes(size))));
+  }
+
+  items = items.filter(p => p.price >= selectedFilters.priceMin && p.price <= selectedFilters.priceMax);
+
+  if (searchTerm) {
+    items = items.filter(p => p.name.toLowerCase().includes(searchTerm) || p.desc.toLowerCase().includes(searchTerm));
+  }
 
   updateActiveFilters();
   renderProducts(items);
@@ -974,6 +1106,10 @@ function filterByNav(cat) {
 
 function sortProducts(val) {
   let items = [...products].filter(p => currentCat === 'all' || p.cat === currentCat || p.subcat === currentCat);
+  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+  if (searchTerm) {
+    items = items.filter(p => p.name.toLowerCase().includes(searchTerm) || p.desc.toLowerCase().includes(searchTerm));
+  }
   if (val === 'price-asc') items.sort((a, b) => a.price - b.price);
   else if (val === 'price-desc') items.sort((a, b) => b.price - a.price);
   else if (val === 'newest') items.sort((a, b) => b.id - a.id);
@@ -1031,9 +1167,21 @@ function closePopupDirect() {
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closePopupDirect(); });
 
-// Init
-initializeFilters();
-applyFilters();
+// Load selected category from localStorage
+window.addEventListener('load', () => {
+  const selectedCat = localStorage.getItem('selectedCategory');
+  if (selectedCat && selectedCat !== 'null') {
+    const catElement = document.querySelector(`.sidebar-item[data-cat="${selectedCat}"]`);
+    if (catElement) {
+      filterCat(catElement, selectedCat, catElement.innerText.trim());
+    }
+    localStorage.removeItem('selectedCategory');
+  } else {
+    initializeFilters();
+    applyFilters();
+  }
+});
 </script>
+
 </body>
 </html>
