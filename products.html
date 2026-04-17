@@ -39,6 +39,18 @@
   }
   .nav-logo span { color: var(--accent); }
   .nav-links { display: flex; gap: 0; align-items: center; }
+  .nav-toggle {
+    display: none;
+    width: 42px;
+    height: 42px;
+    border: 1px solid #2a2a2a;
+    background: transparent;
+    color: var(--white);
+    font-size: 20px;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+  }
   .nav-item { position: relative; }
   .nav-item > a {
     display: block; padding: 22px 18px;
@@ -59,6 +71,7 @@
     box-shadow: 0 20px 40px rgba(0,0,0,.5);
   }
   .nav-item:hover .dropdown { display: block; }
+  .nav-item.open .dropdown { display: block; }
   .dropdown a {
     display: flex; align-items: center; gap: 10px;
     padding: 10px 20px;
@@ -161,8 +174,8 @@
   .brand-list { padding: 0 20px; display: flex; flex-direction: column; gap: 6px; }
   .brand-item { display: flex; align-items: center; gap: 10px; cursor: pointer; }
   .brand-item input[type=checkbox] { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; }
-  .brand-item label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--gray-600); cursor: pointer; }
-  .brand-item:hover label { color: var(--black); }
+  .brand-item span { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--gray-600); cursor: pointer; }
+  .brand-item:hover span { color: var(--black); }
 
   /* ===== SORT BAR ===== */
   .sort-tags-row {
@@ -176,6 +189,8 @@
     background: var(--black); color: var(--white);
     padding: 4px 12px; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
     cursor: pointer;
+    border: none;
+    font-family: 'Barlow', sans-serif;
   }
   .filter-tag .x { color: var(--accent); font-size: 13px; line-height: 1; }
   .sort-wrap { display: flex; align-items: center; gap: 10px; }
@@ -254,6 +269,7 @@
   }
   .page-btn:hover { background: var(--black); color: var(--white); border-color: var(--black); }
   .page-btn.active { background: var(--accent); color: var(--black); border-color: var(--accent); }
+  .page-btn[disabled] { opacity: .4; cursor: not-allowed; }
 
   /* ===== EMPTY STATE ===== */
   .empty-state { text-align: center; padding: 80px 20px; grid-column: 1 / -1; }
@@ -399,6 +415,37 @@
   /* Divider */
   .popup-divider { border: none; border-top: 1px solid var(--gray-200); margin: 20px 0; }
 
+  @media (max-width: 900px) {
+    nav { padding: 0 16px; }
+    .nav-toggle { display: inline-flex; }
+    .nav-links {
+      display: none;
+      position: absolute;
+      top: var(--nav-h);
+      left: 0;
+      right: 0;
+      background: var(--black);
+      border-top: 1px solid #222;
+      flex-direction: column;
+      align-items: stretch;
+      padding: 10px 0;
+    }
+    .nav-links.open { display: flex; }
+    .nav-item > a { padding: 14px 18px; }
+    .nav-item > a.active::after { display: none; }
+    .dropdown {
+      position: static;
+      border: 0;
+      border-top: 1px solid #222;
+      box-shadow: none;
+      padding: 4px 0;
+      min-width: 0;
+    }
+    .nav-item:hover .dropdown { display: none; }
+    .nav-item.open .dropdown { display: block; }
+    .nav-cta { margin: 8px 18px 4px; width: calc(100% - 36px); text-align: center; }
+  }
+
   @media (max-width: 640px) {
     .popup-box { grid-template-columns: 1fr; }
     .popup-gallery { min-height: 280px; }
@@ -418,7 +465,8 @@
 <!-- ===== NAVBAR ===== -->
 <nav>
   <a href="index.html" class="nav-logo">Öz Spor <span>&</span> Outdoor</a>
-  <div class="nav-links">
+  <button class="nav-toggle" id="nav-toggle" aria-label="Menüyü aç/kapat" aria-expanded="false">☰</button>
+  <div class="nav-links" id="nav-links">
     <div class="nav-item">
       <a href="index.html">Anasayfa</a>
     </div>
@@ -489,11 +537,11 @@
     <div class="sidebar-section">
       <div class="sidebar-title">Marka</div>
       <div class="brand-list">
-        <label class="brand-item"><input type="checkbox" onchange="applyFilters()"><label>Adidas</label></label>
-        <label class="brand-item"><input type="checkbox" onchange="applyFilters()"><label>Nike</label></label>
-        <label class="brand-item"><input type="checkbox" checked onchange="applyFilters()"><label>Öz Spor</label></label>
-        <label class="brand-item"><input type="checkbox" onchange="applyFilters()"><label>Mizuno</label></label>
-        <label class="brand-item"><input type="checkbox" onchange="applyFilters()"><label>The North Face</label></label>
+        <label class="brand-item"><input id="brand-adidas" class="brand-checkbox" type="checkbox" value="Adidas" onchange="applyFilters()"><span>Adidas</span></label>
+        <label class="brand-item"><input id="brand-nike" class="brand-checkbox" type="checkbox" value="Nike" onchange="applyFilters()"><span>Nike</span></label>
+        <label class="brand-item"><input id="brand-oz-spor" class="brand-checkbox" type="checkbox" value="Öz Spor" onchange="applyFilters()"><span>Öz Spor</span></label>
+        <label class="brand-item"><input id="brand-mizuno" class="brand-checkbox" type="checkbox" value="Mizuno" onchange="applyFilters()"><span>Mizuno</span></label>
+        <label class="brand-item"><input id="brand-the-north-face" class="brand-checkbox" type="checkbox" value="The North Face" onchange="applyFilters()"><span>The North Face</span></label>
       </div>
     </div>
 
@@ -512,11 +560,11 @@
     <div class="sidebar-section">
       <div class="sidebar-title">Boyut / Beden</div>
       <div class="brand-list">
-        <label class="brand-item"><input type="checkbox" onchange="applyFilters()"><label>XS</label></label>
-        <label class="brand-item"><input type="checkbox" onchange="applyFilters()"><label>S</label></label>
-        <label class="brand-item"><input type="checkbox" checked onchange="applyFilters()"><label>M</label></label>
-        <label class="brand-item"><input type="checkbox" onchange="applyFilters()"><label>L</label></label>
-        <label class="brand-item"><input type="checkbox" onchange="applyFilters()"><label>XL</label></label>
+        <label class="brand-item"><input id="size-xs" class="size-checkbox" type="checkbox" value="XS" onchange="applyFilters()"><span>XS</span></label>
+        <label class="brand-item"><input id="size-s" class="size-checkbox" type="checkbox" value="S" onchange="applyFilters()"><span>S</span></label>
+        <label class="brand-item"><input id="size-m" class="size-checkbox" type="checkbox" value="M" onchange="applyFilters()"><span>M</span></label>
+        <label class="brand-item"><input id="size-l" class="size-checkbox" type="checkbox" value="L" onchange="applyFilters()"><span>L</span></label>
+        <label class="brand-item"><input id="size-xl" class="size-checkbox" type="checkbox" value="XL" onchange="applyFilters()"><span>XL</span></label>
       </div>
     </div>
   </aside>
@@ -528,10 +576,7 @@
     <div class="sort-tags-row">
       <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
         <span class="results-count" id="results-count">12 ürün listeleniyor</span>
-        <div class="active-filters" id="active-filters">
-          <div class="filter-tag">Öz Spor <span class="x">×</span></div>
-          <div class="filter-tag">Beden: M <span class="x">×</span></div>
-        </div>
+        <div class="active-filters" id="active-filters"></div>
       </div>
       <div class="sort-wrap">
         <span class="sort-label">Sırala:</span>
@@ -557,12 +602,7 @@
       <div class="product-grid" id="product-grid"></div>
 
       <!-- Pagination -->
-      <div class="pagination">
-        <div class="page-btn active">1</div>
-        <div class="page-btn">2</div>
-        <div class="page-btn">3</div>
-        <div class="page-btn">›</div>
-      </div>
+      <div class="pagination" id="pagination"></div>
     </div>
   </div>
 </div>
@@ -739,7 +779,25 @@ const products = [
   }
 ];
 
+const productBrandMap = {
+  1: 'Öz Spor',
+  2: 'Öz Spor',
+  3: 'Mizuno',
+  4: 'Adidas',
+  5: 'Nike',
+  6: 'The North Face',
+  7: 'Nike',
+  8: 'Öz Spor',
+  9: 'The North Face',
+  10: 'Adidas',
+  11: 'The North Face',
+  12: 'Öz Spor'
+};
+
 let currentCat = 'all';
+let currentPage = 1;
+let currentSort = 'featured';
+const itemsPerPage = 6;
 
 const heroMap = {
   all:      { img: 'https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=1200&auto=format&fit=crop', title: 'Tüm <span>Ürünler</span>' },
@@ -753,19 +811,111 @@ function catLabel(c) {
   return { all:'Tüm Ürünler', brans:'Branş Ürünleri', giyim:'Outdoor Giyim', kamp:'Kamp Ekipmanları', aksesuar:'Aksesuarlar' }[c] || c;
 }
 
+function getSelectedValues(selector) {
+  return Array.from(document.querySelectorAll(selector))
+    .filter(input => input.checked)
+    .map(input => input.value);
+}
+
+function normalizeSize(size) {
+  return size.toUpperCase().split(' ')[0].replace(/[^A-Z0-9]/g, '');
+}
+
+function getFilteredProducts() {
+  let items = [...products];
+  const selectedBrands = getSelectedValues('.brand-checkbox');
+  const selectedSizes = getSelectedValues('.size-checkbox');
+  const min = parseInt(document.getElementById('priceMin').value, 10) || 0;
+  const max = parseInt(document.getElementById('priceMax').value, 10) || 99999;
+
+  if (currentCat !== 'all') {
+    items = items.filter(p => p.cat === currentCat || p.subcat === currentCat);
+  }
+  if (selectedBrands.length) {
+    items = items.filter(p => selectedBrands.includes(productBrandMap[p.id]));
+  }
+  if (selectedSizes.length) {
+    items = items.filter(p => p.sizes.some(size => selectedSizes.includes(normalizeSize(size))));
+  }
+  items = items.filter(p => p.price >= min && p.price <= max);
+
+  if (currentSort === 'price-asc') items.sort((a, b) => a.price - b.price);
+  else if (currentSort === 'price-desc') items.sort((a, b) => b.price - a.price);
+  else if (currentSort === 'newest') items.sort((a, b) => b.id - a.id);
+
+  return items;
+}
+
+function renderActiveFilters() {
+  const activeFilters = document.getElementById('active-filters');
+  const selectedBrands = getSelectedValues('.brand-checkbox');
+  const selectedSizes = getSelectedValues('.size-checkbox');
+  const min = parseInt(document.getElementById('priceMin').value, 10) || 0;
+  const max = parseInt(document.getElementById('priceMax').value, 10) || 10000;
+  const currentCategoryLabel = document.getElementById('breadcrumb-current').textContent;
+  activeFilters.innerHTML = '';
+
+  const appendTag = (text, type, value) => {
+    const tag = document.createElement('button');
+    tag.type = 'button';
+    tag.className = 'filter-tag';
+    tag.dataset.type = type;
+    if (value) tag.dataset.value = value;
+    tag.append(document.createTextNode(text + ' '));
+    const x = document.createElement('span');
+    x.className = 'x';
+    x.textContent = '×';
+    tag.appendChild(x);
+    tag.addEventListener('click', () => removeFilter(type, value));
+    activeFilters.appendChild(tag);
+  };
+
+  if (currentCat !== 'all') appendTag(currentCategoryLabel, 'category');
+  selectedBrands.forEach(brand => appendTag(brand, 'brand', brand));
+  selectedSizes.forEach(size => appendTag(`Beden: ${size}`, 'size', size));
+  if (min > 0 || max < 10000) appendTag(`${min} - ${max} TL`, 'price');
+}
+
+function removeFilter(type, value) {
+  if (type === 'category') {
+    const allCategoryEl = document.querySelector('.sidebar-item[data-cat="all"]');
+    if (allCategoryEl) filterCat(allCategoryEl, 'all', 'Tüm Ürünler');
+    return;
+  }
+  if (type === 'brand') {
+    const checkbox = document.querySelector(`.brand-checkbox[value="${value}"]`);
+    if (checkbox) checkbox.checked = false;
+  }
+  if (type === 'size') {
+    const checkbox = document.querySelector(`.size-checkbox[value="${value}"]`);
+    if (checkbox) checkbox.checked = false;
+  }
+  if (type === 'price') {
+    document.getElementById('priceMin').value = 0;
+    document.getElementById('priceMax').value = 10000;
+    document.getElementById('priceSlider').value = 10000;
+  }
+  applyFilters();
+}
+
 /* =====================
    RENDER PRODUCTS
 ===================== */
 function renderProducts(items) {
   const grid = document.getElementById('product-grid');
   document.getElementById('results-count').textContent = items.length + ' ürün listeleniyor';
+  const totalPages = Math.max(1, Math.ceil(items.length / itemsPerPage));
+  if (currentPage > totalPages) currentPage = totalPages;
+  const start = (currentPage - 1) * itemsPerPage;
+  const pageItems = items.slice(start, start + itemsPerPage);
 
   if (!items.length) {
     grid.innerHTML = '<div class="empty-state"><h3>Ürün Bulunamadı</h3><p>Farklı filtreler deneyin.</p></div>';
+    renderPagination(1);
     return;
   }
 
-  grid.innerHTML = items.map(p => `
+  grid.innerHTML = pageItems.map(p => `
     <div class="product-card" onclick="openPopup(${p.id})">
       ${p.badge ? `<div class="badge ${p.badge === 'YENİ' ? 'yeni' : ''}">${p.badge}</div>` : ''}
       <div class="product-img-wrap">
@@ -782,19 +932,41 @@ function renderProducts(items) {
       </div>
     </div>
   `).join('');
+
+  renderPagination(totalPages);
+}
+
+function renderPagination(totalPages) {
+  const pagination = document.getElementById('pagination');
+  if (!pagination) return;
+  if (totalPages <= 1) {
+    pagination.innerHTML = '';
+    return;
+  }
+
+  let html = `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="setPage(${currentPage - 1})">‹</button>`;
+  for (let i = 1; i <= totalPages; i++) {
+    html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="setPage(${i})">${i}</button>`;
+  }
+  html += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="setPage(${currentPage + 1})">›</button>`;
+  pagination.innerHTML = html;
+}
+
+function setPage(page) {
+  const filteredItems = getFilteredProducts();
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / itemsPerPage));
+  if (page < 1 || page > totalPages || page === currentPage) return;
+  currentPage = page;
+  renderProducts(filteredItems);
 }
 
 /* =====================
    FILTERING
 ===================== */
-function applyFilters() {
-  let items = [...products];
-  if (currentCat !== 'all') {
-    items = items.filter(p => p.cat === currentCat || p.subcat === currentCat);
-  }
-  const max = parseInt(document.getElementById('priceMax').value) || 99999;
-  const min = parseInt(document.getElementById('priceMin').value) || 0;
-  items = items.filter(p => p.price >= min && p.price <= max);
+function applyFilters(resetPage = true) {
+  if (resetPage) currentPage = 1;
+  const items = getFilteredProducts();
+  renderActiveFilters();
   renderProducts(items);
 }
 
@@ -811,7 +983,8 @@ function filterCat(el, cat, label) {
   const h = heroMap[cat] || heroMap.all;
   document.getElementById('hero-img').src = h.img;
   document.getElementById('hero-title').innerHTML = h.title;
-  applyFilters();
+  document.querySelectorAll('.sidebar-sub-item').forEach(i => i.classList.remove('active'));
+  applyFilters(true);
 }
 
 function filterSub(e, subcat, label) {
@@ -820,7 +993,7 @@ function filterSub(e, subcat, label) {
   e.target.classList.add('active');
   currentCat = subcat;
   document.getElementById('breadcrumb-current').textContent = label;
-  applyFilters();
+  applyFilters(true);
 }
 
 function filterByNav(cat) {
@@ -830,11 +1003,49 @@ function filterByNav(cat) {
 }
 
 function sortProducts(val) {
-  let items = products.filter(p => currentCat === 'all' || p.cat === currentCat || p.subcat === currentCat);
-  if (val === 'price-asc') items.sort((a, b) => a.price - b.price);
-  else if (val === 'price-desc') items.sort((a, b) => b.price - a.price);
-  else if (val === 'newest') items.sort((a, b) => b.id - a.id);
-  renderProducts(items);
+  currentSort = val;
+  applyFilters(true);
+}
+
+function setupMobileNavbar() {
+  const navToggle = document.getElementById('nav-toggle');
+  const navLinks = document.getElementById('nav-links');
+  const navItems = document.querySelectorAll('.nav-item');
+  const mobileNav = window.matchMedia('(max-width: 900px)');
+
+  if (!navToggle || !navLinks) return;
+
+  navToggle.addEventListener('click', () => {
+    navLinks.classList.toggle('open');
+    navToggle.setAttribute('aria-expanded', String(navLinks.classList.contains('open')));
+  });
+
+  navItems.forEach(item => {
+    const trigger = item.querySelector('a');
+    if (!trigger || !item.querySelector('.dropdown')) return;
+    trigger.addEventListener('click', (e) => {
+      if (!mobileNav.matches) return;
+      e.preventDefault();
+      item.classList.toggle('open');
+    });
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!mobileNav.matches) return;
+    if (!e.target.closest('nav')) {
+      navLinks.classList.remove('open');
+      navItems.forEach(item => item.classList.remove('open'));
+      navToggle.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  mobileNav.addEventListener('change', (e) => {
+    if (!e.matches) {
+      navLinks.classList.remove('open');
+      navItems.forEach(item => item.classList.remove('open'));
+      navToggle.setAttribute('aria-expanded', 'false');
+    }
+  });
 }
 
 /* =====================
@@ -894,7 +1105,8 @@ function closePopupDirect() {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closePopupDirect(); });
 
 // Init
-renderProducts(products);
+setupMobileNavbar();
+applyFilters();
 </script>
 </body>
 </html>
