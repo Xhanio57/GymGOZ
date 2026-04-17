@@ -189,6 +189,8 @@
     background: var(--black); color: var(--white);
     padding: 4px 12px; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
     cursor: pointer;
+    border: none;
+    font-family: 'Barlow', sans-serif;
   }
   .filter-tag .x { color: var(--accent); font-size: 13px; line-height: 1; }
   .sort-wrap { display: flex; align-items: center; gap: 10px; }
@@ -535,11 +537,11 @@
     <div class="sidebar-section">
       <div class="sidebar-title">Marka</div>
       <div class="brand-list">
-        <label class="brand-item" for="brand-adidas"><input id="brand-adidas" class="brand-checkbox" type="checkbox" value="Adidas" onchange="applyFilters()"><span>Adidas</span></label>
-        <label class="brand-item" for="brand-nike"><input id="brand-nike" class="brand-checkbox" type="checkbox" value="Nike" onchange="applyFilters()"><span>Nike</span></label>
-        <label class="brand-item" for="brand-oz-spor"><input id="brand-oz-spor" class="brand-checkbox" type="checkbox" value="Öz Spor" onchange="applyFilters()"><span>Öz Spor</span></label>
-        <label class="brand-item" for="brand-mizuno"><input id="brand-mizuno" class="brand-checkbox" type="checkbox" value="Mizuno" onchange="applyFilters()"><span>Mizuno</span></label>
-        <label class="brand-item" for="brand-the-north-face"><input id="brand-the-north-face" class="brand-checkbox" type="checkbox" value="The North Face" onchange="applyFilters()"><span>The North Face</span></label>
+        <label class="brand-item"><input id="brand-adidas" class="brand-checkbox" type="checkbox" value="Adidas" onchange="applyFilters()"><span>Adidas</span></label>
+        <label class="brand-item"><input id="brand-nike" class="brand-checkbox" type="checkbox" value="Nike" onchange="applyFilters()"><span>Nike</span></label>
+        <label class="brand-item"><input id="brand-oz-spor" class="brand-checkbox" type="checkbox" value="Öz Spor" onchange="applyFilters()"><span>Öz Spor</span></label>
+        <label class="brand-item"><input id="brand-mizuno" class="brand-checkbox" type="checkbox" value="Mizuno" onchange="applyFilters()"><span>Mizuno</span></label>
+        <label class="brand-item"><input id="brand-the-north-face" class="brand-checkbox" type="checkbox" value="The North Face" onchange="applyFilters()"><span>The North Face</span></label>
       </div>
     </div>
 
@@ -558,11 +560,11 @@
     <div class="sidebar-section">
       <div class="sidebar-title">Boyut / Beden</div>
       <div class="brand-list">
-        <label class="brand-item" for="size-xs"><input id="size-xs" class="size-checkbox" type="checkbox" value="XS" onchange="applyFilters()"><span>XS</span></label>
-        <label class="brand-item" for="size-s"><input id="size-s" class="size-checkbox" type="checkbox" value="S" onchange="applyFilters()"><span>S</span></label>
-        <label class="brand-item" for="size-m"><input id="size-m" class="size-checkbox" type="checkbox" value="M" onchange="applyFilters()"><span>M</span></label>
-        <label class="brand-item" for="size-l"><input id="size-l" class="size-checkbox" type="checkbox" value="L" onchange="applyFilters()"><span>L</span></label>
-        <label class="brand-item" for="size-xl"><input id="size-xl" class="size-checkbox" type="checkbox" value="XL" onchange="applyFilters()"><span>XL</span></label>
+        <label class="brand-item"><input id="size-xs" class="size-checkbox" type="checkbox" value="XS" onchange="applyFilters()"><span>XS</span></label>
+        <label class="brand-item"><input id="size-s" class="size-checkbox" type="checkbox" value="S" onchange="applyFilters()"><span>S</span></label>
+        <label class="brand-item"><input id="size-m" class="size-checkbox" type="checkbox" value="M" onchange="applyFilters()"><span>M</span></label>
+        <label class="brand-item"><input id="size-l" class="size-checkbox" type="checkbox" value="L" onchange="applyFilters()"><span>L</span></label>
+        <label class="brand-item"><input id="size-xl" class="size-checkbox" type="checkbox" value="XL" onchange="applyFilters()"><span>XL</span></label>
       </div>
     </div>
   </aside>
@@ -850,15 +852,28 @@ function renderActiveFilters() {
   const selectedSizes = getSelectedValues('.size-checkbox');
   const min = parseInt(document.getElementById('priceMin').value, 10) || 0;
   const max = parseInt(document.getElementById('priceMax').value, 10) || 10000;
-  const tags = [];
   const currentCategoryLabel = document.getElementById('breadcrumb-current').textContent;
+  activeFilters.innerHTML = '';
 
-  if (currentCat !== 'all') tags.push(`<div class="filter-tag" onclick="removeFilter('category')">${currentCategoryLabel} <span class="x">×</span></div>`);
-  selectedBrands.forEach(brand => tags.push(`<div class="filter-tag" onclick="removeFilter('brand', '${brand.replace(/'/g, "\\'")}')">${brand} <span class="x">×</span></div>`));
-  selectedSizes.forEach(size => tags.push(`<div class="filter-tag" onclick="removeFilter('size', '${size}')">Beden: ${size} <span class="x">×</span></div>`));
-  if (min > 0 || max < 10000) tags.push(`<div class="filter-tag" onclick="removeFilter('price')">${min} - ${max} TL <span class="x">×</span></div>`);
+  const appendTag = (text, type, value) => {
+    const tag = document.createElement('button');
+    tag.type = 'button';
+    tag.className = 'filter-tag';
+    tag.dataset.type = type;
+    if (value) tag.dataset.value = value;
+    tag.append(document.createTextNode(text + ' '));
+    const x = document.createElement('span');
+    x.className = 'x';
+    x.textContent = '×';
+    tag.appendChild(x);
+    tag.addEventListener('click', () => removeFilter(type, value));
+    activeFilters.appendChild(tag);
+  };
 
-  activeFilters.innerHTML = tags.join('');
+  if (currentCat !== 'all') appendTag(currentCategoryLabel, 'category');
+  selectedBrands.forEach(brand => appendTag(brand, 'brand', brand));
+  selectedSizes.forEach(size => appendTag(`Beden: ${size}`, 'size', size));
+  if (min > 0 || max < 10000) appendTag(`${min} - ${max} TL`, 'price');
 }
 
 function removeFilter(type, value) {
@@ -930,7 +945,7 @@ function renderPagination(totalPages) {
   }
 
   let html = `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="setPage(${currentPage - 1})">‹</button>`;
-  for (let i = 1; i <= totalPages; i += 1) {
+  for (let i = 1; i <= totalPages; i++) {
     html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="setPage(${i})">${i}</button>`;
   }
   html += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="setPage(${currentPage + 1})">›</button>`;
@@ -996,6 +1011,7 @@ function setupMobileNavbar() {
   const navToggle = document.getElementById('nav-toggle');
   const navLinks = document.getElementById('nav-links');
   const navItems = document.querySelectorAll('.nav-item');
+  const mobileNav = window.matchMedia('(max-width: 900px)');
 
   if (!navToggle || !navLinks) return;
 
@@ -1008,14 +1024,14 @@ function setupMobileNavbar() {
     const trigger = item.querySelector('a');
     if (!trigger || !item.querySelector('.dropdown')) return;
     trigger.addEventListener('click', (e) => {
-      if (window.innerWidth > 900) return;
+      if (!mobileNav.matches) return;
       e.preventDefault();
       item.classList.toggle('open');
     });
   });
 
   document.addEventListener('click', (e) => {
-    if (window.innerWidth > 900) return;
+    if (!mobileNav.matches) return;
     if (!e.target.closest('nav')) {
       navLinks.classList.remove('open');
       navItems.forEach(item => item.classList.remove('open'));
@@ -1023,8 +1039,8 @@ function setupMobileNavbar() {
     }
   });
 
-  window.addEventListener('resize', () => {
-    if (window.innerWidth > 900) {
+  mobileNav.addEventListener('change', (e) => {
+    if (!e.matches) {
       navLinks.classList.remove('open');
       navItems.forEach(item => item.classList.remove('open'));
       navToggle.setAttribute('aria-expanded', 'false');
