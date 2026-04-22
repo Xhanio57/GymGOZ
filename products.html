@@ -485,13 +485,13 @@
     <div class="nav-item">
       <a href="index.html#contact">İletişim</a>
     </div>
-    <a href="https://shopier.com" target="_blank" class="nav-cta">Shopier'e Git →</a>
+    <a href="https://www.shopier.com/oz_spor_outdoor" target="_blank" class="nav-cta">Shopier'e Git →</a>
   </div>
 </nav>
 
 <!-- ===== BREADCRUMB ===== -->
 <div class="breadcrumb-bar">
-  <a href="index.html">🏠 Anasayfa</a>
+  <a href="index.html">Anasayfa</a>
   <span class="sep">›</span>
   <span class="current" id="breadcrumb-current">Tüm Ürünler</span>
 </div>
@@ -651,134 +651,514 @@
 ===================== */
 const products = [
   {
-    id: 1, cat: 'brans', subcat: 'judo', brand: 'Öz Spor',
-    name: 'Pro Judo Gi (Beyaz)', desc: '750 GSM Teknik Kumaş',
-    longDesc: 'Uluslararası turnuvalar için tasarlanmış, yüksek dayanıklılıklı 750 GSM teknik kumaştan üretilmiştir. Çift yaka takviyesi ve güçlendirilmiş dikiş yapısıyla uzun ömürlü.',
-    features: ['750 GSM Ağır Dokuma', 'Çift Yaka Takviyesi', 'IJF Onaylı Kumaş', 'Özel Boyama – Renk Atmaz', '%100 Pamuk'],
-    sizes: ['140', '150', '160', '170', '180', '190'],
-    price: 2499, badge: '', stock: true,
-    img: 'https://images.unsplash.com/photo-1555597673-b21d5c935865?q=80&w=800',
-    link: 'https://shopier.com/link1'
+    id: 1, cat: 'giyim', subcat: 'mont', brand: 'Adidas',
+    name: 'Adidas Yağmurluk', desc: 'Su geçirmez spor yağmurluk',
+    longDesc: 'Yüksek performanslı su geçirmez yağmurluk. Nefes alabilen kumaş ve ergonomik kesim. Outdoor aktiviteler için ideal.',
+    features: ['Su geçirmez', 'Nefes alabilen', 'Hafif taşınabilir', 'Ayarlanabilir kapüşon'],
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    price: 1199.99, badge: '', stock: true,
+    img: 'products/AY-1.jpg',
+    link: 'https://shopier.com/1'
   },
   {
-    id: 2, cat: 'brans', subcat: 'judo', brand: 'Öz Spor',
-    name: 'Pro Judo Gi (Mavi)', desc: 'IJF Onaylı – 750 GSM',
-    longDesc: 'Ulusal ve uluslararası müsabakalarda kullanıma uygun, IJF onaylı mavi renk Judo Gi. Üstün dayanıklılık ve hareket özgürlüğü bir arada.',
-    features: ['IJF Onaylı', '750 GSM Doku', 'Mavi Renk – Solmaz', 'Uzun Kollu Tasarım'],
-    sizes: ['140', '150', '160', '170', '180', '190'],
-    price: 2799, badge: 'YENİ', stock: true,
-    img: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?q=80&w=800',
-    link: 'https://shopier.com/link2'
+    id: 2, cat: 'giyim', subcat: 'tshirt', brand: 'Alo',
+    name: 'Alo Takım', desc: 'Eşofman takımı',
+    longDesc: 'Şık ve rahat eşofman takımı. Yumuşak kumaş ve modern kesim. Günlük kullanım ve spor sonrası için ideal.',
+    features: ['Pamuk karışımı', 'Rahat kalıp', '2 cepli', 'Yumuşak dokuma'],
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    price: 720.00, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/2'
   },
   {
-    id: 3, cat: 'brans', subcat: 'gures', brand: 'Mizuno',
-    name: 'Güreş Mayosu – Kırmızı', desc: 'Elastik & Nefes Alan Kumaş',
-    longDesc: 'Yüksek esneklik oranına sahip spandex karışım kumaştan üretilen güreş mayosu. Vücut hareketlerine tam uyum sağlar.',
-    features: ['%80 Polyester %20 Spandex', 'Flatlock Dikiş', 'Anti-Bacterial İşlem', 'Kırmızı – UWW Uyumlu'],
+    id: 3, cat: 'giyim', subcat: 'alt', brand: 'Alo',
+    name: 'Alo Tayt', desc: 'Spor tayt',
+    longDesc: 'Esnek ve nefes alan tayt. Yoga, pilates ve spor için ideal. Vücudu sarar ve maksimum hareket özgürlüğü sağlar.',
+    features: ['Yüksek bel', '4 yönlü esneklik', 'Ter emici', 'Sıkılaştırıcı etki'],
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    price: 450.00, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/3'
+  },
+  {
+    id: 4, cat: 'aksesuar', subcat: 'aksesuar', brand: 'Öz Spor',
+    name: 'Anahtarlık', desc: 'Metal anahtarlık',
+    longDesc: 'Dayanıklı metal anahtarlık, şık tasarım. Günlük kullanım için hafif ve kompakt.',
+    features: ['Paslanmaz çelik', 'Hafif', 'Kompakt', 'Özel baskılı'],
+    sizes: ['Tek Boyut'],
+    price: 50.00, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/4'
+  },
+  {
+    id: 5, cat: 'aksesuar', subcat: 'aksesuar', brand: 'Öz Spor',
+    name: 'Badminton Top (6 Adet)', desc: 'Badminton tüy top',
+    longDesc: '6 adet yüksek kaliteli badminton topu. Doğal tüy malzeme, standart ağırlık ve dayanıklı yapı.',
+    features: ['Doğal tüy', '6\'lı set', 'Standart ağırlık', 'Yüksek uçuş stabilitesi'],
+    sizes: ['Tek Boyut'],
+    price: 199.90, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/5'
+  },
+  {
+    id: 6, cat: 'aksesuar', subcat: 'aksesuar', brand: 'Öz Spor',
+    name: 'Badminton Çantalı Set', desc: 'Badminton seti',
+    longDesc: 'Çanta ile birlikte badminton seti. Başlangıç seviyesi için ideal. İçerisinde raketler ve toplar mevcuttur.',
+    features: ['2 raket', '3 top', 'Taşıma çantası', 'Kullanıma hazır'],
+    sizes: ['Tek Boyut'],
+    price: 719.90, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/6'
+  },
+  {
+    id: 7, cat: 'aksesuar', subcat: 'aksesuar', brand: 'Öz Spor',
+    name: 'Balıkçı Model Şapka', desc: 'Kot şapka',
+    longDesc: 'Balıkçı modeli şık şapka. Güneş korumalı ve nefes alan yapısıyla rahat kullanım.',
+    features: ['Pamuklu', 'Ayarlanabilir', 'Nefes alan', 'UV koruma'],
+    sizes: ['Tek Boyut'],
+    price: 449.90, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/7'
+  },
+  {
+    id: 8, cat: 'giyim', subcat: 'tshirt', brand: 'Öz Spor',
+    name: 'Bej Taktik Gömlek', desc: 'Taktik gömlek',
+    longDesc: 'Dayanıklı taktik gömlek. Çoklu cepler ve hafif kumaş. Saha görevi ve outdoor aktiviteler için tasarlanmıştır.',
+    features: ['Çoklu cep', 'Pamuk polyester', 'UV koruma', 'Hafif'],
+    sizes: ['S', 'L', 'XL', 'XXL'],
+    price: 1399.99, badge: '', stock: true,
+    img: 'products/CG-1.jpg',
+    link: 'https://shopier.com/8'
+  },
+  {
+    id: 9, cat: 'giyim', subcat: 'tshirt', brand: 'Nike',
+    name: 'Beyaz Dri-Fit', desc: 'Dri-Fit tişört',
+    longDesc: 'Hızlı kuruyan teknoloji ile antrenman konforu. Teri emer ve vücudu kuru tutar.',
+    features: ['Dri-Fit', 'Hafif', 'Ter emici', 'Yansıtıcı detaylar'],
     sizes: ['S', 'M', 'L', 'XL'],
-    price: 1299, badge: '', stock: true,
-    img: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=800',
-    link: 'https://shopier.com/link3'
+    price: 360.00, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/9'
   },
   {
-    id: 4, cat: 'brans', subcat: 'boks', brand: 'Adidas',
-    name: 'Boks Eldiveni 12oz', desc: 'Deri – Çift Yoğunluk Dolgu',
-    longDesc: 'Deri üst yüzey ve çift yoğunluklu köpük dolgusuyla hem antrenman hem de spar için ideal koruma sağlar.',
-    features: ['Hakiki Deri Üst Yüzey', 'Çift Yoğunluk Dolgu', 'Nefes Alabilen Avuç İçi', 'Velcro Bilek Desteği', '12oz – Spar Uyumlu'],
-    sizes: ['10oz', '12oz', '14oz', '16oz'],
-    price: 1850, badge: '', stock: true,
-    img: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?q=80&w=800',
-    link: 'https://shopier.com/link4'
-  },
-  {
-    id: 5, cat: 'giyim', subcat: 'tshirt', brand: 'Öz Spor',
-    name: 'Dry-Fit Teknik T-Shirt', desc: 'Hızlı Kuruyan Özel Doku',
-    longDesc: 'Özel mikro dokuma yapısıyla nem yönetimini üst düzeye çıkaran teknik spor t-shirtü. Yoğun antrenman ve outdoor aktiviteler için tasarlandı.',
-    features: ['Hızlı Kuruyan Mikro Doku', 'UV Koruma 30+', 'Flatlock Dikiş', 'Ergonomik Kalıp'],
-    sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
-    price: 850, badge: '', stock: true,
-    img: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=800',
-    link: 'https://shopier.com/link5'
-  },
-  {
-    id: 6, cat: 'giyim', subcat: 'mont', brand: 'The North Face',
-    name: 'Trail Yağmurluk', desc: 'Su Geçirmez – Packable',
-    longDesc: '20.000mm su geçirmezlik değeriyle en zorlu hava koşullarına dayanıklı, yapı��ık dikişli ve katlanabilir ultra hafif yağmurluk.',
-    features: ['20.000mm Su Geçirmezlik', 'Yapışık Dikiş Teknolojisi', 'Packable – 280gr', '2.5 Katman Membran', 'Ayarlanabilir Kapüşon'],
+    id: 10, cat: 'giyim', subcat: 'alt', brand: 'Nike',
+    name: 'Beyaz Nike Etek', desc: 'Spor etek',
+    longDesc: 'Şık spor etek, iç taytlı ve esnek. Tenis, koşu veya günlük spor için idealdir.',
+    features: ['İç taytlı', 'Esnek bel', 'Nefes alan', 'Yüksek esneklik'],
     sizes: ['S', 'M', 'L', 'XL'],
-    price: 3200, badge: 'YENİ', stock: true,
-    img: 'https://images.unsplash.com/photo-1544966503-8e4d3a3a1e56?q=80&w=800',
-    link: 'https://shopier.com/link6'
+    price: 450.00, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/10'
   },
   {
-    id: 7, cat: 'giyim', subcat: 'alt', brand: 'Nike',
-    name: 'Tayt – Sıkıştırma', desc: 'Quadrato Compression Tech',
-    longDesc: 'Quadrato sıkıştırma teknolojisiyle kas yorgunluğunu azaltan, eklemleri destekleyen performans taytı. Hafif ve görünmez dikişleriyle tüm gün konfor.',
-    features: ['Sıkıştırma Teknolojisi', 'Kas Desteği', 'UPF 50+ Güneş Koruması', 'Geniş Bant Beli'],
+    id: 11, cat: 'giyim', subcat: 'tshirt', brand: 'Adidas',
+    name: 'Beyaz Pamuk Adidas Tişört', desc: 'Pamuklu tişört',
+    longDesc: 'Yumuşak pamuklu tişört, günlük kullanım için. Klasik kesim ve rahat yapı.',
+    features: ['%100 pamuk', 'Rahat kesim', 'Adidas logosu', 'Yıkanabilir'],
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    price: 499.99, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/11'
+  },
+  {
+    id: 12, cat: 'giyim', subcat: 'alt', brand: 'Nike',
+    name: 'Beyaz Tenis Çorap', desc: 'Tenis çorabı',
+    longDesc: 'Yastıklı tenis çorabı, ter emici ve nefes alan. Uzun maçlar için ekstra konfor.',
+    features: ['Yastıklı taban', 'Nefes alan', 'Yüksek bilek', 'Sıkı tutuş'],
+    sizes: ['S'],
+    price: 35.00, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/12'
+  },
+  {
+    id: 13, cat: 'aksesuar', subcat: 'aksesuar', brand: 'Columbia',
+    name: 'Columbia Dağcı Çanta', desc: 'Sırt çantası',
+    longDesc: 'Dağcılık için dayanıklı sırt çantası. Geniş hacim ve su geçirmez özellik.',
+    features: ['30L', 'Su geçirmez', 'Hava yastığı', 'Ergonomik askı'],
+    sizes: ['Tek Boyut'],
+    price: 2300.00, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/13'
+  },
+  {
+    id: 14, cat: 'aksesuar', subcat: 'aksesuar', brand: 'Delta',
+    name: 'Delta Atlama İpi', desc: 'Atlama ipi',
+    longDesc: 'Hızlı kardiyo için ayarlanabilir atlama ipi. Sapma önleyici rulman sistemi.',
+    features: ['Ayarlanabilir', 'Sapma önleyici', 'Hafif', 'Yumuşak sap'],
+    sizes: ['Tek Boyut'],
+    price: 250.00, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/14'
+  },
+  {
+    id: 15, cat: 'brans', subcat: 'judo', brand: 'Dragon-Do',
+    name: 'Dragon-Do Judogi Beyaz', desc: 'Judo giysisi',
+    longDesc: 'Resmi judo giysisi. Dayanıklı pamuklu kumaş ve güçlendirilmiş dikişler. Antrenman ve müsabaka için uygundur.',
+    features: ['IJF uyumlu', 'Pamuklu', 'Yıkanabilir', 'Güçlendirilmiş dikiş'],
+    sizes: ['170cm'],
+    price: 3199.90, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/15'
+  },
+  {
+    id: 16, cat: 'giyim', subcat: 'tshirt', brand: 'Nike',
+    name: 'Dri-Fit Takım', desc: 'Eşofman takımı',
+    longDesc: 'Dri-Fit teknolojili eşofman takımı. Antrenman öncesi ve sonrası için ideal. Hızlı kuruma ve ter emme.',
+    features: ['Dri-Fit', '2 parça', 'Hızlı kuruma', 'Yumuşak iç yüzey'],
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    price: 1810.00, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/16'
+  },
+  {
+    id: 17, cat: 'giyim', subcat: 'tshirt', brand: 'Öz Spor',
+    name: 'Gri Taktik Gömlek', desc: 'Taktik gömlek',
+    longDesc: 'Gri renk taktik gömlek. Çok amaçlı cepler ve dayanıklı kumaş. Saha ve şehir kullanımı için.',
+    features: ['Omuz cepleri', 'Göğüs cepleri', 'Hafif', 'Nefes alan'],
+    sizes: ['M', 'L', 'XL', 'XXL', 'XXXL'],
+    price: 1399.99, badge: '', stock: true,
+    img: 'products/GG-1.jpg',
+    link: 'https://shopier.com/17'
+  },
+  {
+    id: 18, cat: 'aksesuar', subcat: 'aksesuar', brand: 'Öz Spor',
+    name: 'Haki Akrep Toka Kemer', desc: 'Kemer',
+    longDesc: 'Akrep tokalı dayanıklı kemer. Taktik görünüm ve sağlam yapı.',
+    features: ['Metal toka', 'Ayarlanabilir', 'Sağlam', 'Uzun ömürlü'],
+    sizes: ['Tek Boyut'],
+    price: 399.99, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/18'
+  },
+  {
+    id: 19, cat: 'aksesuar', subcat: 'aksesuar', brand: 'Öz Spor',
+    name: 'Haki Taktik Kemer', desc: 'Taktik kemer',
+    longDesc: 'Haki renk taktik kemer. Hafif ve dayanıklı naylon malzeme. Hızlı toka sistemi.',
+    features: ['Naylon', 'Hızlı toka', 'Ayarlanabilir', 'Hafif'],
+    sizes: ['Tek Boyut'],
+    price: 399.99, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/19'
+  },
+  {
+    id: 20, cat: 'giyim', subcat: 'alt', brand: 'Öz Spor',
+    name: 'Haki Taktik Pantolon', desc: 'Taktik pantolon',
+    longDesc: 'Haki renk taktik pantolon. Çoklu cepler ve dayanıklı kumaş. Arazi ve günlük kullanım için ideal.',
+    features: ['Diz takviyesi', '6 cep', 'Hafif', 'Su itici'],
+    sizes: ['M', 'L', 'XL', 'XXL', 'XXXL', '4XL'],
+    price: 1499.99, badge: '', stock: true,
+    img: 'products/HK-1.jpg',
+    link: 'https://shopier.com/20'
+  },
+  {
+    id: 21, cat: 'brans', subcat: 'judo', brand: 'Öz Spor',
+    name: 'Judo Antreman Yakasi', desc: 'Antrenman yakası',
+    longDesc: 'Judo antrenmanları için yaka aparatı. Dayanıklı malzeme ve kolay temizlik.',
+    features: ['Yüksek dayanım', 'Kolay temizlik', 'Standart ölçü'],
+    sizes: ['Tek Boyut'],
+    price: 800.00, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/21'
+  },
+  {
+    id: 22, cat: 'brans', subcat: 'judo', brand: 'Öz Spor',
+    name: 'Judo Kemer', desc: 'Judo kemeri',
+    longDesc: 'Pamuklu judo kemeri. Çeşitli renk seçenekleri. Antrenman ve derece gösterimi için.',
+    features: ['Pamuklu', 'Standart uzunluk', 'Yumuşak', 'Renk solmaz'],
+    sizes: ['Tek Boyut'],
+    price: 200.00, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/22'
+  },
+  {
+    id: 23, cat: 'brans', subcat: 'judo', brand: 'Öz Spor',
+    name: 'Judo Kemer (Kaliteli)', desc: 'Judo kemeri üst kalite',
+    longDesc: 'Üst kalite judo kemeri. Turnuva kullanımına uygun, sıkı dokuma ve renk solmaz özellik.',
+    features: ['Sıkı dokuma', 'Renk solmaz', 'Turnuva onaylı', 'Uzun ömürlü'],
+    sizes: ['Tek Boyut'],
+    price: 300.00, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/23'
+  },
+  {
+    id: 24, cat: 'aksesuar', subcat: 'aksesuar', brand: 'Öz Spor',
+    name: 'Kum Taktik Kemer', desc: 'Taktik kemer',
+    longDesc: 'Kum rengi taktik kemer. Hafif naylon malzeme ve hızlı toka sistemi.',
+    features: ['Naylon', 'Hızlı toka', 'Ayarlanabilir', 'Dayanıklı'],
+    sizes: ['Tek Boyut'],
+    price: 399.99, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/24'
+  },
+  {
+    id: 25, cat: 'giyim', subcat: 'alt', brand: 'Öz Spor',
+    name: 'Kum Taktik Pantolon', desc: 'Taktik pantolon',
+    longDesc: 'Kum rengi taktik pantolon. Sağlam kumaş ve bol cepler. Arazi şartlarına dayanıklı.',
+    features: ['Diz takviyesi', '6 cep', 'Hafif', 'Yırtılmaz kumaş'],
+    sizes: ['L', 'XL', 'XXL', 'XXXL', '4XL'],
+    price: 1499.99, badge: '', stock: true,
+    img: 'products/KP-1.jpg',
+    link: 'https://shopier.com/25'
+  },
+  {
+    id: 26, cat: 'giyim', subcat: 'tshirt', brand: 'Nike',
+    name: 'Kırmızı Dri-fit', desc: 'Dri-Fit tişört',
+    longDesc: 'Kırmızı Dri-Fit performans tişörtü. Hızlı kuruma ve maksimum konfor.',
+    features: ['Hızlı kuruma', 'Hafif', 'Ter emici', 'Yansıtıcı logo'],
+    sizes: ['S', 'M', 'L', 'XL'],
+    price: 360.00, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/26'
+  },
+  {
+    id: 27, cat: 'giyim', subcat: 'tshirt', brand: 'Adidas',
+    name: 'Kırmızı Pamuk Adidas', desc: 'Pamuklu tişört',
+    longDesc: 'Kırmızı pamuklu Adidas tişört. Rahat kesim ve yumuşak dokuma.',
+    features: ['%100 pamuk', 'Adidas logo', 'Rahat kalıp', 'Günlük kullanım'],
+    sizes: ['S', 'M', 'L', 'XL'],
+    price: 499.99, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/27'
+  },
+  {
+    id: 28, cat: 'giyim', subcat: 'mont', brand: 'Adidas',
+    name: 'Lacivert Adidas Terrex', desc: 'Outdoor ceket',
+    longDesc: 'Terrex serisi su geçirmez ceket. Rüzgar geçirmez ve nefes alabilen yapı.',
+    features: ['Su geçirmez', 'Rüzgar geçirmez', 'Hafif', 'Katlanabilir'],
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    price: 599.99, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/28'
+  },
+  {
+    id: 29, cat: 'giyim', subcat: 'tshirt', brand: 'Oisho',
+    name: 'Lacivert Oisho Tişört', desc: 'Pamuklu tişört',
+    longDesc: 'Lacivert Oisho tişört. Günlük kullanım için yumuşak pamuklu kumaş.',
+    features: ['Yumuşak pamuk', 'Standart kesim', 'Baskılı', 'Rahat'],
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    price: 479.99, badge: '', stock: true,
+    img: 'products/AL.jpg',
+    link: 'https://shopier.com/29'
+  },
+  {
+    id: 31, cat: 'giyim', subcat: 'alt', brand: 'Öz Spor',
+    name: 'Mevsimlik Gri Alt', desc: 'Eşofman altı',
+    longDesc: 'Mevsimlik gri eşofman altı. Rahat ve esnek yapı. Antrenman ve günlük kullanım için.',
+    features: ['Pamuklu', 'Lastikli bel', 'Esnek', '2 cep'],
+    sizes: ['M', 'L', 'XL', 'XXL'],
+    price: 275.00, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/31'
+  },
+  {
+    id: 32, cat: 'giyim', subcat: 'alt', brand: 'Öz Spor',
+    name: 'Mevsimlik Siyah Alt', desc: 'Eşofman altı',
+    longDesc: 'Siyah mevsimlik eşofman altı. Şık ve rahat. Yumuşak iç yüzey.',
+    features: ['Pamuklu', 'Lastikli bel', 'Esnek', '2 cep'],
+    sizes: ['M', 'L', 'XL', 'XXL'],
+    price: 275.00, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/32'
+  },
+  {
+    id: 33, cat: 'giyim', subcat: 'tshirt', brand: 'Miu-Miu',
+    name: 'Miu Miu Tişört', desc: 'Pamuklu tişört',
+    longDesc: 'Miu Miu marka şık tişört. Özel baskı ve yumuşak kumaş.',
+    features: ['Yumuşak pamuk', 'Özel baskı', 'Rahat kalıp', 'Şık tasarım'],
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    price: 450.00, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/33'
+  },
+  {
+    id: 34, cat: 'giyim', subcat: 'tshirt', brand: 'Adidas',
+    name: 'Mor Acid Tişört Adidas', desc: 'Acid tişört',
+    longDesc: 'Mor renk acid tişört. Dikkat çekici tasarım ve yumuşak kumaş.',
+    features: ['Acid yıkama', 'Yumuşak kumaş', 'Adidas logo', 'Rahat kesim'],
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    price: 539.99, badge: '', stock: true,
+    img: 'products/AAC.jpg',
+    link: 'https://shopier.com/34'
+  },
+  {
+    id: 35, cat: 'giyim', subcat: 'mont', brand: 'Nike',
+    name: 'Nike Storm-Fit Eşofman Takım', desc: 'Storm-Fit takım',
+    longDesc: 'Su geçirmez eşofman takımı. Rüzgar korumalı ve nefes alabilen yapı.',
+    features: ['Storm-Fit', 'Su geçirmez', '2 parça', 'Isı tutucu'],
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    price: 2199.99, badge: '', stock: true,
+    img: 'products/NFTU.jpg',
+    link: 'https://shopier.com/35'
+  },
+  {
+    id: 36, cat: 'giyim', subcat: 'mont', brand: 'Nike',
+    name: 'Nike Storm-Fit Turkuaz', desc: 'Storm-Fit ceket',
+    longDesc: 'Turkuaz renk su geçirmez ceket. Storm-Fit teknolojisi ile rüzgar ve yağmura karşı koruma.',
+    features: ['Storm-Fit', 'Su geçirmez', 'Hafif', 'Katlanabilir'],
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    price: 1099.99, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/36'
+  },
+  {
+    id: 37, cat: 'giyim', subcat: 'alt', brand: 'Oysho',
+    name: 'Pembe Oysho Etek', desc: 'Spor etek',
+    longDesc: 'Pembe spor etek. İç taytlı ve esnek yapı. Yoga ve koşu için ideal.',
+    features: ['İç taytlı', 'Esnek bel', 'Nefes alan', 'Yüksek esneklik'],
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    price: 450.00, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/37'
+  },
+  {
+    id: 38, cat: 'aksesuar', subcat: 'aksesuar', brand: 'Öz Spor',
+    name: 'Pilates Set', desc: 'Pilates seti',
+    longDesc: 'Pilates topu ve direnç bandı seti. Evde pilates için tüm ekipmanlar.',
+    features: ['Top 25cm', 'Direnç bandı', 'Pompa dahil', 'Taşıma filesi'],
+    sizes: ['Tek Boyut'],
+    price: 1000.00, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/38'
+  },
+  {
+    id: 39, cat: 'giyim', subcat: 'tshirt', brand: 'Reebok',
+    name: 'Reebok Beyaz Tişört', desc: 'Pamuklu tişört',
+    longDesc: 'Beyaz Reebok tişört. Klasik kesim ve yumuşak pamuklu kumaş.',
+    features: ['%100 pamuk', 'Reebok logo', 'Rahat kalıp', 'Günlük kullanım'],
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    price: 529.99, badge: '', stock: true,
+    img: 'products/RT-1.jpg',
+    link: 'https://shopier.com/39'
+  },
+  {
+    id: 40, cat: 'giyim', subcat: 'alt', brand: 'Reebok',
+    name: 'Reebok Siyah Şort', desc: 'Spor şort',
+    longDesc: 'Siyah spor şort. Rahat ve nefes alan. Antrenman ve koşu için ideal.',
+    features: ['Hızlı kuruma', 'Bel lastikli', 'İç astarlı', 'Hafif'],
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    price: 569.99, badge: '', stock: true,
+    img: 'products/RS-1.jpg',
+    link: 'https://shopier.com/40'
+  },
+  {
+    id: 43, cat: 'aksesuar', subcat: 'aksesuar', brand: 'Sfam Noris',
+    name: 'Sfam Noris', desc: 'Aksesuar',
+    longDesc: 'Sfam Noris marka çok amaçlı aksesuar. Dayanıklı ve hafif malzeme.',
+    features: ['Dayanıklı', 'Hafif', 'Kompakt', 'Çok amaçlı'],
+    sizes: ['Tek Boyut'],
+    price: 1200.00, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/43'
+  },
+  {
+    id: 44, cat: 'aksesuar', subcat: 'aksesuar', brand: 'Öz Spor',
+    name: 'Siyah Akrep Kemer', desc: 'Kemer',
+    longDesc: 'Siyah akrep tokalı kemer. Şık ve sağlam yapı. Günlük ve taktik kullanım.',
+    features: ['Metal toka', 'Ayarlanabilir', 'Sağlam', 'Uzun ömürlü'],
+    sizes: ['Tek Boyut'],
+    price: 399.99, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/44'
+  },
+  {
+    id: 45, cat: 'giyim', subcat: 'alt', brand: 'Nike',
+    name: 'Siyah Nike Etek', desc: 'Spor etek',
+    longDesc: 'Siyah spor etek. İç taytlı ve esnek yapı. Tenis ve koşu için ideal.',
+    features: ['İç taytlı', 'Esnek bel', 'Nefes alan', 'Yüksek esneklik'],
+    sizes: ['S', 'M', 'L', 'XXL'],
+    price: 450.00, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/45'
+  },
+  {
+    id: 46, cat: 'giyim', subcat: 'tshirt', brand: 'Adidas',
+    name: 'Siyah Oisho Tişört Adidas', desc: 'Pamuklu tişört',
+    longDesc: 'Siyah Oisho tişört. Rahat kesim ve yumuşak pamuklu kumaş.',
+    features: ['Pamuklu', 'Standart kalıp', 'Adidas logo', 'Günlük kullanım'],
+    sizes: ['S', 'L', 'XL', 'XXL'],
+    price: 479.99, badge: '', stock: true,
+    img: 'products/AO.jpg',
+    link: 'https://shopier.com/46'
+  },
+  {
+    id: 47, cat: 'giyim', subcat: 'alt', brand: 'Öz Spor',
+    name: 'Siyah Taktik Pantolon', desc: 'Taktik pantolon',
+    longDesc: 'Siyah taktik pantolon. Dayanıklı ve çok cepli. Arazi ve operasyon kullanımı için.',
+    features: ['Diz takviyesi', '6 cep', 'Sağlam fermuar', 'Yırtılmaz kumaş'],
+    sizes: ['M', 'L', 'XL', 'XXL', 'XXXL', '4XL'],
+    price: 1499.99, badge: '', stock: true,
+    img: 'products/SP-1.jpg',
+    link: 'https://shopier.com/47'
+  },
+  {
+    id: 48, cat: 'kamp', subcat: 'mat', brand: 'Stanley',
+    name: 'Stanley Termos Pembe', desc: 'Termos',
+    longDesc: 'Stanley pembe termos. Sıcaklığı uzun süre korur. Paslanmaz çelik ve vakum izolasyon.',
+    features: ['Paslanmaz çelik', 'Vakum izolasyon', '1L', 'Dayanıklı'],
+    sizes: ['Tek Boyut'],
+    price: 1500.00, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/48'
+  },
+  {
+    id: 49, cat: 'kamp', subcat: 'mat', brand: 'Stanley',
+    name: 'Stanley Termos Yeşil', desc: 'Termos',
+    longDesc: 'Stanley yeşil termos. Dayanıklı ve yalıtımlı. Uzun süre sıcak/soğuk tutar.',
+    features: ['Paslanmaz çelik', 'Vakum izolasyon', '1L', 'Sağlam gövde'],
+    sizes: ['Tek Boyut'],
+    price: 1500.00, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/49'
+  },
+  {
+    id: 50, cat: 'giyim', subcat: 'alt', brand: 'Öz Spor',
+    name: 'Toparlayıcı Mini Şort', desc: 'Toparlayıcı şort',
+    longDesc: 'Mini toparlayıcı şort. Sıkılaştırıcı etki ve yüksek bel. Spor ve günlük kullanım.',
+    features: ['Sıkılaştırıcı', 'Yüksek bel', 'Esnek', 'Nefes alan'],
     sizes: ['XS', 'S', 'M', 'L', 'XL'],
-    price: 1100, badge: '', stock: true,
-    img: 'https://images.unsplash.com/photo-1506629082955-511b1aa562c8?q=80&w=800',
-    link: 'https://shopier.com/link7'
+    price: 230.00, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/50'
   },
   {
-    id: 8, cat: 'kamp', subcat: 'mat', brand: 'Öz Spor',
-    name: 'Ultra Hafif Kamp Matı', desc: 'Polyethylene Yüksek Dansite',
-    longDesc: 'Yüksek yoğunluklu polyethylene köpükten üretilen, nem ve ısıyı izole eden ultra hafif kamp matı. Katlanabilir ve taşıması kolay tasarımıyla her outdoor maceraya eşlik eder.',
-    features: ['Yüksek Yoğunluk PE Köpük', '180×55cm', 'Nem İzolatörü', 'Katlanabilir Tasarım', '350gr Ağırlık'],
-    sizes: ['Standart (180cm)', 'XL (200cm)'],
-    price: 1100, badge: '', stock: true,
-    img: 'https://images.unsplash.com/photo-1533659091351-893fee143d49?q=80&w=800',
-    link: 'https://shopier.com/link8'
+    id: 51, cat: 'giyim', subcat: 'alt', brand: 'Öz Spor',
+    name: 'Toparlayıcı Tayt', desc: 'Toparlayıcı tayt',
+    longDesc: 'Toparlayıcı tayt. Basınçlı ve rahat. Spor sırasında kas desteği sağlar.',
+    features: ['Sıkılaştırıcı', '4 yönlü esneklik', 'Ter emici', 'Yüksek bel'],
+    sizes: ['S', 'M', 'L', 'XL'],
+    price: 400.00, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/51'
   },
   {
-    id: 9, cat: 'kamp', subcat: 'mat', brand: 'Adidas',
-    name: 'Vortex Yürüyüş Ayakkabısı', desc: 'Su Geçirmez & Vibram Taban',
-    longDesc: 'Gore-Tex membran ve Vibram dış taban kombinasyonuyla kayalık ve ıslak zeminlerde maksimum tutuş ve su geçirmezlik sunan yürüyüş botu.',
-    features: ['Gore-Tex Su Geçirmez Membran', 'Vibram Dış Taban', 'Ortopedik Astarı', 'Çelik Burun Koruması'],
-    sizes: ['39', '40', '41', '42', '43', '44', '45'],
-    price: 4150, badge: '', stock: true,
-    img: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=800',
-    link: 'https://shopier.com/link9'
+    id: 52, cat: 'giyim', subcat: 'mont', brand: 'UnderArmor',
+    name: 'UnderArmor Yağmurluk', desc: 'Su geçirmez ceket',
+    longDesc: 'UnderArmor su geçirmez yağmurluk. Hafif ve katlanabilir. Outdoor aktiviteler için.',
+    features: ['Su geçirmez', 'Katlanabilir', 'Hafif', 'Rüzgar geçirmez'],
+    sizes: ['S', 'M', 'L', 'XL'],
+    price: 1099.99, badge: '', stock: true,
+    img: 'products/UAY-1.jpg',
+    link: 'https://shopier.com/52'
   },
   {
-    id: 10, cat: 'kamp', subcat: 'aydinlatma', brand: 'The North Face',
-    name: 'Kafa Feneri 500 Lümen', desc: 'USB-C Şarjlı, Su Geçirmez',
-    longDesc: '500 lümen maksimum parlaklık, IPX6 su geçirmezlik ve USB-C hızlı şarj destekli profesyonel kamp ve trekking feneri. Kırmızı ışık modu ile gece görüşü korunur.',
-    features: ['500 Lümen Maksimum', 'IPX6 Su Geçirmez', 'USB-C Hızlı Şarj', 'Kırmızı Gece Modu', '8 Saat Batarya'],
-    sizes: ['Tek Beden'],
-    price: 750, badge: '', stock: true,
-    img: 'https://images.unsplash.com/photo-1464207687429-7505649dae38?q=80&w=800',
-    link: 'https://shopier.com/link10'
+    id: 53, cat: 'giyim', subcat: 'alt', brand: 'Öz Spor',
+    name: 'Çöl Taktik Pantolon', desc: 'Taktik pantolon',
+    longDesc: 'Çöl renk taktik pantolon. Dayanıklı kumaş ve bol cepler. Saha şartlarına uygun.',
+    features: ['Diz takviyesi', 'Bol cepler', 'Hafif', 'Su itici'],
+    sizes: ['M', 'L', 'XL', 'XXL'],
+    price: 1499.99, badge: '', stock: true,
+    img: 'products/ÇP-1.jpg',
+    link: 'https://shopier.com/53'
   },
   {
-    id: 11, cat: 'aksesuar', subcat: 'aksesuar', brand: 'Öz Spor',
-    name: 'Outdoor Taktik Çanta 35L', desc: 'Molle Sistemli – Yüksek Dayanıklılık',
-    longDesc: '500D Cordura kumaş ve Molle sistemli panel yapısıyla hem günlük hem taktik kullanıma uygun 35 litrelik outdoor sırt çantası. Yağmur kılıfı dahildir.',
-    features: ['500D Cordura Kumaş', '35 Litre Hacim', 'Molle Panel Sistemi', 'Dahil Yağmur Kılıfı', 'Ergonomik Sırt Sistemi'],
-    sizes: ['Tek Beden'],
-    price: 2100, badge: 'YENİ', stock: true,
-    img: 'https://images.unsplash.com/photo-1622260614927-2a832a50ee60?q=80&w=800',
-    link: 'https://shopier.com/link11'
-  },
-  {
-    id: 12, cat: 'aksesuar', subcat: 'aksesuar', brand: 'Mizuno',
-    name: 'Trekking Bastonu (Çift)', desc: 'Alüminyum – Teleskopik',
-    longDesc: '7075 alüminyum alaşımından üretilen, teleskopik ve katlanabilir anti-şok trekking bastonu çifti. Konfor için köpük kaplamalı sap ve bilek kayışı dahildir.',
-    features: ['7075 Alüminyum', 'Anti-Şok Mekanizma', '65-135cm Ayarlanabilir', 'Yedek Uç Dahil', 'Çift (2 Adet)'],
-    sizes: ['Tek Beden'],
-    price: 680, badge: '', stock: true,
-    img: 'https://images.unsplash.com/photo-1473188588951-666fce8e7c68?q=80&w=800',
-    link: 'https://shopier.com/link12'
-  },
-  {
-    id: 13, cat: 'brans', subcat: 'judo', brand: 'Nike',
-    name: 'Premium Judo Gi (Siyah)', desc: 'Uluslararası Turnuva Kalitesi',
-    longDesc: 'Profesyonel judocu için tasarlanmış siyah renkli yüksek kaliteli Judo Gi. IJF standartlarına uygun, maksimum dayanıklılık ve hareket özg��rlüğü.',
-    features: ['IJF Sertifikalı', '800 GSM Kalite', 'Siyah Renk', 'Çift Dikiş Sistemi', 'Uluslararası Standar'],
-    sizes: ['140', '150', '160', '170', '180', '190', '200'],
-    price: 3499, badge: '', stock: true,
-    img: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?q=80&w=800',
-    link: 'https://shopier.com/link13'
+    id: 54, cat: 'brans', subcat: 'judo', brand: 'İppon Gear',
+    name: 'İppon Gear Judogi Beyaz', desc: 'Judo giysisi',
+    longDesc: 'İppon Gear marka beyaz judogi. Turnuva kalitesi, IJF onaylı kumaş.',
+    features: ['IJF onaylı', '700 GSM', 'Pamuklu', 'Güçlendirilmiş dikiş'],
+    sizes: ['140cm', '160cm'],
+    price: 2999.99, badge: '', stock: true,
+    img: 'products/default-product.png',
+    link: 'https://shopier.com/54'
   }
 ];
 
@@ -831,7 +1211,7 @@ function toggleMobileMenu() {
    INITIALIZE FILTERS
 ===================== */
 function initializeFilters() {
-  const brands = ['Adidas', 'Nike', 'Öz Spor', 'Mizuno', 'The North Face'];
+  const brands = ['Adidas', 'Nike', 'Dragon-Do', 'Miu-Miu', 'Columbia', 'Salomon', 'Merrel', 'Stanley', 'Under Armour', 'Alo', 'Oysho', 'The North Face', 'Delta', 'Mizuno', 'Öz Spor & Outdoor'];
   const sizes = ['XS', 'S', 'M', 'L', 'XL'];
   
   const brandContainer = document.getElementById('brand-filters');
