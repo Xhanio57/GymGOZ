@@ -8,10 +8,80 @@ connectDB();
 
 const app = express();
 
+const session = require('express-session');
+
 // Middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
+
+// Session Setup
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'GymGOZ_Fallback_Secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    maxAge: 1000 * 60 * 60 * 24 // 24 Hours
+  }
+}));
+
+// Expose auth state to EJS templates
+app.use((req, res, next) => {
+  res.locals.isAdmin = req.session && req.session.isAdmin;
+  next();
+});
+
+// Global Admin & Mutation API Firewall
+app.use((req, res, next) => {
+  const isApiMutation = req.path.startsWith('/api/') && req.method !== 'GET';
+  const isAdminPath = req.path.startsWith('/admin') || req.path.startsWith('/pos');
+
+  if (isApiMutation || isAdminPath) {
+    if (req.session && req.session.isAdmin) {
+      return next();
+    }
+    if (req.path.startsWith('/api/')) {
+      return res.status(401).json({ success: false, message: 'Yetkisiz erişim. Lütfen giriş yapın.' });
+    }
+    return res.redirect('/login');
+  }
+  next();
+});
+
+// Login Page (GET)
+app.get('/login', (req, res) => {
+  if (req.session && req.session.isAdmin) {
+    return res.redirect('/admin');
+  }
+  res.render('login', { title: 'Yönetici Girişi', error: null });
+});
+
+// Login Action (POST)
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+  const expectedUser = process.env.ADMIN_USERNAME || 'admin';
+  const expectedPass = process.env.ADMIN_PASSWORD || 'admin123';
+
+  if (username === expectedUser && password === expectedPass) {
+    req.session.isAdmin = true;
+    return res.redirect('/admin');
+  }
+
+  res.render('login', {
+    title: 'Yönetici Girişi',
+    error: 'Hatalı kullanıcı adı veya şifre!'
+  });
+});
+
+// Logout Action (GET)
+app.get('/logout', (req, res) => {
+  req.session.destroy(err => {
+    if (err) {
+      console.error('Oturum kapatma hatası:', err);
+    }
+    res.redirect('/');
+  });
+});
 
 // View Engine
 app.set('view engine', 'ejs');
