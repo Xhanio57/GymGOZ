@@ -1,0 +1,558 @@
+<%- include('layout', {
+  title: 'Stok Listesi',
+  body: `
+  <div class="admin-panel">
+    <div class="header">
+      <h2>📊 Stok Listesi</h2>
+      <button onclick="exportPDF()" class="btn btn-export">📄 PDF İndir</button>
+      <button onclick="openBulkLabelModal()" class="btn btn-export" style="background:#8b5cf6">🏷️ Toplu Etiket</button>
+    </div>
+
+    <div class="filters">
+      <input type="text" id="search" placeholder="Ürün adı veya barkod ara...">
+      <select id="catFilter">
+        <option value="">Tüm Kategoriler</option>
+        <option value="Spor Giyim">Spor Giyim</option>
+        <option value="Çocuk Giyim">Çocuk Giyim</option>
+        <option value="Judogi">Judogi</option>
+        <option value="Kamp Malzemeleri">Kamp Malzemeleri</option>
+        <option value="Ayakkabı">Ayakkabı</option>
+        <option value="Aksesuarlar">Aksesuarlar</option>
+        <option value="Diğer">Diğer</option>
+      </select>
+    </div>
+
+    <table class="inventory-table">
+      <thead>
+        <tr>
+          <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+          <th>Resim</th>
+          <th>Ürün</th>
+          <th>Kategori</th>
+          <th>Barkod</th>
+          <th>Beden Stokları</th>
+          <th>Toplam</th>
+          <th>Fiyat</th>
+          <th>İşlem</th>
+        </tr>
+      </thead>
+      <tbody id="t"></tbody>
+    </table>
+  </div>
+
+  <div id="m1" class="modal hidden">
+    <div class="modal-content">
+      <span class="close" onclick="closeM('m1')">&times;</span>
+      <h3>📦 Çoklu Stok Ekle</h3>
+      <div id="sizes" class="multi-stock-list"></div>
+      <button onclick="addS()" class="btn btn-primary" style="width:100%">Stokları Kaydet</button>
+    </div>
+  </div>
+
+  <div id="m2" class="modal hidden">
+    <div class="modal-content">
+      <span class="close" onclick="closeM('m2')">&times;</span>
+      <h3>✏️ Düzenle</h3>
+      <input type="text" id="n">
+      <input type="number" id="pr" step="0.01">
+      <select id="c">
+        <option value="Spor Giyim">Spor Giyim</option>
+        <option value="Çocuk Giyim">Çocuk Giyim</option>
+        <option value="Judogi">Judogi</option>
+        <option value="Kamp Malzemeleri">Kamp Malzemeleri</option>
+        <option value="Ayakkabı">Ayakkabı</option>
+        <option value="Aksesuarlar">Aksesuarlar</option>
+        <option value="Diğer">Diğer</option>
+      </select>
+
+      <div style="margin-bottom: 15px;">
+        <label style="display:block;font-weight:600;margin-bottom:8px;color:#374151;">Ürün Görseli (Değiştirmek için dosya seçin)</label>
+        <input type="file" id="editImageFile" accept="image/*" style="padding: 8px 0; border: none; border-radius: 0; background: transparent; width: auto; margin-bottom: 0;">
+        <input type="hidden" id="editImage" value="">
+      </div>
+
+      <h4 style="margin-top:15px">Vitrin Ayarları</h4>
+      <input type="text" id="brand" placeholder="Marka (Örn: Adidas, Nike, Öz Spor)">
+      <select id="subcat">
+        <option value="">Vitrin Alt Kategorisi Seç</option>
+        <option value="mont">Mont & Yağmurluk (Giyim)</option>
+        <option value="tshirt">T-Shirt (Giyim)</option>
+        <option value="alt">Alt Giyim (Giyim)</option>
+        <option value="judo">Judo (Branş)</option>
+        <option value="gures">Güreş (Branş)</option>
+        <option value="boks">Boks (Branş)</option>
+        <option value="mat">Mat & Çadır (Kamp)</option>
+        <option value="aydinlatma">Aydınlatma (Kamp)</option>
+        <option value="aksesuar">Aksesuar (Genel)</option>
+      </select>
+      <input type="text" id="shopierLink" placeholder="Shopier Satış Linki">
+      <input type="text" id="badge" placeholder="Ürün Rozeti (Örn: YENİ)">
+      <input type="text" id="features" placeholder="Özellikler (virgülle ayırın, Örn: Su geçirmez, Nefes alan)">
+
+      <h4 style="margin-top:15px">İndirim Ayarları</h4>
+      <select id="discType">
+        <option value="none">İndirim Yok</option>
+        <option value="percentage">Yüzde İndirim (%)</option>
+        <option value="fixed">Sabit İndirim (₺)</option>
+      </select>
+      <input type="number" id="discValue" placeholder="İndirim Miktarı" step="0.01">
+      <input type="text" id="discLabel" placeholder="İndirim Etiketi (opsiyonel)">
+
+      <h4 style="margin-top:15px">Etiket Yazısı</h4>
+      <input type="text" id="labelText" placeholder="Örn: Açılışa Özel, 23 Nisan İndirimi">
+
+      <button onclick="editS()" class="btn btn-primary" style="width:100%">Kaydet</button>
+    </div>
+  </div>
+
+  <div id="m3" class="modal hidden">
+    <div class="modal-content">
+      <span class="close" onclick="closeM('m3')">&times;</span>
+      <h3>🏷️ Etiket Ayarları</h3>
+      <label style="display:block;margin-bottom:10px">
+        <input type="checkbox" id="chkOldPrice"> Eski Fiyat Göster
+      </label>
+      <input type="number" id="oldPrice" placeholder="Eski Fiyat (₺)" step="0.01" disabled style="margin-bottom:15px">
+      <input type="text" id="labelNote" placeholder="Etiketin altına eklenecek yazı (opsiyonel)" style="margin-bottom:15px">
+      <button onclick="labelS()" class="btn btn-primary" style="width:100%">Yazdır</button>
+    </div>
+  </div>
+
+  <div id="m4" class="modal hidden">
+    <div class="modal-content">
+      <span class="close" onclick="closeM('m4')">&times;</span>
+      <h3>📄 PDF Ayarları</h3>
+      <label>
+        <input type="checkbox" id="chkStock" checked> Stok Bilgisi Dahil Et
+      </label>
+      <br><br>
+      <button onclick="generatePDF()" class="btn btn-primary" style="width:100%">PDF Oluştur</button>
+    </div>
+  </div>
+
+  <div id="m5" class="modal hidden">
+    <div class="modal-content">
+      <span class="close" onclick="closeM('m5')">&times;</span>
+      <h3>🏷️ Toplu Etiket Oluştur</h3>
+
+      <div class="bulk-label-options">
+        <h4>Seçili Ürünler:</h4>
+        <div id="selectedProducts" class="selected-products-list"></div>
+
+        <h4 style="margin-top:15px">Ayarlar:</h4>
+        <label style="display:block;margin-bottom:10px">
+          <input type="checkbox" id="bulkShowOldPrice"> Eski Fiyat Göster
+        </label>
+        <input type="number" id="bulkOldPriceInput" placeholder="Eski Fiyat (₺)" step="0.01" disabled style="margin-bottom:15px">
+        <input type="text" id="bulkLabelNote" placeholder="Etiketin altına eklenecek yazı (opsiyonel)" style="margin-bottom:15px">
+
+        <label style="display:block;margin-bottom:15px">
+          <input type="checkbox" id="bulkStockQuantity" checked> Stok Sayısı Kadar Etiket
+        </label>
+
+        <div style="background:#f0f7ff;padding:10px;border-radius:4px;margin-bottom:15px;font-size:12px">
+          <strong>Toplam Etiket:</strong> <span id="totalLabelsCount">0</span> adet
+        </div>
+
+        <button onclick="generateBulkLabels()" class="btn btn-primary" style="width:100%">Toplu Etiket PDF Oluştur</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .admin-panel{background:white;padding:30px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+    .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:10px;flex-wrap:wrap}
+    .header h2{margin:0}
+    .btn-export{background:#10b981;color:white;padding:10px 20px;border:none;border-radius:6px;cursor:pointer;font-weight:500;flex:1;min-width:150px}
+    .btn-export:hover{background:#059669}
+    .filters{display:flex;gap:15px;margin-bottom:20px}
+    .filters input,.filters select{padding:10px;border:1px solid #ddd;border-radius:6px;flex:1}
+    .inventory-table{width:100%;border-collapse:collapse}
+    .inventory-table th{background:#f5f5f5;padding:12px;text-align:left;border-bottom:2px solid #ddd;font-weight:600}
+    .inventory-table td{padding:12px;border-bottom:1px solid #eee;vertical-align:top}
+    .inventory-table input[type="checkbox"]{cursor:pointer;width:18px;height:18px}
+    .inventory-table img{width:50px;height:50px;object-fit:cover;border-radius:4px}
+    .size-stock-display{display:flex;gap:8px;flex-wrap:wrap}
+    .size-badge{background:#f0f0f0;padding:6px 10px;border-radius:4px;font-size:12px;font-weight:500}
+    .size-badge.out{background:#fee2e2;color:#dc2626}
+    .total-stock{font-weight:bold;color:#2563eb}
+    .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.4)}
+    .modal:not(.hidden){display:flex;align-items:center;justify-content:center}
+    .modal-content{background:white;padding:30px;border-radius:8px;width:90%;max-width:560px;box-shadow:0 4px 6px rgba(0,0,0,0.1);max-height:90vh;overflow-y:auto}
+    .modal-content h3{margin-bottom:20px}
+    .modal-content h4{margin-bottom:10px;font-size:13px}
+    .close{float:right;font-size:28px;font-weight:bold;color:#999;cursor:pointer;line-height:1}
+    .close:hover{color:#333}
+    .modal-content input,.modal-content select{width:100%;padding:10px;margin-bottom:15px;border:1px solid #ddd;border-radius:4px;box-sizing:border-box;font-size:14px}
+    .modal-content input:disabled{background:#f0f0f0;cursor:not-allowed}
+    .btn{padding:8px 12px;border:none;border-radius:4px;cursor:pointer;font-weight:500;transition:background 0.3s}
+    .btn-primary{background:#2563eb;color:white}
+    .btn-primary:hover{background:#1d4ed8}
+    .btn-small{font-size:12px;padding:6px 10px;margin:0 2px}
+    .btn-danger{background:#dc2626;color:white}
+    .btn-danger:hover{background:#b91c1c}
+    .action-buttons{display:flex;gap:5px;flex-wrap:wrap}
+    .selected-products-list{max-height:200px;overflow-y:auto;margin-bottom:15px;border:1px solid #ddd;padding:10px;border-radius:4px;background:#f9f9f9}
+    .selected-products-list div{padding:8px;background:#e0f2fe;margin-bottom:5px;border-radius:4px;display:flex;justify-content:space-between;align-items:center;font-size:12px}
+    .selected-products-list button{padding:4px 8px;background:#dc2626;color:white;border:0;border-radius:3px;cursor:pointer;font-size:10px}
+    .bulk-label-options label{cursor:pointer}
+    .multi-stock-list{display:flex;flex-direction:column;gap:10px;margin-bottom:15px}
+    .multi-stock-row{display:grid;grid-template-columns:110px 1fr 130px;gap:12px;align-items:center;padding:10px 12px;border:1px solid #dbeafe;border-radius:8px;background:#f8fbff}
+    .multi-stock-label{font-weight:700;color:#1e3a8a}
+    .multi-stock-current{font-size:12px;color:#6b7280}
+    .multi-stock-input{margin-bottom:0 !important}
+    @media (max-width: 768px){
+      .filters{flex-direction:column}
+      .multi-stock-row{grid-template-columns:1fr}
+    }
+  </style>
+
+  <script>
+    let prods = [];
+    let cid = null;
+    let cp = null;
+    let selectedIds = {};
+
+    function getSizeLabel(product, size) {
+      if (product.category === 'Çocuk Giyim') return size;
+      return size;
+    }
+
+    async function load() {
+      try {
+        const r = await fetch('/api/products');
+        prods = await r.json();
+        render();
+      } catch (error) {
+        console.error(error);
+        alert('Ürünler yüklenemedi');
+      }
+    }
+
+    function render() {
+      const t = document.getElementById('t');
+      const s = document.getElementById('search').value.toLowerCase();
+      const cf = document.getElementById('catFilter').value;
+
+      const filtered = prods.filter(function(p) {
+        const nameMatch = (p.name || '').toLowerCase().includes(s);
+        const barcodeMatch = (p.barcode || '').includes(s);
+        const categoryMatch = !cf || p.category === cf;
+        return (nameMatch || barcodeMatch) && categoryMatch;
+      });
+
+      t.innerHTML = filtered.map(function(p) {
+        const sizeStock = Array.isArray(p.sizeStock) ? p.sizeStock : [];
+        const total = sizeStock.reduce(function(a, b) { return a + (b.stock || 0); }, 0);
+
+        const sizeHtml = sizeStock.map(function(sz) {
+          let cls = 'size-badge';
+          if (sz.stock === 0) cls += ' out';
+          return '<span class="' + cls + '">' + getSizeLabel(p, sz.size) + ': ' + sz.stock + '</span>';
+        }).join('');
+
+        const isChecked = selectedIds[p._id] ? 'checked' : '';
+
+        return '<tr>' +
+          '<td><input type="checkbox" data-id="' + p._id + '" onchange="toggleSelect(this)" ' + isChecked + '></td>' +
+          '<td><img src="' + (p.image || '') + '" onerror="this.src=\\'/images/default-product.svg\\'"></td>' +
+          '<td>' + (p.name || '') + '</td>' +
+          '<td>' + (p.category || '') + '</td>' +
+          '<td><code style="font-size:11px">' + (p.barcode || '') + '</code></td>' +
+          '<td><div class="size-stock-display">' + sizeHtml + '</div></td>' +
+          '<td><span class="total-stock">' + total + '</span></td>' +
+          '<td>' + Number(p.price || 0).toFixed(2) + ' ₺</td>' +
+          '<td><div class="action-buttons">' +
+            '<button onclick="os(\\'' + p._id + '\\')" class="btn btn-small">➕</button>' +
+            '<button onclick="oe(\\'' + p._id + '\\')" class="btn btn-small">✏️</button>' +
+            '<button onclick="ol(\\'' + p._id + '\\')" class="btn btn-small">🏷️</button>' +
+            '<button onclick="del(\\'' + p._id + '\\')" class="btn btn-small btn-danger">🗑️</button>' +
+          '</div></td>' +
+        '</tr>';
+      }).join('');
+    }
+
+    function toggleSelect(checkbox) {
+      const id = checkbox.dataset.id;
+      if (checkbox.checked) selectedIds[id] = true;
+      else delete selectedIds[id];
+      updateBulkLabelCount();
+    }
+
+    function toggleSelectAll() {
+      const checkboxes = document.querySelectorAll('.inventory-table tbody input[type="checkbox"]');
+      const selectAllCheckbox = document.getElementById('selectAll');
+
+      checkboxes.forEach(function(cb) {
+        cb.checked = selectAllCheckbox.checked;
+        const id = cb.dataset.id;
+        if (cb.checked) selectedIds[id] = true;
+        else delete selectedIds[id];
+      });
+
+      updateBulkLabelCount();
+    }
+
+    function openBulkLabelModal() {
+      if (Object.keys(selectedIds).length === 0) {
+        alert('Lütfen en az bir ürün seçin');
+        return;
+      }
+
+      const listDiv = document.getElementById('selectedProducts');
+      listDiv.innerHTML = Object.keys(selectedIds).map(function(id) {
+        const p = prods.find(function(x) { return x._id === id; });
+        if (!p) return '';
+        const tot = (p.sizeStock || []).reduce(function(a, b) { return a + (b.stock || 0); }, 0);
+        return '<div><span>' + p.name + ' (Stok: ' + tot + ')</span><button onclick="removeFromBulk(\\'' + id + '\\')" type="button">Kaldır</button></div>';
+      }).join('');
+
+      document.getElementById('m5').classList.remove('hidden');
+      updateBulkLabelCount();
+    }
+
+    function removeFromBulk(id) {
+      delete selectedIds[id];
+      const checkbox = document.querySelector('input[data-id="' + id + '"]');
+      if (checkbox) checkbox.checked = false;
+      openBulkLabelModal();
+    }
+
+    function updateBulkLabelCount() {
+      const checkbox = document.getElementById('bulkStockQuantity');
+      if (!checkbox) return;
+
+      const useStockQty = checkbox.checked;
+      let total = 0;
+
+      Object.keys(selectedIds).forEach(function(id) {
+        const p = prods.find(function(x) { return x._id === id; });
+        if (!p) return;
+        const stk = (p.sizeStock || []).reduce(function(a, b) { return a + (b.stock || 0); }, 0);
+        total += useStockQty ? stk : 1;
+      });
+
+      const countEl = document.getElementById('totalLabelsCount');
+      if (countEl) countEl.textContent = total;
+    }
+
+    function os(id) {
+      cid = id;
+      cp = prods.find(function(p) { return p._id === id; });
+
+      const sb = document.getElementById('sizes');
+      sb.innerHTML = (cp.sizeStock || []).map(function(s) {
+        return '<div class="multi-stock-row">' +
+          '<div class="multi-stock-label">' + getSizeLabel(cp, s.size) + '</div>' +
+          '<div class="multi-stock-current">Mevcut stok: ' + s.stock + '</div>' +
+          '<input type="number" min="0" class="multi-stock-input" data-size="' + s.size + '" placeholder="Eklenecek miktar">' +
+        '</div>';
+      }).join('');
+
+      document.getElementById('m1').classList.remove('hidden');
+    }
+
+    async function addS() {
+      const inputs = Array.from(document.querySelectorAll('#sizes .multi-stock-input'));
+      const updates = inputs.map(function(input) {
+        return {
+          size: input.getAttribute('data-size'),
+          quantity: parseInt(input.value, 10) || 0
+        };
+      }).filter(function(item) {
+        return item.quantity > 0;
+      });
+
+      if (updates.length === 0) {
+        alert('Lütfen en az bir beden için miktar girin');
+        return;
+      }
+
+      try {
+        for (const update of updates) {
+          const response = await fetch('/api/products/' + cid + '/size-stock', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              size: update.size,
+              quantity: update.quantity
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(update.size + ' bedeni için stok eklenemedi');
+          }
+        }
+
+        closeM('m1');
+        load();
+        alert('✅ Stoklar güncellendi');
+      } catch (error) {
+        alert('Hata: ' + error.message);
+      }
+    }
+
+    function oe(id) {
+      cid = id;
+      const x = prods.find(function(z) { return z._id === id; });
+      document.getElementById('n').value = x.name || '';
+      document.getElementById('pr').value = x.price || 0;
+      document.getElementById('c').value = x.category || 'Spor Giyim';
+      document.getElementById('discType').value = x.discountType || 'none';
+      document.getElementById('discValue').value = x.discountValue || 0;
+      document.getElementById('discLabel').value = x.discountLabel || '';
+      document.getElementById('labelText').value = x.labelText || '';
+      
+      // New fields
+      document.getElementById('brand').value = x.brand || 'Öz Spor';
+      document.getElementById('subcat').value = x.subcat || '';
+      document.getElementById('shopierLink').value = x.shopierLink || '';
+      document.getElementById('badge').value = x.badge || '';
+      document.getElementById('features').value = Array.isArray(x.features) ? x.features.join(', ') : (x.features || '');
+
+      // Image upload fields
+      document.getElementById('editImageFile').value = '';
+      document.getElementById('editImage').value = x.image || '';
+
+      document.getElementById('m2').classList.remove('hidden');
+    }
+
+    async function editS() {
+      try {
+        const formData = new FormData();
+        formData.append('name', document.getElementById('n').value);
+        formData.append('price', document.getElementById('pr').value);
+        formData.append('category', document.getElementById('c').value);
+        formData.append('discountType', document.getElementById('discType').value);
+        formData.append('discountValue', parseFloat(document.getElementById('discValue').value) || 0);
+        formData.append('discountLabel', document.getElementById('discLabel').value);
+        formData.append('labelText', document.getElementById('labelText').value);
+        formData.append('brand', document.getElementById('brand').value);
+        formData.append('subcat', document.getElementById('subcat').value);
+        formData.append('shopierLink', document.getElementById('shopierLink').value);
+        formData.append('badge', document.getElementById('badge').value);
+        formData.append('features', document.getElementById('features').value);
+        formData.append('image', document.getElementById('editImage').value);
+
+        const fileInput = document.getElementById('editImageFile');
+        if (fileInput.files.length > 0) {
+          formData.append('imageFile', fileInput.files[0]);
+        }
+
+        const response = await fetch('/api/products/' + cid, {
+          method: 'PUT',
+          body: formData
+        });
+
+        if (!response.ok) throw new Error('Güncelleme başarısız');
+        closeM('m2');
+        load();
+      } catch (error) {
+        alert('Hata: ' + error.message);
+      }
+    }
+
+    function ol(id) {
+      cid = id;
+      cp = prods.find(function(z) { return z._id === id; });
+      document.getElementById('chkOldPrice').checked = false;
+      document.getElementById('oldPrice').disabled = true;
+      document.getElementById('oldPrice').value = '';
+      document.getElementById('labelNote').value = '';
+      document.getElementById('m3').classList.remove('hidden');
+    }
+
+    function labelS() {
+      const oldPrice = document.getElementById('chkOldPrice').checked
+        ? parseFloat(document.getElementById('oldPrice').value)
+        : null;
+      const labelNote = document.getElementById('labelNote').value;
+
+      if (oldPrice !== null && (!oldPrice || oldPrice < 0)) {
+        alert('Geçerli eski fiyat girin');
+        return;
+      }
+
+      const params = new URLSearchParams();
+      params.append('oldPrice', oldPrice || '');
+      params.append('labelNote', labelNote || '');
+
+      window.open('/api/products/' + cid + '/label-pdf?' + params.toString());
+      closeM('m3');
+    }
+
+    async function generateBulkLabels() {
+      const selectedList = Object.keys(selectedIds);
+      if (selectedList.length === 0) {
+        alert('Ürün seçin');
+        return;
+      }
+
+      const oldPrice = document.getElementById('bulkShowOldPrice').checked
+        ? parseFloat(document.getElementById('bulkOldPriceInput').value)
+        : null;
+      const labelNote = document.getElementById('bulkLabelNote').value;
+      const useStockQty = document.getElementById('bulkStockQuantity').checked;
+
+      if (oldPrice !== null && (!oldPrice || oldPrice < 0)) {
+        alert('Geçerli eski fiyat girin');
+        return;
+      }
+
+      const params = new URLSearchParams();
+      params.append('products', JSON.stringify(selectedList));
+      params.append('oldPrice', oldPrice || '');
+      params.append('labelNote', labelNote || '');
+      params.append('useStockQty', useStockQty);
+
+      window.open('/api/products/bulk-labels-pdf?' + params.toString());
+      closeM('m5');
+    }
+
+    async function del(id) {
+      if (!confirm('Bu ürünü silmek istediğinize emin misiniz?')) return;
+
+      try {
+        const response = await fetch('/api/products/' + id, {
+          method: 'DELETE'
+        });
+
+        if (!response.ok) throw new Error('Silme başarısız');
+        load();
+      } catch (error) {
+        alert('Hata: ' + error.message);
+      }
+    }
+
+    function exportPDF() {
+      document.getElementById('m4').classList.remove('hidden');
+    }
+
+    function generatePDF() {
+      const includeStock = document.getElementById('chkStock').checked;
+      const url = '/api/products/export/pdf/' + includeStock;
+      window.location.href = url;
+      closeM('m4');
+    }
+
+    function closeM(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    document.getElementById('search').addEventListener('keyup', render);
+    document.getElementById('catFilter').addEventListener('change', render);
+
+    document.getElementById('chkOldPrice').addEventListener('change', function() {
+      document.getElementById('oldPrice').disabled = !this.checked;
+    });
+
+    document.getElementById('bulkShowOldPrice').addEventListener('change', function() {
+      document.getElementById('bulkOldPriceInput').disabled = !this.checked;
+    });
+
+    document.getElementById('bulkStockQuantity').addEventListener('change', updateBulkLabelCount);
+
+    load();
+  <\/script>
+  `
+}) %>

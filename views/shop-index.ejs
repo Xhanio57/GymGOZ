@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Öz Spor & Outdoor | Sınırlarını Zorla</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,400;0,500;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --black: #0a0a0a;
+    --white: #f5f5f0;
+    --accent: #d4ff00;
+    --gray-100: #f0f0eb;
+    --gray-200: #e0e0da;
+    --gray-400: #999990;
+    --gray-600: #555550;
+    --nav-h: 64px;
+  }
+
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Barlow', sans-serif; background: var(--white); color: var(--black); overflow-x: hidden; }
+
+  /* ===== NAVBAR ===== */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    height: var(--nav-h);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px;
+    transition: all 0.3s ease;
+    background: transparent;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  nav.scrolled {
+    background: var(--black);
+    border-bottom: 2px solid #1a1a1a;
+  }
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px; letter-spacing: 2px;
+    color: var(--white); text-decoration: none;
+  }
+  .nav-logo span { color: var(--accent); }
+  .nav-links { display: flex; gap: 0; align-items: center; }
+  .nav-item { position: relative; }
+  .nav-item > a {
+    display: block; padding: 22px 18px;
+    font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--white); text-decoration: none;
+    transition: color .2s;
+  }
+  .nav-item > a:hover,
+  .nav-item > a.active { color: var(--accent); }
+  .dropdown {
+    display: none; position: absolute; top: 100%; left: 0;
+    background: var(--black); border: 1px solid #222; border-top: 2px solid var(--accent);
+    min-width: 220px; padding: 8px 0;
+    box-shadow: 0 20px 40px rgba(0,0,0,.5);
+  }
+  .nav-item:hover .dropdown { display: block; }
+  .dropdown a {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 20px;
+    font-size: 12px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase;
+    color: #ccc; text-decoration: none;
+    transition: all .15s;
+    cursor: pointer;
+  }
+  .dropdown a:hover { color: var(--accent); padding-left: 26px; }
+  .dropdown a .dot { width: 5px; height: 5px; background: var(--accent); border-radius: 50%; flex-shrink: 0; }
+  .nav-cta {
+    margin-left: 16px;
+    background: var(--accent); color: var(--black) !important;
+    padding: 8px 18px !important;
+    font-size: 11px; font-weight: 700; letter-spacing: 2px; text-decoration: none;
+    border: none; cursor: pointer; transition: background 0.2s;
+  }
+  .nav-cta:hover { background: #e3ff4d; }
+
+  /* Mobile Hamburger */
+  .hamburger-icon {
+    display: none;
+    font-size: 28px;
+    color: var(--white);
+    cursor: pointer;
+    background: none;
+    border: none;
+  }
+
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+    .hamburger-icon { display: block; }
+    .nav-links.active { 
+      display: flex; 
+      position: absolute;
+      top: var(--nav-h);
+      left: 0;
+      right: 0;
+      flex-direction: column;
+      background: var(--black);
+      border-bottom: 1px solid #222;
+      gap: 0;
+    }
+    .nav-links.active .nav-item > a {
+      padding: 16px 28px;
+      border-bottom: 1px solid #222;
+    }
+    .dropdown {
+      position: static;
+      display: none;
+      box-shadow: none;
+      background: #111;
+    }
+    .nav-item:hover .dropdown { display: none; }
+    .dropdown.mobile-active { display: flex; flex-direction: column; }
+  }
+
+  /* ===== HERO SECTION ===== */
+  .home-hero {
+    position: relative; height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--black); overflow: hidden;
+  }
+  .home-hero img {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    opacity: 0.45;
+  }
+  .home-hero-text {
+    position: relative; z-index: 10; text-align: center; color: var(--white); padding: 0 20px;
+  }
+  .home-hero-text h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(60px, 8vw, 120px); letter-spacing: 4px; text-transform: uppercase;
+    line-height: 0.9; margin-bottom: 20px;
+  }
+  .home-hero-text h1 span { color: var(--accent); }
+  .home-hero-text p {
+    font-size: clamp(14px, 2vw, 18px); letter-spacing: 4px; text-transform: uppercase;
+    color: var(--gray-200); margin-bottom: 40px; font-weight: 500;
+  }
+  .btn-hero {
+    background: var(--white); color: var(--black);
+    padding: 16px 36px; font-size: 13px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+    text-decoration: none; display: inline-block; transition: all .2s; border: 1px solid var(--white);
+  }
+  .btn-hero:hover { background: var(--black); color: var(--white); }
+
+  /* ===== FOOTER ===== */
+  footer { background: var(--black); color: var(--white); padding: 80px 28px 30px; }
+  .footer-grid { display: grid; grid-template-columns: 1fr; gap: 40px; border-bottom: 1px solid #222; padding-bottom: 60px; margin-bottom: 30px; }
+  @media (min-width: 768px) { .footer-grid { grid-template-columns: 2fr 1fr 1fr; } }
+  .footer-brand { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 16px; }
+  .footer-brand span { color: var(--accent); }
+  .footer-desc { color: var(--gray-400); font-size: 14px; line-height: 1.6; max-width: 400px; }
+  .footer-heading { font-size: 12px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px; color: var(--white); }
+  .footer-text { color: var(--gray-400); font-size: 13px; margin-bottom: 8px; }
+  .shopier-badge { display: inline-block; border: 1px solid var(--gray-600); padding: 6px 12px; font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--gray-400); }
+  .footer-bottom { text-align: center; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--gray-600); }
+</style>
+</head>
+<body>
+
+<nav id="navbar">
+  <a href="/" class="nav-logo">Öz Spor <span>&</span> Outdoor</a>
+  <button class="hamburger-icon" onclick="toggleMobileMenu()">☰</button>
+  <div class="nav-links" id="navLinks">
+    <div class="nav-item"><a href="/" class="active">Anasayfa</a></div>
+    <div class="nav-item">
+      <a href="/products">Ürünler ▾</a>
+      <div class="dropdown" id="productsDropdown">
+        <a onclick="filterFromNav('brans')"><span class="dot"></span>Branş Ürünleri</a>
+        <a onclick="filterFromNav('giyim')"><span class="dot"></span>Outdoor Giyim</a>
+        <a onclick="filterFromNav('kamp')"><span class="dot"></span>Kamp Ekipmanları</a>
+        <a onclick="filterFromNav('aksesuar')"><span class="dot"></span>Aksesuarlar</a>
+      </div>
+    </div>
+    <div class="nav-item"><a href="#contact">İletişim</a></div>
+    <a href="https://www.shopier.com/oz_spor_outdoor" target="_blank" class="nav-cta">Shopier'e Git →</a>
+  </div>
+</nav>
+
+<section class="home-hero">
+  <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2070&auto=format&fit=crop" alt="Outdoor Hero">
+  <div class="home-hero-text">
+    <h1>Sınırlarını <span>Zorla</span></h1>
+    <p>Profesyonel Ekipman & Outdoor Performans</p>
+    <a href="/products" class="btn-hero">Koleksiyonu Keşfet</a>
+  </div>
+</section>
+
+<footer id="contact">
+  <div class="footer-grid">
+    <div>
+      <div class="footer-brand">Öz Spor <span>&</span> Outdoor</div>
+      <p class="footer-desc">Gerze'den dünyaya açılan macera ruhu. En kaliteli ekipmanlarla performansını bir üst seviyeye taşı.</p>
+    </div>
+    <div>
+      <div class="footer-heading">İletişim</div>
+      <p class="footer-text">Gerze, Sinop / Türkiye</p>
+      <a style="color: #999990; text-decoration: none;" href="mailto:info@ozsporoutdoor.com">info@ozsporoutdoor.com</a>
+    </div>
+    <div>
+      <div class="footer-heading">Ödeme</div>
+      <div class="shopier-badge">Shopier Güvencesiyle</div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    &copy; 2026 Öz Spor & Outdoor. Tüm Hakları Saklıdır.
+  </div>
+</footer>
+
+<script>
+  // Navbar Scroll Effect
+  window.addEventListener('scroll', () => {
+    const nav = document.getElementById('navbar');
+    if (window.scrollY > 50) {
+      nav.classList.add('scrolled');
+    } else {
+      nav.classList.remove('scrolled');
+    }
+  });
+
+  // Mobile Menu Toggle
+  function toggleMobileMenu() {
+    const nav = document.getElementById('navLinks');
+    nav.classList.toggle('active');
+  }
+
+  // Navigation from navbar to products page with filter
+  function filterFromNav(category) {
+    localStorage.setItem('selectedCategory', category);
+    window.location.href = '/products';
+  }
+
+  // Featured card to products page
+  function goToProductsWithCategory(category) {
+    localStorage.setItem('selectedCategory', category);
+    window.location.href = '/products';
+  }
+</script>
+
+</body>
+</html>

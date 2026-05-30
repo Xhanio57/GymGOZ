@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title><%= title %> | Öz Spor & Outdoor</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/label-print.css">
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <div class="logo">
+        <h1>�� Öz Spor & Outdoor</h1>
+      </div>
+      <ul class="nav-menu">
+        <li><a href="/admin" class="nav-link">Ana Sayfa</a></li>
+        <li><a href="/admin/add-product" class="nav-link">➕ Ürün Ekle</a></li>
+        <li><a href="/admin/inventory" class="nav-link">📊 Stok Listesi</a></li>
+        <li><a href="/admin/sales-history" class="nav-link">📈 Satış Geçmişi</a></li>
+        <li><a href="/pos" class="nav-link">💰 POS Satış</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container main-content">
+    <%- body %>
+  </div>
+
+  <footer class="footer">
+    <p>&copy; 2026 Öz Spor & Outdoor. Tüm hakları saklıdır.</p>
+  </footer>
+</body>
+</html>

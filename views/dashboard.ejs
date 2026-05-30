@@ -1,0 +1,45 @@
+<%- include('layout', { 
+  title: 'Ana Sayfa',
+  body: `
+    <div class="dashboard">
+      <h2 style="color: var(--primary-color); font-size: 2rem; margin-bottom: 2rem;">
+        🏪 Öz Spor & Outdoor Sistemine Hoş Geldiniz
+      </h2>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem;">
+        
+        <div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center;">
+          <h3 style="font-size: 3rem; color: #3b82f6;">📦</h3>
+          <h3 style="margin: 1rem 0; color: var(--text-color);">Ürün Yönetimi</h3>
+          <p style="color: var(--dark-gray); margin-bottom: 1rem;">Yeni ürün ekleyin ve stoğunuzu yönetin</p>
+          <a href="/admin/add-product" class="btn btn-primary">Ürün Ekle →</a>
+        </div>
+
+        <div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center;">
+          <h3 style="font-size: 3rem; color: #10b981;">📊</h3>
+          <h3 style="margin: 1rem 0; color: var(--text-color);">Stok Listesi</h3>
+          <p style="color: var(--dark-gray); margin-bottom: 1rem;">Tüm ürünleri ve stok durumlarını görüntüleyin</p>
+          <a href="/admin/inventory" class="btn btn-primary">Listeyi Aç →</a>
+        </div>
+
+        <div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center;">
+          <h3 style="font-size: 3rem; color: #f59e0b;">💰</h3>
+          <h3 style="margin: 1rem 0; color: var(--text-color);">POS Satış</h3>
+          <p style="color: var(--dark-gray); margin-bottom: 1rem;">Hızl�� satış ekranına geçin ve barkod okutun</p>
+          <a href="/pos" class="btn btn-primary">POS Aç →</a>
+        </div>
+
+      </div>
+
+      <div style="background: #f0f9ff; padding: 2rem; border-radius: 8px; margin-top: 2rem; border-left: 4px solid var(--primary-color);">
+        <h3 style="margin-bottom: 1rem;">ℹ️ Sistem Bilgisi</h3>
+        <ul style="list-style: none; color: var(--dark-gray);">
+          <li>✓ MongoDB bağlantısı aktif</li>
+          <li>✓ Otomatik barkod üretimi etkinleştirildi</li>
+          <li>✓ POS satış sistemi hazır</li>
+          <li>✓ JsBarcode kütüphanesi entegre edildi</li>
+        </ul>
+      </div>
+    </div>
+  ` 
+}) %>

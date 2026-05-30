@@ -1,0 +1,290 @@
+<%- include('layout', { 
+  title: 'Ürün Ekle',
+  body: `<div class="form-container">
+    <h2>➕ Yeni Ürün Ekle</h2>
+
+    <form id="productForm">
+      <input type="text" id="name" placeholder="Ürün Adı" required>
+      <input type="number" id="price" step="0.01" placeholder="Fiyat" required>
+
+      <select id="category" required>
+        <option value="">Kategori Seç</option>
+        <option value="Spor Giyim">Spor Giyim</option>
+        <option value="Çocuk Giyim">Çocuk Giyim</option>
+        <option value="Judogi">Judogi</option>
+        <option value="Kamp Malzemeleri">Kamp Malzemeleri</option>
+        <option value="Ayakkabı">Ayakkabı</option>
+        <option value="Aksesuarlar">Aksesuarlar</option>
+        <option value="Diğer">Diğer</option>
+      </select>
+
+      <input type="text" id="brand" placeholder="Marka (Örn: Adidas, Nike, Öz Spor)" value="Öz Spor">
+      
+      <select id="subcat">
+        <option value="">Vitrin Alt Kategorisi Seç (Opsiyonel)</option>
+        <option value="mont">Mont & Yağmurluk (Giyim)</option>
+        <option value="tshirt">T-Shirt (Giyim)</option>
+        <option value="alt">Alt Giyim (Giyim)</option>
+        <option value="judo">Judo (Branş)</option>
+        <option value="gures">Güreş (Branş)</option>
+        <option value="boks">Boks (Branş)</option>
+        <option value="mat">Mat & Çadır (Kamp)</option>
+        <option value="aydinlatma">Aydınlatma (Kamp)</option>
+        <option value="aksesuar">Aksesuar (Genel)</option>
+      </select>
+
+      <input type="text" id="shopierLink" placeholder="Shopier Satış Linki">
+      <input type="text" id="badge" placeholder="Ürün Rozeti (Örn: YENİ)">
+      <input type="text" id="features" placeholder="Özellikler (virgülle ayırın, Örn: Su geçirmez, Nefes alan)">
+
+      <div id="sizeWrapper" style="display:none;">
+        <label style="display:block;font-weight:600;margin-bottom:10px;color:#374151;">Beden Seç</label>
+        <div id="sizeContainer" class="size-grid"></div>
+      </div>
+
+      <div style="margin-bottom: 15px;">
+        <label style="display:block;font-weight:600;margin-bottom:8px;color:#374151;">Ürün Görseli</label>
+        <input type="file" id="imageFile" accept="image/*" style="padding: 8px 0; border: none; border-radius: 0; background: transparent; width: auto; margin-bottom: 0;">
+        <input type="hidden" id="image" value="">
+      </div>
+      <input type="text" id="barcode" placeholder="Barkod (otomatik oluşturulabilir)">
+      <textarea id="description" placeholder="Açıklama (opsiyonel)"></textarea>
+
+      <button type="submit" class="btn btn-primary">Ürün Ekle</button>
+    </form>
+
+    <div id="message"></div>
+  </div>
+
+  <style>
+    .form-container{
+      max-width:700px;
+      margin:0 auto;
+      background:white;
+      padding:30px;
+      border-radius:8px;
+      box-shadow:0 2px 8px rgba(0,0,0,0.1)
+    }
+    h2{
+      margin-bottom:25px;
+      color:#333
+    }
+    .form-container input,
+    .form-container select,
+    .form-container textarea{
+      width:100%;
+      padding:12px;
+      margin-bottom:15px;
+      border:1px solid #ddd;
+      border-radius:6px;
+      font-size:14px;
+      box-sizing:border-box;
+      font-family:inherit
+    }
+    .form-container textarea{
+      min-height:100px;
+      resize:vertical
+    }
+    .size-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(90px,1fr));
+      gap:10px;
+      margin-bottom:15px
+    }
+    .size-item{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:10px;
+      border:1px solid #dbeafe;
+      border-radius:8px;
+      background:#f8fbff;
+      cursor:pointer;
+      user-select:none;
+      transition:all .2s ease
+    }
+    .size-item:hover{
+      border-color:#2563eb;
+      background:#eff6ff
+    }
+    .size-item input{
+      width:auto;
+      margin:0
+    }
+    .size-item span{
+      font-size:14px;
+      font-weight:600;
+      color:#1e3a8a
+    }
+    #message{
+      margin-top:20px;
+      padding:15px;
+      border-radius:6px;
+      display:none
+    }
+    #message.success{
+      background:#d1fae5;
+      color:#065f46;
+      border:1px solid #6ee7b7;
+      display:block
+    }
+    #message.error{
+      background:#fee2e2;
+      color:#991b1b;
+      border:1px solid #fca5a5;
+      display:block
+    }
+  </style>
+
+  <script>
+    const categoryMap = {
+      'Judogi': ['100cm', '110cm', '120cm', '130cm', '140cm', '150cm', '160cm', '170cm', '180cm', '190cm', '200cm'],
+      'Ayakkabı': ['20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31', '32', '33', '34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46'],
+      'Spor Giyim': ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', '4XL', '5XL'],
+      'Çocuk Giyim': ['1 Yaş', '2 Yaş', '3 Yaş', '4 Yaş', '5 Yaş', '6 Yaş', '7 Yaş', '8 Yaş', '9 Yaş', '10 Yaş', '11 Yaş', '12 Yaş', '13 Yaş', '14 Yaş', '15 Yaş', '16 Yaş'],
+      'Kamp Malzemeleri': ['Tek Boyut'],
+      'Aksesuarlar': ['Tek Boyut'],
+      'Diğer': ['Tek Boyut']
+    };
+
+    function renderSizes(category) {
+      const wrapper = document.getElementById('sizeWrapper');
+      const container = document.getElementById('sizeContainer');
+      container.innerHTML = '';
+
+      if (!categoryMap[category]) {
+        wrapper.style.display = 'none';
+        return;
+      }
+
+      wrapper.style.display = 'block';
+
+      categoryMap[category].forEach(function(size) {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'size-item';
+        itemDiv.style.display = 'flex';
+        itemDiv.style.flexDirection = 'column';
+        itemDiv.style.gap = '6px';
+        itemDiv.style.width = '100%';
+        itemDiv.style.padding = '8px';
+
+        const labelSpan = document.createElement('label');
+        labelSpan.style.display = 'flex';
+        labelSpan.style.alignItems = 'center';
+        labelSpan.style.gap = '8px';
+        labelSpan.style.cursor = 'pointer';
+        labelSpan.style.margin = '0';
+
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.name = 'sizes';
+        input.value = size;
+
+        const text = document.createElement('span');
+        text.textContent = size;
+
+        labelSpan.appendChild(input);
+        labelSpan.appendChild(text);
+        itemDiv.appendChild(labelSpan);
+
+        const stockInput = document.createElement('input');
+        stockInput.type = 'number';
+        stockInput.id = 'stock_' + size;
+        stockInput.placeholder = 'Stok';
+        stockInput.value = '1';
+        stockInput.min = '0';
+        stockInput.style.width = '100%';
+        stockInput.style.padding = '4px';
+        stockInput.style.margin = '0';
+        stockInput.style.display = 'none';
+
+        itemDiv.appendChild(stockInput);
+
+        input.addEventListener('change', function() {
+          if (this.checked) {
+            stockInput.style.display = 'block';
+          } else {
+            stockInput.style.display = 'none';
+          }
+        });
+
+        container.appendChild(itemDiv);
+      });
+    }
+
+    document.getElementById('category').addEventListener('change', function() {
+      renderSizes(this.value);
+    });
+
+    document.getElementById('productForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const form = document.getElementById('productForm');
+      const messageDiv = document.getElementById('message');
+      const category = document.getElementById('category').value;
+      const selectedSizes = Array.from(document.querySelectorAll('input[name="sizes"]:checked')).map(function(el) {
+        return el.value;
+      });
+
+      if (categoryMap[category] && selectedSizes.length === 0) {
+        messageDiv.className = 'error';
+        messageDiv.textContent = '❌ Lütfen en az bir beden seçin';
+        messageDiv.style.display = 'block';
+        return;
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append('name', document.getElementById('name').value);
+        formData.append('price', document.getElementById('price').value);
+        formData.append('category', category);
+        formData.append('barcode', document.getElementById('barcode').value);
+        formData.append('description', document.getElementById('description').value);
+        formData.append('brand', document.getElementById('brand').value);
+        formData.append('subcat', document.getElementById('subcat').value);
+        formData.append('shopierLink', document.getElementById('shopierLink').value);
+        formData.append('badge', document.getElementById('badge').value);
+        formData.append('features', document.getElementById('features').value);
+
+        selectedSizes.forEach(size => {
+          formData.append('sizes', size);
+          const stockVal = document.getElementById('stock_' + size).value || '0';
+          formData.append('stock_' + size, stockVal);
+        });
+
+        const fileInput = document.getElementById('imageFile');
+        if (fileInput.files.length > 0) {
+          formData.append('imageFile', fileInput.files[0]);
+        }
+
+        const response = await fetch('/api/products', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          messageDiv.className = 'success';
+          messageDiv.textContent = '✅ ' + data.message;
+          messageDiv.style.display = 'block';
+          form.reset();
+          document.getElementById('sizeContainer').innerHTML = '';
+          document.getElementById('sizeWrapper').style.display = 'none';
+
+          setTimeout(function() {
+            messageDiv.style.display = 'none';
+          }, 3000);
+        } else {
+          messageDiv.className = 'error';
+          messageDiv.textContent = '❌ ' + data.message;
+          messageDiv.style.display = 'block';
+        }
+      } catch (error) {
+        messageDiv.className = 'error';
+        messageDiv.textContent = '❌ Hata: ' + error.message;
+        messageDiv.style.display = 'block';
+      }
+    });
+  <\/script>` 
+}) %>
