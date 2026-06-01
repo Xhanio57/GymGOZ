@@ -1,0 +1,409 @@
+<%- include('layout', { 
+  title: 'Ayarlar',
+  body: `
+  <div class="settings-container">
+    <h2>⚙️ Ayarlar (Kategori & Marka Yönetimi)</h2>
+    
+    <div class="settings-grid">
+      <!-- KATEGORİ VE ALT KATEGORİ YÖNETİMİ -->
+      <div class="settings-card">
+        <h3>📂 Kategori Yönetimi</h3>
+        
+        <form id="categoryForm" class="settings-form">
+          <div class="form-group">
+            <label for="newCatName">Yeni Kategori Adı</label>
+            <input type="text" id="newCatName" placeholder="Örn: Çocuk Giyim" required>
+          </div>
+          <div class="form-group">
+            <label for="newCatSizes">Beden Listesi (Virgülle ayırın)</label>
+            <input type="text" id="newCatSizes" placeholder="Örn: S, M, L VEYA 1 Yaş, 2 Yaş VEYA Tek Boyut">
+            <small style="color: #6b7280; font-size: 11px;">Boş bırakılırsa varsayılan olarak 'Tek Boyut' atanır.</small>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Kategori Ekle</button>
+        </form>
+
+        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+
+        <h4>Mevcut Kategoriler</h4>
+        <div id="categoriesList" class="settings-list">
+          <!-- Dinamik olarak doldurulacak -->
+        </div>
+      </div>
+
+      <!-- MARKA YÖNETİMİ -->
+      <div class="settings-card">
+        <h3>🏷️ Marka Yönetimi</h3>
+        
+        <form id="brandForm" class="settings-form">
+          <div class="form-group">
+            <label for="newBrandName">Yeni Marka Adı</label>
+            <input type="text" id="newBrandName" placeholder="Örn: Adidas" required>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Marka Ekle</button>
+        </form>
+
+        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+
+        <h4>Mevcut Markalar</h4>
+        <div id="brandsList" class="settings-list">
+          <!-- Dinamik olarak doldurulacak -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .settings-container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .settings-container h2 {
+      margin-bottom: 25px;
+      color: #1e3a8a;
+    }
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+    }
+    .settings-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .settings-card h3 {
+      margin-top: 0;
+      color: #334155;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #cbd5e1;
+      padding-bottom: 8px;
+    }
+    .settings-card h4 {
+      color: #475569;
+      margin-bottom: 12px;
+    }
+    .settings-form {
+      margin-bottom: 15px;
+    }
+    .form-group {
+      margin-bottom: 12px;
+    }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #374151;
+      font-size: 13px;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    .w-100 {
+      width: 100%;
+    }
+    .settings-list {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    .category-item, .brand-item {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 12px;
+    }
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .brand-item .item-header {
+      margin-bottom: 0;
+    }
+    .item-title {
+      font-weight: bold;
+      color: #1e293b;
+      font-size: 15px;
+    }
+    .btn-delete-small {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .btn-delete-small:hover {
+      background: #dc2626;
+    }
+    .item-details {
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 8px;
+      background: #f1f5f9;
+      padding: 6px;
+      border-radius: 4px;
+    }
+    .subcategories-section {
+      border-top: 1px dashed #e2e8f0;
+      padding-top: 8px;
+      margin-top: 8px;
+    }
+    .subcategories-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .subcategory-tag {
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-remove-sub {
+      background: none;
+      border: none;
+      color: #ef4444;
+      cursor: pointer;
+      font-weight: bold;
+      padding: 0;
+      font-size: 11px;
+    }
+    .subcategory-add-form {
+      display: flex;
+      gap: 6px;
+    }
+    .subcategory-add-form input {
+      flex: 1;
+      padding: 4px 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .btn-add-sub {
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .btn-add-sub:hover {
+      background: #059669;
+    }
+    @media (max-width: 992px) {
+      .settings-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+  <script>
+    async function loadAll() {
+      await loadCategories();
+      await loadBrands();
+    }
+
+    async function loadCategories() {
+      try {
+        const response = await fetch('/api/categories');
+        const categories = await response.json();
+        const container = document.getElementById('categoriesList');
+        
+        container.innerHTML = categories.map(cat => {
+          const sizesText = cat.sizes && cat.sizes.length > 0 ? cat.sizes.join(', ') : 'Belirtilmemiş';
+          
+          const subTags = (cat.subcategories || []).map(sub => 
+            '<span class="subcategory-tag">' +
+              sub.name +
+              '<button onclick="deleteSubcategory(\'' + cat._id + '\', \'' + sub._id + '\')" class="btn-remove-sub" title="Alt Kategoriyi Sil">×</button>' +
+            '</span>'
+          ).join('');
+
+          return '<div class="category-item">' +
+              '<div class="item-header">' +
+                '<span class="item-title">' + cat.name + '</span>' +
+                '<button onclick="deleteCategory(\'' + cat._id + '\')" class="btn-delete-small">🗑️ Sil</button>' +
+              '</div>' +
+              '<div class="item-details">' +
+                '<strong>Bedenler:</strong> ' + sizesText +
+              '</div>' +
+              '<div class="subcategories-section">' +
+                '<div style="font-size: 12px; font-weight: bold; margin-bottom: 6px; color: #475569;">Alt Kategoriler:</div>' +
+                '<div class="subcategories-list">' +
+                  (subTags || '<span style="font-size:11px; color:#94a3b8; font-style:italic;">Alt kategori eklenmemiş</span>') +
+                '</div>' +
+                '<div class="subcategory-add-form">' +
+                  '<input type="text" id="subInput_' + cat._id + '" placeholder="Yeni Alt Kategori Adı" required>' +
+                  '<button onclick="addSubcategory(\'' + cat._id + '\')" class="btn-add-sub">Ekle</button>' +
+                '</div>' +
+              '</div>' +
+            '</div>';
+        }).join('');
+      } catch (err) {
+        console.error('Kategoriler yüklenemedi:', err);
+      }
+    }
+
+    async function loadBrands() {
+      try {
+        const response = await fetch('/api/brands');
+        const brands = await response.json();
+        const container = document.getElementById('brandsList');
+        
+        container.innerHTML = brands.map(brand => 
+          '<div class="brand-item">' +
+            '<div class="item-header">' +
+              '<span class="item-title">' + brand.name + '</span>' +
+              '<button onclick="deleteBrand(\'' + brand._id + '\')" class="btn-delete-small">🗑️ Sil</button>' +
+            '</div>' +
+          '</div>'
+        ).join('');
+      } catch (err) {
+        console.error('Markalar yüklenemedi:', err);
+      }
+    }
+
+    // Category Add
+    document.getElementById('categoryForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const name = document.getElementById('newCatName').value.trim();
+      const sizes = document.getElementById('newCatSizes').value.trim();
+      
+      try {
+        const res = await fetch('/api/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, sizes })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          document.getElementById('newCatName').value = '';
+          document.getElementById('newCatSizes').value = '';
+          loadCategories();
+        } else {
+          alert('Hata: ' + data.message);
+        }
+      } catch (err) {
+        alert('İşlem başarısız');
+      }
+    });
+
+    // Category Delete
+    async function deleteCategory(id) {
+      if (!confirm('Bu kategoriyi silmek istediğinize emin misiniz?')) return;
+      try {
+        const res = await fetch('/api/categories/' + id, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok) {
+          loadCategories();
+        } else {
+          alert('Hata: ' + data.message);
+        }
+      } catch (err) {
+        alert('Silme işlemi başarısız');
+      }
+    }
+
+    // Subcategory Add
+    async function addSubcategory(catId) {
+      const input = document.getElementById('subInput_' + catId);
+      const name = input.value.trim();
+      if (!name) {
+        alert('Lütfen bir alt kategori adı girin');
+        return;
+      }
+      try {
+        const res = await fetch('/api/categories/' + catId + '/subcategories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          input.value = '';
+          loadCategories();
+        } else {
+          alert('Hata: ' + data.message);
+        }
+      } catch (err) {
+        alert('Ekleme işlemi başarısız');
+      }
+    }
+
+    // Subcategory Delete
+    async function deleteSubcategory(catId, subId) {
+      if (!confirm('Bu alt kategoriyi silmek istediğinize emin misiniz?')) return;
+      try {
+        const res = await fetch('/api/categories/' + catId + '/subcategories/' + subId, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok) {
+          loadCategories();
+        } else {
+          alert('Hata: ' + data.message);
+        }
+      } catch (err) {
+        alert('Silme işlemi başarısız');
+      }
+    }
+
+    // Brand Add
+    document.getElementById('brandForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const name = document.getElementById('newBrandName').value.trim();
+      
+      try {
+        const res = await fetch('/api/brands', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          document.getElementById('newBrandName').value = '';
+          loadBrands();
+        } else {
+          alert('Hata: ' + data.message);
+        }
+      } catch (err) {
+        alert('İşlem başarısız');
+      }
+    });
+
+    // Brand Delete
+    async function deleteBrand(id) {
+      if (!confirm('Bu markayı silmek istediğinize emin misiniz?')) return;
+      try {
+        const res = await fetch('/api/brands/' + id, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok) {
+          loadBrands();
+        } else {
+          alert('Hata: ' + data.message);
+        }
+      } catch (err) {
+        alert('Silme işlemi başarısız');
+      }
+    }
+
+    loadAll();
+  </script>
+  `
+}) %>

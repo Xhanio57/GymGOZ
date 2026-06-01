@@ -1,10 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
+const Category = require('../models/Category');
+const Brand = require('../models/Brand');
 const PDFDocument = require('pdfkit');
 const htmlPdf = require('html-pdf');
 const path = require('path');
 const multer = require('multer');
+const fs = require('fs').promises;
+const heicConvert = require('heic-convert');
 
 // Configure Multer storage
 const storage = multer.diskStorage({
@@ -20,15 +24,41 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   fileFilter: function (req, file, cb) {
-    const filetypes = /jpeg|jpg|png|gif|webp|svg/;
-    const mimetype = filetypes.test(file.mimetype);
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    const ext = path.extname(file.originalname).toLowerCase();
+    const isHeic = ext === '.heic' || ext === '.heif';
+    const filetypes = /jpeg|jpg|png|gif|webp|svg|heic|heif/;
+    const mimetype = filetypes.test(file.mimetype) || (isHeic && file.mimetype === 'application/octet-stream');
+    const extname = filetypes.test(ext);
     if (mimetype && extname) {
       return cb(null, true);
     }
     cb(new Error('Yalnızca görsel dosyaları yükleyebilirsiniz!'));
   }
 });
+
+async function convertHeicToJpeg(file) {
+  if (!file) return;
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (ext === '.heic' || ext === '.heif') {
+    try {
+      const inputBuffer = await fs.readFile(file.path);
+      const outputBuffer = await heicConvert({
+        buffer: inputBuffer,
+        format: 'JPEG',
+        quality: 0.85
+      });
+      const newFilename = file.filename.replace(/\.(heic|heif)$/i, '.jpg');
+      const newPath = path.join(path.dirname(file.path), newFilename);
+      await fs.writeFile(newPath, outputBuffer);
+      await fs.unlink(file.path);
+      
+      file.filename = newFilename;
+      file.path = newPath;
+    } catch (err) {
+      console.error('HEIC conversion error:', err);
+    }
+  }
+}
 
 router.get('/api/products', async (req, res) => {
   try {
@@ -57,6 +87,7 @@ router.post('/api/products/:id/view', async (req, res) => {
 
 router.post('/api/products', upload.single('imageFile'), async (req, res) => {
   try {
+    await convertHeicToJpeg(req.file);
     const { name, price, category, barcode, image, description, brand, shopierLink, features, subcat, badge } = req.body;
 
     if (!name || !price || !category) {
@@ -124,6 +155,7 @@ router.post('/api/products', upload.single('imageFile'), async (req, res) => {
 
 router.put('/api/products/:id', upload.single('imageFile'), async (req, res) => {
   try {
+    await convertHeicToJpeg(req.file);
     const { name, price, category, image, description, discountType, discountValue, discountLabel, labelText, brand, shopierLink, features, subcat, badge } = req.body;
     
     const updateData = {
@@ -546,7 +578,7 @@ router.get('/api/products/bulk-labels-pdf', async (req, res) => {
 
       labelHtml += `
         <div class="label">
-          <img src="${label.image}" alt="${label.name}" class="label-image" onerror="this.src='/images/default-product.svg'">
+          <img src="/images/default-product.png" alt="${label.name}" class="label-image">
           <div class="label-name">${label.name || ''}</div>
           ${label.category ? '<div class="label-category">' + label.category + '</div>' : ''}
           ${label.sizeLabel ? '<div class="label-size-badge">' + label.sizeLabel + '</div>' : ''}
@@ -960,7 +992,7 @@ router.get('/api/products/:id/label-pdf', async (req, res) => {
             }
 
             label.innerHTML = \`
-              <img src="\${product.image}" alt="\${product.name}" class="label-image" onerror="this.src='/images/default-product.svg'">
+              <img src="/images/default-product.png" alt="\${product.name}" class="label-image">
               <div class="label-name">\${product.name}</div>
               <div class="label-category">\${product.category}</div>
               \${priceHtml}
@@ -1013,6 +1045,194 @@ router.get('/api/products/:id/label-pdf', async (req, res) => {
     res.send(html);
   } catch (error) {
     res.status(500).json({ success: false, message: 'Etiket oluşturma hatası: ' + error.message });
+  }
+});
+
+// Category & Subcategory APIs
+router.get('/api/categories', async (req, res) => {
+  try {
+    const categories = await Category.find().sort({ name: 1 });
+    res.json(categories);
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Kategoriler yüklenemedi: ' + error.message });
+  }
+});
+
+router.post('/api/categories', async (req, res) => {
+  try {
+    const { name, sizes } = req.body;
+    if (!name) {
+      return res.status(400).json({ success: false, message: 'Kategori adı zorunludur' });
+    }
+    const slug = name.toLowerCase()
+      .replace(/[^a-z0-9ğüşıöç]+/g, '-')
+      .replace(/ğ/g, 'g')
+      .replace(/ü/g, 'u')
+      .replace(/ş/g, 's')
+      .replace(/ı/g, 'i')
+      .replace(/ö/g, 'o')
+      .replace(/ç/g, 'c')
+      .replace(/^-+|-+$/g, '');
+
+    const existing = await Category.findOne({ slug });
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'Bu kategori zaten mevcut' });
+    }
+
+    let sizeList = ['Tek Boyut'];
+    if (sizes) {
+      sizeList = Array.isArray(sizes) ? sizes : sizes.split(',').map(s => s.trim()).filter(s => s.length > 0);
+    }
+
+    const newCategory = new Category({ name, slug, sizes: sizeList, subcategories: [] });
+    await newCategory.save();
+    res.status(201).json({ success: true, message: 'Kategori başarıyla oluşturuldu', category: newCategory });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Kategori oluşturulamadı: ' + error.message });
+  }
+});
+
+router.put('/api/categories/:id', async (req, res) => {
+  try {
+    const { name, sizes } = req.body;
+    const category = await Category.findById(req.params.id);
+    if (!category) {
+      return res.status(404).json({ success: false, message: 'Kategori bulunamadı' });
+    }
+
+    if (name) {
+      category.name = name;
+      category.slug = name.toLowerCase()
+        .replace(/[^a-z0-9ğüşıöç]+/g, '-')
+        .replace(/ğ/g, 'g')
+        .replace(/ü/g, 'u')
+        .replace(/ş/g, 's')
+        .replace(/ı/g, 'i')
+        .replace(/ö/g, 'o')
+        .replace(/ç/g, 'c')
+        .replace(/^-+|-+$/g, '');
+    }
+
+    if (sizes) {
+      category.sizes = Array.isArray(sizes) ? sizes : sizes.split(',').map(s => s.trim()).filter(s => s.length > 0);
+    }
+
+    await category.save();
+    res.json({ success: true, message: 'Kategori başarıyla güncellendi', category });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Kategori güncellenemedi: ' + error.message });
+  }
+});
+
+router.delete('/api/categories/:id', async (req, res) => {
+  try {
+    const category = await Category.findByIdAndDelete(req.params.id);
+    if (!category) {
+      return res.status(404).json({ success: false, message: 'Kategori bulunamadı' });
+    }
+    res.json({ success: true, message: 'Kategori başarıyla silindi' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Kategori silinemedi: ' + error.message });
+  }
+});
+
+router.post('/api/categories/:id/subcategories', async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name) {
+      return res.status(400).json({ success: false, message: 'Alt kategori adı zorunludur' });
+    }
+    const category = await Category.findById(req.params.id);
+    if (!category) {
+      return res.status(404).json({ success: false, message: 'Kategori bulunamadı' });
+    }
+
+    const slug = name.toLowerCase()
+      .replace(/[^a-z0-9ğüşıöç]+/g, '-')
+      .replace(/ğ/g, 'g')
+      .replace(/ü/g, 'u')
+      .replace(/ş/g, 's')
+      .replace(/ı/g, 'i')
+      .replace(/ö/g, 'o')
+      .replace(/ç/g, 'c')
+      .replace(/^-+|-+$/g, '');
+
+    const existing = category.subcategories.find(s => s.slug === slug);
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'Bu alt kategori zaten mevcut' });
+    }
+
+    category.subcategories.push({ name, slug });
+    await category.save();
+    res.status(201).json({ success: true, message: 'Alt kategori başarıyla eklendi', category });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Alt kategori eklenemedi: ' + error.message });
+  }
+});
+
+router.delete('/api/categories/:id/subcategories/:subId', async (req, res) => {
+  try {
+    const category = await Category.findById(req.params.id);
+    if (!category) {
+      return res.status(404).json({ success: false, message: 'Kategori bulunamadı' });
+    }
+
+    category.subcategories = category.subcategories.filter(s => s._id.toString() !== req.params.subId && s.slug !== req.params.subId);
+    await category.save();
+    res.json({ success: true, message: 'Alt kategori başarıyla silindi', category });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Alt kategori silinemedi: ' + error.message });
+  }
+});
+
+// Brand APIs
+router.get('/api/brands', async (req, res) => {
+  try {
+    const brands = await Brand.find().sort({ name: 1 });
+    res.json(brands);
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Markalar yüklenemedi: ' + error.message });
+  }
+});
+
+router.post('/api/brands', async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name) {
+      return res.status(400).json({ success: false, message: 'Marka adı zorunludur' });
+    }
+    const slug = name.toLowerCase()
+      .replace(/[^a-z0-9ğüşıöç]+/g, '-')
+      .replace(/ğ/g, 'g')
+      .replace(/ü/g, 'u')
+      .replace(/ş/g, 's')
+      .replace(/ı/g, 'i')
+      .replace(/ö/g, 'o')
+      .replace(/ç/g, 'c')
+      .replace(/^-+|-+$/g, '');
+
+    const existing = await Brand.findOne({ slug });
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'Bu marka zaten mevcut' });
+    }
+
+    const newBrand = new Brand({ name, slug });
+    await newBrand.save();
+    res.status(201).json({ success: true, message: 'Marka başarıyla oluşturuldu', brand: newBrand });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Marka oluşturulamadı: ' + error.message });
+  }
+});
+
+router.delete('/api/brands/:id', async (req, res) => {
+  try {
+    const brand = await Brand.findByIdAndDelete(req.params.id);
+    if (!brand) {
+      return res.status(404).json({ success: false, message: 'Marka bulunamadı' });
+    }
+    res.json({ success: true, message: 'Marka başarıyla silindi' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Marka silinemedi: ' + error.message });
   }
 });
 

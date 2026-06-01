@@ -43,4 +43,10 @@ router.get('/admin', (req, res) => {
   });
 });
 
+router.get('/admin/settings', (req, res) => {
+  res.render('admin-settings', {
+    title: 'Ayarlar'
+  });
+});
+
 module.exports = router;

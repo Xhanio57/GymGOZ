@@ -12,13 +12,6 @@
       <input type="text" id="search" placeholder="Ürün adı veya barkod ara...">
       <select id="catFilter">
         <option value="">Tüm Kategoriler</option>
-        <option value="Spor Giyim">Spor Giyim</option>
-        <option value="Çocuk Giyim">Çocuk Giyim</option>
-        <option value="Judogi">Judogi</option>
-        <option value="Kamp Malzemeleri">Kamp Malzemeleri</option>
-        <option value="Ayakkabı">Ayakkabı</option>
-        <option value="Aksesuarlar">Aksesuarlar</option>
-        <option value="Diğer">Diğer</option>
       </select>
     </div>
 
@@ -56,13 +49,7 @@
       <input type="text" id="n">
       <input type="number" id="pr" step="0.01">
       <select id="c">
-        <option value="Spor Giyim">Spor Giyim</option>
-        <option value="Çocuk Giyim">Çocuk Giyim</option>
-        <option value="Judogi">Judogi</option>
-        <option value="Kamp Malzemeleri">Kamp Malzemeleri</option>
-        <option value="Ayakkabı">Ayakkabı</option>
-        <option value="Aksesuarlar">Aksesuarlar</option>
-        <option value="Diğer">Diğer</option>
+        <!-- Populated dynamically -->
       </select>
 
       <div style="margin-bottom: 15px;">
@@ -72,18 +59,12 @@
       </div>
 
       <h4 style="margin-top:15px">Vitrin Ayarları</h4>
-      <input type="text" id="brand" placeholder="Marka (Örn: Adidas, Nike, Öz Spor)">
+      <select id="brand" style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 14px;">
+        <!-- Populated dynamically -->
+      </select>
       <select id="subcat">
         <option value="">Vitrin Alt Kategorisi Seç</option>
-        <option value="mont">Mont & Yağmurluk (Giyim)</option>
-        <option value="tshirt">T-Shirt (Giyim)</option>
-        <option value="alt">Alt Giyim (Giyim)</option>
-        <option value="judo">Judo (Branş)</option>
-        <option value="gures">Güreş (Branş)</option>
-        <option value="boks">Boks (Branş)</option>
-        <option value="mat">Mat & Çadır (Kamp)</option>
-        <option value="aydinlatma">Aydınlatma (Kamp)</option>
-        <option value="aksesuar">Aksesuar (Genel)</option>
+        <!-- Populated dynamically -->
       </select>
       <input type="text" id="shopierLink" placeholder="Shopier Satış Linki">
       <input type="text" id="badge" placeholder="Ürün Rozeti (Örn: YENİ)">
@@ -218,8 +199,73 @@
       return size;
     }
 
+    let categoriesList = [];
+    let brandsList = [];
+
+    async function loadCategories() {
+      try {
+        const response = await fetch('/api/categories');
+        categoriesList = await response.json();
+        
+        // Populate filters
+        const catFilter = document.getElementById('catFilter');
+        if (catFilter) {
+          catFilter.innerHTML = '<option value="">Tüm Kategoriler</option>' + 
+            categoriesList.map(function(cat) {
+              return '<option value="' + cat.name + '">' + cat.name + '</option>';
+            }).join('');
+        }
+
+        // Populate edit modal category
+        const editCat = document.getElementById('c');
+        if (editCat) {
+          editCat.innerHTML = categoriesList.map(function(cat) {
+            return '<option value="' + cat.name + '">' + cat.name + '</option>';
+          }).join('');
+          editCat.addEventListener('change', updateEditSubcategories);
+        }
+      } catch (err) {
+        console.error('Kategoriler yüklenirken hata:', err);
+      }
+    }
+
+    function updateEditSubcategories() {
+      const editCatVal = document.getElementById('c').value;
+      const subcatSelect = document.getElementById('subcat');
+      if (!subcatSelect) return;
+
+      const selectedCat = categoriesList.find(cat => cat.name === editCatVal);
+      if (selectedCat && selectedCat.subcategories && selectedCat.subcategories.length > 0) {
+        subcatSelect.innerHTML = '<option value="">Vitrin Alt Kategorisi Seç</option>' + 
+          selectedCat.subcategories.map(function(sub) {
+            return '<option value="' + sub.slug + '">' + sub.name + '</option>';
+          }).join('');
+      } else {
+        subcatSelect.innerHTML = '<option value="">Alt Kategori Yok</option>';
+      }
+    }
+
+    async function loadBrands() {
+      try {
+        const response = await fetch('/api/brands');
+        brandsList = await response.json();
+        
+        const brandSelect = document.getElementById('brand');
+        if (brandSelect) {
+          brandSelect.innerHTML = '<option value="">Marka Seçin</option>' + 
+            brandsList.map(function(br) {
+              return '<option value="' + br.name + '">' + br.name + '</option>';
+            }).join('');
+        }
+      } catch (err) {
+        console.error('Markalar yüklenirken hata:', err);
+      }
+    }
+
     async function load() {
       try {
+        await loadCategories();
+        await loadBrands();
         const r = await fetch('/api/products');
         prods = await r.json();
         render();
@@ -345,7 +391,7 @@
         return '<div class="multi-stock-row">' +
           '<div class="multi-stock-label">' + getSizeLabel(cp, s.size) + '</div>' +
           '<div class="multi-stock-current">Mevcut stok: ' + s.stock + '</div>' +
-          '<input type="number" min="0" class="multi-stock-input" data-size="' + s.size + '" placeholder="Eklenecek miktar">' +
+          '<input type="number" class="multi-stock-input" data-size="' + s.size + '" placeholder="Değişim miktarı (örn: 1 veya -1)">' +
         '</div>';
       }).join('');
 
@@ -360,11 +406,11 @@
           quantity: parseInt(input.value, 10) || 0
         };
       }).filter(function(item) {
-        return item.quantity > 0;
+        return item.quantity !== 0;
       });
 
       if (updates.length === 0) {
-        alert('Lütfen en az bir beden için miktar girin');
+        alert('Lütfen en az bir beden için değişim miktarı girin');
         return;
       }
 
@@ -397,14 +443,15 @@
       const x = prods.find(function(z) { return z._id === id; });
       document.getElementById('n').value = x.name || '';
       document.getElementById('pr').value = x.price || 0;
-      document.getElementById('c').value = x.category || 'Spor Giyim';
+      document.getElementById('c').value = x.category || '';
+      updateEditSubcategories();
       document.getElementById('discType').value = x.discountType || 'none';
       document.getElementById('discValue').value = x.discountValue || 0;
       document.getElementById('discLabel').value = x.discountLabel || '';
       document.getElementById('labelText').value = x.labelText || '';
       
       // New fields
-      document.getElementById('brand').value = x.brand || 'Öz Spor';
+      document.getElementById('brand').value = x.brand || '';
       document.getElementById('subcat').value = x.subcat || '';
       document.getElementById('shopierLink').value = x.shopierLink || '';
       document.getElementById('badge').value = x.badge || '';

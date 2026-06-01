@@ -170,10 +170,7 @@
     <div class="nav-item">
       <a href="/products">Ürünler ▾</a>
       <div class="dropdown" id="productsDropdown">
-        <a onclick="filterFromNav('brans')"><span class="dot"></span>Branş Ürünleri</a>
-        <a onclick="filterFromNav('giyim')"><span class="dot"></span>Outdoor Giyim</a>
-        <a onclick="filterFromNav('kamp')"><span class="dot"></span>Kamp Ekipmanları</a>
-        <a onclick="filterFromNav('aksesuar')"><span class="dot"></span>Aksesuarlar</a>
+        <!-- Populated dynamically -->
       </div>
     </div>
     <div class="nav-item"><a href="#contact">İletişim</a></div>
@@ -239,6 +236,22 @@
     localStorage.setItem('selectedCategory', category);
     window.location.href = '/products';
   }
+
+  async function loadDropdownCategories() {
+    try {
+      const res = await fetch('/api/categories');
+      const categories = await res.json();
+      const dropdown = document.getElementById('productsDropdown');
+      if (dropdown && categories.length > 0) {
+        dropdown.innerHTML = categories.map(cat => `
+          <a onclick="filterFromNav('${cat.name}')"><span class="dot"></span>${cat.name}</a>
+        `).join('');
+      }
+    } catch (err) {
+      console.error('Failed to load categories for dropdown:', err);
+    }
+  }
+  window.addEventListener('load', loadDropdownCategories);
 </script>
 
 </body>

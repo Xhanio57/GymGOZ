@@ -559,11 +559,8 @@
     </div>
     <div class="nav-item">
       <a href="/products" class="active">Ürünler ▾</a>
-      <div class="dropdown">
-        <a onclick="filterByNav('brans')"><span class="dot"></span>Branş Ürünleri</a>
-        <a onclick="filterByNav('giyim')"><span class="dot"></span>Outdoor Giyim</a>
-        <a onclick="filterByNav('kamp')"><span class="dot"></span>Kamp Ekipmanları</a>
-        <a onclick="filterByNav('aksesuar')"><span class="dot"></span>Aksesuarlar</a>
+      <div class="dropdown" id="nav-categories-dropdown">
+        <!-- Populated dynamically -->
       </div>
     </div>
     <div class="nav-item">
@@ -592,34 +589,8 @@
     <button class="sidebar-close-btn" onclick="toggleSidebar(false)">✕</button>
     <div class="sidebar-section">
       <div class="sidebar-title">Kategoriler</div>
-      <div class="sidebar-item active" data-cat="all" onclick="filterCat(this, 'all', 'Tüm Ürünler')">
-        Tüm Ürünler <span class="count" id="count-all">0</span>
-      </div>
-      <div class="sidebar-item" data-cat="brans" onclick="filterCat(this, 'brans', 'Branş Ürünleri')">
-        Branş Ürünleri <span class="count" id="count-brans">0</span>
-      </div>
-      <div class="sidebar-sub" id="sub-brans" style="display:none">
-        <div class="sidebar-sub-item" onclick="filterSub(event, 'judo', 'Judo')">Judo</div>
-        <div class="sidebar-sub-item" onclick="filterSub(event, 'gures', 'Güreş')">Güreş</div>
-        <div class="sidebar-sub-item" onclick="filterSub(event, 'boks', 'Boks')">Boks</div>
-      </div>
-      <div class="sidebar-item" data-cat="giyim" onclick="filterCat(this, 'giyim', 'Outdoor Giyim')">
-        Outdoor Giyim <span class="count" id="count-giyim">0</span>
-      </div>
-      <div class="sidebar-sub" id="sub-giyim" style="display:none">
-        <div class="sidebar-sub-item" onclick="filterSub(event, 'tshirt', 'T-Shirt')">T-Shirt</div>
-        <div class="sidebar-sub-item" onclick="filterSub(event, 'mont', 'Mont & Yağmurluk')">Mont & Yağmurluk</div>
-        <div class="sidebar-sub-item" onclick="filterSub(event, 'alt', 'Alt Giyim')">Alt Giyim</div>
-      </div>
-      <div class="sidebar-item" data-cat="kamp" onclick="filterCat(this, 'kamp', 'Kamp Ekipmanları')">
-        Kamp Ekipmanları <span class="count" id="count-kamp">0</span>
-      </div>
-      <div class="sidebar-sub" id="sub-kamp" style="display:none">
-        <div class="sidebar-sub-item" onclick="filterSub(event, 'mat', 'Mat & Çadır')">Mat & Çadır</div>
-        <div class="sidebar-sub-item" onclick="filterSub(event, 'aydinlatma', 'Aydınlatma')">Aydınlatma</div>
-      </div>
-      <div class="sidebar-item" data-cat="aksesuar" onclick="filterCat(this, 'aksesuar', 'Aksesuarlar')">
-        Aksesuarlar <span class="count" id="count-aksesuar">0</span>
+      <div id="categories-sidebar">
+        <!-- Populated dynamically -->
       </div>
     </div>
 
@@ -640,7 +611,7 @@
       </div>
     </div>
 
-    <div class="sidebar-section">
+    <div class="sidebar-section" id="size-filter-section" style="display:none">
       <div class="sidebar-title">Boyut / Beden</div>
       <div class="brand-list" id="size-filters"></div>
     </div>
@@ -737,6 +708,7 @@
 
 <script>
 let products = [];
+let categoriesList = [];
 let currentCat = 'all';
 let activeProduct = null;
 let selectedFilters = {
@@ -749,34 +721,17 @@ let currentPage = 1;
 const itemsPerPage = 12;
 let currentSort = 'featured';
 
-// Count kategorileri güncelle
-function updateCategoryCounts() {
-  const categories = {
-    'all': products.length,
-    'brans': products.filter(p => p.cat === 'brans').length,
-    'giyim': products.filter(p => p.cat === 'giyim').length,
-    'kamp': products.filter(p => p.cat === 'kamp').length,
-    'aksesuar': products.filter(p => p.cat === 'aksesuar').length
-  };
-
-  Object.keys(categories).forEach(cat => {
-    const countEl = document.getElementById(`count-${cat}`);
-    if (countEl) {
-      countEl.textContent = categories[cat];
-    }
-  });
-}
-
 const heroMap = {
   all:      { img: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=1200&auto=format&fit=crop', title: 'Tüm <span>Ürünler</span>' },
-  brans:    { img: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=1200&auto=format&fit=crop', title: 'Branş <span>Ürünleri</span>' },
-  giyim:    { img: 'https://images.unsplash.com/photo-1501555088652-021faa106b9b?q=80&w=1200&auto=format&fit=crop', title: 'Outdoor <span>Giyim</span>' },
-  kamp:     { img: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?q=80&w=1200&auto=format&fit=crop', title: 'Kamp <span>Ekipmanları</span>' },
-  aksesuar: { img: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?q=80&w=1200&auto=format&fit=crop', title: '<span>Aksesuarlar</span>' }
+  'spor-giyim':    { img: 'https://images.unsplash.com/photo-1501555088652-021faa106b9b?q=80&w=1200&auto=format&fit=crop', title: 'Outdoor <span>Giyim</span>' },
+  'cocuk-giyim':    { img: 'https://images.unsplash.com/photo-1501555088652-021faa106b9b?q=80&w=1200&auto=format&fit=crop', title: 'Çocuk <span>Giyim</span>' },
+  'judogi':    { img: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=1200&auto=format&fit=crop', title: 'Branş <span>Ürünleri</span>' },
+  'kamp-malzemeleri':     { img: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?q=80&w=1200&auto=format&fit=crop', title: 'Kamp <span>Ekipmanları</span>' },
+  'aksesuarlar': { img: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?q=80&w=1200&auto=format&fit=crop', title: '<span>Aksesuarlar</span>' }
 };
 
 function catLabel(c) {
-  return { all:'Tüm Ürünler', brans:'Branş Ürünleri', giyim:'Outdoor Giyim', kamp:'Kamp Ekipmanları', aksesuar:'Aksesuarlar' }[c] || c;
+  return c;
 }
 
 function toggleMobileMenu() {
@@ -803,30 +758,12 @@ function toggleSidebar(open) {
    INITIALIZE FILTERS
 ===================== */
 function initializeFilters() {
-  // Extract unique brands and sizes from dynamically fetched products
   const brandsSet = new Set();
-  const sizesSet = new Set();
-  
   products.forEach(p => {
     if (p.brand) brandsSet.add(p.brand);
-    if (p.sizes) {
-      p.sizes.forEach(s => {
-        if (s !== 'Tek Boyut') sizesSet.add(s);
-      });
-    }
   });
 
   const brands = Array.from(brandsSet).sort();
-  const sizes = Array.from(sizesSet).sort((a, b) => {
-    const order = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', '4XL', '5XL'];
-    const idxA = order.indexOf(a);
-    const idxB = order.indexOf(b);
-    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-    if (idxA !== -1) return -1;
-    if (idxB !== -1) return 1;
-    return a.localeCompare(b);
-  });
-  
   const brandContainer = document.getElementById('brand-filters');
   brandContainer.innerHTML = '';
   brands.forEach(brand => {
@@ -835,17 +772,50 @@ function initializeFilters() {
     label.innerHTML = `<input type="checkbox" value="${brand}" onchange="applyFilters()"><label>${brand}</label>`;
     brandContainer.appendChild(label);
   });
+}
 
-  const sizeContainer = document.getElementById('size-filters');
-  sizeContainer.innerHTML = '';
-  sizes.forEach(size => {
-    const label = document.createElement('label');
-    label.className = 'brand-item';
-    label.innerHTML = `<input type="checkbox" value="${size}" onchange="applyFilters()"><label>${size}</label>`;
-    sizeContainer.appendChild(label);
+function renderSidebarCategories() {
+  const container = document.getElementById('categories-sidebar');
+  if (!container) return;
+
+  let html = `
+    <div class="sidebar-item active" data-cat="all" onclick="filterCat(this, 'all', 'Tüm Ürünler')">
+      Tüm Ürünler <span class="count" id="count-all">${products.length}</span>
+    </div>
+  `;
+
+  categoriesList.forEach(cat => {
+    const catCount = products.filter(p => p.cat === cat.name).length;
+    const subHtml = (cat.subcategories || []).map(sub => {
+      const subCount = products.filter(p => p.subcat === sub.slug).length;
+      return `
+        <div class="sidebar-sub-item" onclick="filterSub(event, '${sub.slug}', '${sub.name}')">
+          ${sub.name} <span style="font-size:10px; color:var(--gray-400)">(${subCount})</span>
+        </div>
+      `;
+    }).join('');
+
+    html += `
+      <div class="sidebar-item" data-cat="${cat.name}" onclick="filterCat(this, '${cat.name}', '${cat.name}')">
+        ${cat.name} <span class="count" id="count-${cat._id}">${catCount}</span>
+      </div>
+      ${cat.subcategories && cat.subcategories.length > 0 ? `
+        <div class="sidebar-sub" id="sub-${cat._id}" style="display:none">
+          ${subHtml}
+        </div>
+      ` : ''}
+    `;
   });
 
-  updateCategoryCounts();
+  container.innerHTML = html;
+
+  // Build nav dropdown dynamically too
+  const dropdown = document.getElementById('nav-categories-dropdown');
+  if (dropdown) {
+    dropdown.innerHTML = categoriesList.map(cat => `
+      <a onclick="filterByNav('${cat.name}')"><span class="dot"></span>${cat.name}</a>
+    `).join('');
+  }
 }
 
 /* =====================
@@ -956,13 +926,11 @@ function getFilteredSortedProducts() {
   // Apply sorting
   if (currentSort === 'featured') {
     items.sort((a, b) => {
-      // 1. In stock products first
       const aInStock = (a.totalStock || 0) > 0;
       const bInStock = (b.totalStock || 0) > 0;
       if (aInStock && !bInStock) return -1;
       if (!aInStock && bInStock) return 1;
       
-      // 2. Score = views * 10 + totalStock
       const aScore = (a.views || 0) * 10 + (a.totalStock || 0);
       const bScore = (b.views || 0) * 10 + (b.totalStock || 0);
       return bScore - aScore;
@@ -1025,14 +993,28 @@ function filterCat(el, cat, label) {
   document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
   el.classList.add('active');
   document.querySelectorAll('.sidebar-sub').forEach(s => s.style.display = 'none');
+  
+  // Clear size filter section and hide it since we selected a main category
+  document.getElementById('size-filter-section').style.display = 'none';
+  selectedFilters.sizes = [];
+  document.querySelectorAll('#size-filters input').forEach(cb => cb.checked = false);
+
   if (cat !== 'all') {
-    const sub = document.getElementById('sub-' + cat);
-    if (sub) sub.style.display = 'block';
+    const category = categoriesList.find(c => c.name === cat);
+    if (category) {
+      const sub = document.getElementById('sub-' + category._id);
+      if (sub) sub.style.display = 'block';
+    }
   }
+
   document.getElementById('breadcrumb-current').textContent = label;
-  const h = heroMap[cat] || heroMap.all;
+  
+  // Set hero image/title
+  const slug = cat.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const h = heroMap[slug] || heroMap.all;
   document.getElementById('hero-img').src = h.img;
-  document.getElementById('hero-title').innerHTML = h.title;
+  document.getElementById('hero-title').innerHTML = cat === 'all' ? 'Tüm <span>Ürünler</span>' : `${cat}`;
+
   applyFilters();
 }
 
@@ -1043,16 +1025,34 @@ function filterSub(e, subcat, label) {
   currentCat = subcat;
   currentPage = 1;
   document.getElementById('breadcrumb-current').textContent = label;
+
+  // Show sizes filter for the parent category of this subcategory
+  const parentCat = categoriesList.find(cat => (cat.subcategories || []).some(sub => sub.slug === subcat));
+  if (parentCat && parentCat.sizes && parentCat.sizes.length > 0 && parentCat.sizes[0] !== 'Tek Boyut') {
+    const sizeContainer = document.getElementById('size-filters');
+    sizeContainer.innerHTML = parentCat.sizes.map(size => `
+      <label class="brand-item">
+        <input type="checkbox" value="${size}" onchange="applyFilters()">
+        <label>${size}</label>
+      </label>
+    `).join('');
+    document.getElementById('size-filter-section').style.display = 'block';
+  } else {
+    document.getElementById('size-filter-section').style.display = 'none';
+    selectedFilters.sizes = [];
+    document.querySelectorAll('#size-filters input').forEach(cb => cb.checked = false);
+  }
+
   applyFilters();
 }
 
-function filterByNav(cat) {
-  const map = { brans: 'Branş Ürünleri', giyim: 'Outdoor Giyim', kamp: 'Kamp Ekipmanları', aksesuar: 'Aksesuarlar' };
-  const el = document.querySelector(`.sidebar-item[data-cat="${cat}"]`);
-  if (el) filterCat(el, cat, map[cat]);
+function filterByNav(categoryName) {
+  const el = document.querySelector(`.sidebar-item[data-cat="${categoryName}"]`);
+  if (el) filterCat(el, categoryName, categoryName);
   toggleMobileMenu();
 }
 
+// Keep other functions intact
 function sortProducts(val) {
   currentSort = val;
   applyFilters();
@@ -1096,9 +1096,7 @@ function openPopup(id) {
 
   activeProduct = p;
 
-  // Increment local views count
   p.views = (p.views || 0) + 1;
-  // Send background view count increment request to server
   fetch('/api/products/' + id + '/view', { method: 'POST' }).catch(err => console.error('Error recording view:', err));
 
   document.getElementById('popup-img').src = p.img;
@@ -1118,7 +1116,6 @@ function openPopup(id) {
 
   document.getElementById('popup-features').innerHTML = p.features.map(f => `<li>${f}</li>`).join('');
 
-  // Generate size buttons dynamically using sizeStock
   const sizeStockList = p.sizeStock || [];
   let selectedIndex = -1;
   let defaultSize = 'Tek Boyut';
@@ -1135,7 +1132,6 @@ function openPopup(id) {
                    onclick="selectSize(this, '${item.size}', ${item.stock || 0})">${item.size}</div>`;
     }).join('');
 
-    // If no sizes are in stock, still select the first one (which will be styled out-of-stock)
     if (selectedIndex === -1) {
       const firstBtn = document.querySelector('#popup-sizes .size-btn');
       if (firstBtn) firstBtn.classList.add('selected');
@@ -1146,7 +1142,6 @@ function openPopup(id) {
       defaultSize = sizeStockList[selectedIndex].size;
     }
   } else {
-    // Fallback if sizeStock doesn't exist
     const isOutOfStock = !p.stock;
     document.getElementById('popup-sizes').innerHTML = `<div class="size-btn selected ${isOutOfStock ? 'out-of-stock' : ''}" 
                  onclick="selectSize(this, 'Tek Boyut', ${isOutOfStock ? 0 : 10})">Tek Boyut</div>`;
@@ -1169,6 +1164,7 @@ function selectSize(el, sizeName, stockCount) {
   updateWhatsAppLink(sizeName);
 }
 
+// Popup event listeners
 function closePopup(e) {
   if (e.target === document.getElementById('popup-overlay')) closePopupDirect();
 }
@@ -1185,23 +1181,22 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closePopupDi
 ===================== */
 async function loadProducts() {
   try {
+    const catRes = await fetch('/api/categories');
+    categoriesList = await catRes.json();
+
     const res = await fetch('/api/products');
     const dbProducts = await res.json();
     
-    // Filter out products with 0 total stock for the customer vitrin
     const inStockDbProducts = dbProducts.filter(p => {
       const sizeStock = Array.isArray(p.sizeStock) ? p.sizeStock : [];
       const totalStock = sizeStock.reduce((total, item) => total + (item.stock || 0), 0);
       return totalStock > 0;
     });
     
-    // Map database products back to the structure the storefront JavaScript expects:
     products = inStockDbProducts.map(p => {
-      // Calculate active stock boolean
       const sizeStock = Array.isArray(p.sizeStock) ? p.sizeStock : [];
       const totalStock = sizeStock.reduce((total, item) => total + (item.stock || 0), 0);
       
-      // Calculate final price with discount
       let finalPrice = p.price;
       if (p.discountType === 'percentage' && p.discountValue > 0) {
         finalPrice = p.price * (1 - p.discountValue / 100);
@@ -1209,22 +1204,10 @@ async function loadProducts() {
         finalPrice = Math.max(0, p.price - p.discountValue);
       }
       
-      // Determine front-end category string based on Mongoose category
-      let mappedCat = 'aksesuar';
-      if (p.category === 'Spor Giyim' || p.category === 'Çocuk Giyim') {
-        mappedCat = 'giyim';
-      } else if (p.category === 'Judogi') {
-        mappedCat = 'brans';
-      } else if (p.category === 'Kamp Malzemeleri') {
-        mappedCat = 'kamp';
-      } else if (p.category === 'Aksesuarlar') {
-        mappedCat = 'aksesuar';
-      }
-      
       return {
         id: p._id,
-        cat: mappedCat,
-        subcat: p.subcat || 'aksesuar',
+        cat: p.category,
+        subcat: p.subcat || '',
         brand: p.brand || 'Öz Spor',
         name: p.name,
         desc: p.description ? (p.description.length > 70 ? p.description.substring(0, 67) + '...' : p.description) : '',
@@ -1242,15 +1225,14 @@ async function loadProducts() {
       };
     });
     
-    // Initialize filters UI
+    renderSidebarCategories();
     initializeFilters();
 
-    // Check if we need to load a pre-selected category from navigation
     const selectedCat = localStorage.getItem('selectedCategory');
     if (selectedCat && selectedCat !== 'null') {
       const catElement = document.querySelector(`.sidebar-item[data-cat="${selectedCat}"]`);
       if (catElement) {
-        filterCat(catElement, selectedCat, catElement.innerText.split('\n')[0].trim());
+        filterCat(catElement, selectedCat, selectedCat);
       }
       localStorage.removeItem('selectedCategory');
     } else {

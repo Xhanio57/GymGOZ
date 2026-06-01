@@ -9,28 +9,17 @@
 
       <select id="category" required>
         <option value="">Kategori Seç</option>
-        <option value="Spor Giyim">Spor Giyim</option>
-        <option value="Çocuk Giyim">Çocuk Giyim</option>
-        <option value="Judogi">Judogi</option>
-        <option value="Kamp Malzemeleri">Kamp Malzemeleri</option>
-        <option value="Ayakkabı">Ayakkabı</option>
-        <option value="Aksesuarlar">Aksesuarlar</option>
-        <option value="Diğer">Diğer</option>
+        <!-- Populated dynamically -->
       </select>
 
-      <input type="text" id="brand" placeholder="Marka (Örn: Adidas, Nike, Öz Spor)" value="Öz Spor">
+      <select id="brand" required>
+        <option value="">Marka Seçin</option>
+        <!-- Populated dynamically -->
+      </select>
       
       <select id="subcat">
         <option value="">Vitrin Alt Kategorisi Seç (Opsiyonel)</option>
-        <option value="mont">Mont & Yağmurluk (Giyim)</option>
-        <option value="tshirt">T-Shirt (Giyim)</option>
-        <option value="alt">Alt Giyim (Giyim)</option>
-        <option value="judo">Judo (Branş)</option>
-        <option value="gures">Güreş (Branş)</option>
-        <option value="boks">Boks (Branş)</option>
-        <option value="mat">Mat & Çadır (Kamp)</option>
-        <option value="aydinlatma">Aydınlatma (Kamp)</option>
-        <option value="aksesuar">Aksesuar (Genel)</option>
+        <!-- Populated dynamically -->
       </select>
 
       <input type="text" id="shopierLink" placeholder="Shopier Satış Linki">
@@ -137,29 +126,56 @@
   </style>
 
   <script>
-    const categoryMap = {
-      'Judogi': ['100cm', '110cm', '120cm', '130cm', '140cm', '150cm', '160cm', '170cm', '180cm', '190cm', '200cm'],
-      'Ayakkabı': ['20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31', '32', '33', '34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46'],
-      'Spor Giyim': ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', '4XL', '5XL'],
-      'Çocuk Giyim': ['1 Yaş', '2 Yaş', '3 Yaş', '4 Yaş', '5 Yaş', '6 Yaş', '7 Yaş', '8 Yaş', '9 Yaş', '10 Yaş', '11 Yaş', '12 Yaş', '13 Yaş', '14 Yaş', '15 Yaş', '16 Yaş'],
-      'Kamp Malzemeleri': ['Tek Boyut'],
-      'Aksesuarlar': ['Tek Boyut'],
-      'Diğer': ['Tek Boyut']
-    };
+    let categoriesList = [];
+    let brandsList = [];
 
-    function renderSizes(category) {
+    async function loadFormOptions() {
+      try {
+        const catRes = await fetch('/api/categories');
+        categoriesList = await catRes.json();
+        const catSelect = document.getElementById('category');
+        catSelect.innerHTML = '<option value="">Kategori Seçin</option>' +
+          categoriesList.map(function(cat) {
+            return '<option value="' + cat.name + '">' + cat.name + '</option>';
+          }).join('');
+
+        const brandRes = await fetch('/api/brands');
+        brandsList = await brandRes.json();
+        const brandSelect = document.getElementById('brand');
+        brandSelect.innerHTML = '<option value="">Marka Seçin</option>' +
+          brandsList.map(function(br) {
+            return '<option value="' + br.name + '">' + br.name + '</option>';
+          }).join('');
+      } catch (err) {
+        console.error('Seçenekler yüklenirken hata:', err);
+      }
+    }
+
+    function renderSizes(categoryName) {
       const wrapper = document.getElementById('sizeWrapper');
       const container = document.getElementById('sizeContainer');
       container.innerHTML = '';
 
-      if (!categoryMap[category]) {
+      const category = categoriesList.find(c => c.name === categoryName);
+      if (!category || !category.sizes || category.sizes.length === 0) {
         wrapper.style.display = 'none';
         return;
       }
 
       wrapper.style.display = 'block';
 
-      categoryMap[category].forEach(function(size) {
+      // Update subcategories select dropdown dynamically
+      const subcatSelect = document.getElementById('subcat');
+      if (category.subcategories && category.subcategories.length > 0) {
+        subcatSelect.innerHTML = '<option value="">Vitrin Alt Kategorisi Seç (Opsiyonel)</option>' +
+          category.subcategories.map(function(sub) {
+            return '<option value="' + sub.slug + '">' + sub.name + '</option>';
+          }).join('');
+      } else {
+        subcatSelect.innerHTML = '<option value="">Alt Kategori Yok</option>';
+      }
+
+      category.sizes.forEach(function(size) {
         const itemDiv = document.createElement('div');
         itemDiv.className = 'size-item';
         itemDiv.style.display = 'flex';
@@ -226,7 +242,8 @@
         return el.value;
       });
 
-      if (categoryMap[category] && selectedSizes.length === 0) {
+      const selectedCategory = categoriesList.find(c => c.name === category);
+      if (selectedCategory && selectedCategory.sizes && selectedCategory.sizes.length > 0 && selectedSizes.length === 0) {
         messageDiv.className = 'error';
         messageDiv.textContent = '❌ Lütfen en az bir beden seçin';
         messageDiv.style.display = 'block';
@@ -286,5 +303,7 @@
         messageDiv.style.display = 'block';
       }
     });
+
+    loadFormOptions();
   <\/script>` 
 }) %>
