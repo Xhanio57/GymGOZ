@@ -9,6 +9,22 @@ const path = require('path');
 const multer = require('multer');
 const fs = require('fs').promises;
 const heicConvert = require('heic-convert');
+const cloudinary = require('cloudinary').v2;
+
+// Cloudinary Yapılandırması (Kalıcı görsel depolama)
+const isCloudinaryConfigured = !!(
+  process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_API_KEY &&
+  process.env.CLOUDINARY_API_SECRET
+);
+
+if (isCloudinaryConfigured) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+}
 
 // Configure Multer storage
 const storage = multer.diskStorage({
@@ -60,6 +76,33 @@ async function convertHeicToJpeg(file) {
   }
 }
 
+async function uploadToCloudinaryAndCleanup(file) {
+  if (!file) return null;
+
+  if (!isCloudinaryConfigured) {
+    console.log('Cloudinary is not configured. Saving file locally.');
+    return '/products/' + file.filename;
+  }
+
+  try {
+    const result = await cloudinary.uploader.upload(file.path, {
+      folder: 'gymgoz_products'
+    });
+
+    // Clean up temporary local file
+    try {
+      await fs.unlink(file.path);
+    } catch (unlinkErr) {
+      console.error('Local temp file cleanup error:', unlinkErr);
+    }
+
+    return result.secure_url;
+  } catch (err) {
+    console.error('Cloudinary upload failed, falling back to local file path:', err);
+    return '/products/' + file.filename;
+  }
+}
+
 router.get('/api/products', async (req, res) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 });
@@ -99,7 +142,7 @@ router.post('/api/products', upload.single('imageFile'), async (req, res) => {
 
     let imagePath = '/images/default-product.png';
     if (req.file) {
-      imagePath = '/products/' + req.file.filename;
+      imagePath = await uploadToCloudinaryAndCleanup(req.file);
     } else if (image && image.trim()) {
       imagePath = image.trim();
     }
@@ -175,7 +218,7 @@ router.put('/api/products/:id', upload.single('imageFile'), async (req, res) => 
     };
 
     if (req.file) {
-      updateData.image = '/products/' + req.file.filename;
+      updateData.image = await uploadToCloudinaryAndCleanup(req.file);
     } else if (image !== undefined) {
       updateData.image = image || '/images/default-product.png';
     }
