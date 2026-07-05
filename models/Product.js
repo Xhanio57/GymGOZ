@@ -102,6 +102,53 @@ productSchema.pre('save', async function (next) {
   if (!this.barcode) {
     this.barcode = await generateUniqueBarcode();
   }
+
+  // Automatic brand stripping and suffix abbreviation formatting
+  if (this.name) {
+    const brandAbbreviations = {
+      'Nike': 'NKE',
+      'Adidas': 'ADS',
+      'Puma': 'PMA',
+      'Reebok': 'RBK',
+      'Hummel': 'HML',
+      'Under Armour': 'UA',
+      'Decathlon': 'DEC',
+      'Öz Spor': 'ÖZS',
+      'Dragon-Do': 'DRG',
+      'İppon Gear': 'IPG',
+      'Oysho': 'OYS',
+      'Miu Miu': 'MIU'
+    };
+
+    const sortedBrandNames = Object.keys(brandAbbreviations).sort((a, b) => b.length - a.length);
+    let matchedBrand = null;
+
+    for (const brandName of sortedBrandNames) {
+      const escapedBrand = brandName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp('(?:^|\\s|[-–—/])' + escapedBrand + '(?:$|\\s|[-–—/])', 'gi');
+      if (regex.test(this.name)) {
+        matchedBrand = brandName;
+        break;
+      }
+    }
+
+    if (matchedBrand) {
+      const abbr = brandAbbreviations[matchedBrand];
+      const suffix = ` (${abbr})`;
+      const escapedBrand = matchedBrand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp('(?:^|\\s|[-–—/])' + escapedBrand + '(?:$|\\s|[-–—/])', 'gi');
+      
+      let cleanedName = this.name.replace(regex, ' ').replace(/\s+/g, ' ').trim();
+      cleanedName = cleanedName.replace(/^[-–—\s]+|[-–—\s]+$/g, '');
+
+      if (!cleanedName.endsWith(suffix)) {
+        this.name = cleanedName + suffix;
+      } else {
+        this.name = cleanedName;
+      }
+      this.brand = matchedBrand;
+    }
+  }
   
   if (!this.sizeStock || this.sizeStock.length === 0) {
     const sizes = {
