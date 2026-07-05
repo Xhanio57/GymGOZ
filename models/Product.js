@@ -117,7 +117,33 @@ productSchema.pre('save', async function (next) {
       'Dragon-Do': 'DRG',
       'İppon Gear': 'IPG',
       'Oysho': 'OYS',
-      'Miu Miu': 'MIU'
+      'Miu Miu': 'MIU',
+      'Mizuno': 'MZN',
+      'Stanley': 'STN',
+      'Cyclone': 'CYC',
+      'Alo': 'ALO',
+      'Dugana': 'DGN',
+      'Lacoste': 'LAC',
+      'The North Face': 'TNF',
+      'the-north-face': 'TNF',
+      'North Face': 'TNF',
+      'Void': 'VOI',
+      'Sea Star': 'SST',
+      'sea-star': 'SST',
+      'Avva': 'AVV',
+      'Li-Ning': 'LIN',
+      'Lining': 'LIN',
+      'li-ning': 'LIN',
+      'Salomon': 'SAL',
+      'Delta': 'DLT'
+    };
+
+    const canonicalBrands = {
+      'North Face': 'The North Face',
+      'the-north-face': 'The North Face',
+      'sea-star': 'Sea Star',
+      'Lining': 'Li-Ning',
+      'li-ning': 'Li-Ning'
     };
 
     const sortedBrandNames = Object.keys(brandAbbreviations).sort((a, b) => b.length - a.length);
@@ -146,7 +172,7 @@ productSchema.pre('save', async function (next) {
       } else {
         this.name = cleanedName;
       }
-      this.brand = matchedBrand;
+      this.brand = canonicalBrands[matchedBrand] || matchedBrand;
     }
   }
   

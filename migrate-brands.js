@@ -16,7 +16,33 @@ const brandAbbreviations = {
   'Dragon-Do': 'DRG',
   'İppon Gear': 'IPG',
   'Oysho': 'OYS',
-  'Miu Miu': 'MIU'
+  'Miu Miu': 'MIU',
+  'Mizuno': 'MZN',
+  'Stanley': 'STN',
+  'Cyclone': 'CYC',
+  'Alo': 'ALO',
+  'Dugana': 'DGN',
+  'Lacoste': 'LAC',
+  'The North Face': 'TNF',
+  'the-north-face': 'TNF',
+  'North Face': 'TNF',
+  'Void': 'VOI',
+  'Sea Star': 'SST',
+  'sea-star': 'SST',
+  'Avva': 'AVV',
+  'Li-Ning': 'LIN',
+  'Lining': 'LIN',
+  'li-ning': 'LIN',
+  'Salomon': 'SAL',
+  'Delta': 'DLT'
+};
+
+const canonicalBrands = {
+  'North Face': 'The North Face',
+  'the-north-face': 'The North Face',
+  'sea-star': 'Sea Star',
+  'Lining': 'Li-Ning',
+  'li-ning': 'Li-Ning'
 };
 
 function escapeRegExp(string) {
@@ -69,17 +95,19 @@ async function migrate() {
           targetName = cleanedName + suffix;
         }
 
+        const resolvedBrand = canonicalBrands[matchedBrand] || matchedBrand;
+
         // Check if anything changed
-        if (product.name !== targetName || product.brand !== matchedBrand) {
-          console.log(`Migrating: "${originalName}" (Brand: "${product.brand}") -> "${targetName}" (Brand: "${matchedBrand}")`);
+        if (product.name !== targetName || product.brand !== resolvedBrand) {
+          console.log(`Migrating: "${originalName}" (Brand: "${product.brand}") -> "${targetName}" (Brand: "${resolvedBrand}")`);
           
           product.name = targetName;
-          product.brand = matchedBrand;
+          product.brand = resolvedBrand;
           await product.save();
           updatedCount++;
 
           // Track new brands that might need to be inserted in the Brand collection
-          newBrandsToInsert.add(matchedBrand);
+          newBrandsToInsert.add(resolvedBrand);
         }
       }
     }
