@@ -594,7 +594,7 @@
       </div>
     </div>
 
-    <div class="sidebar-section">
+    <div class="sidebar-section" style="display:none">
       <div class="sidebar-title">Marka</div>
       <div class="brand-list" id="brand-filters"></div>
     </div>
@@ -758,20 +758,20 @@ function toggleSidebar(open) {
    INITIALIZE FILTERS
 ===================== */
 function initializeFilters() {
-  const brandsSet = new Set();
-  products.forEach(p => {
-    if (p.brand) brandsSet.add(p.brand);
-  });
-
-  const brands = Array.from(brandsSet).sort();
-  const brandContainer = document.getElementById('brand-filters');
-  brandContainer.innerHTML = '';
-  brands.forEach(brand => {
-    const label = document.createElement('label');
-    label.className = 'brand-item';
-    label.innerHTML = `<input type="checkbox" value="${brand}" onchange="applyFilters()"><label>${brand}</label>`;
-    brandContainer.appendChild(label);
-  });
+  // const brandsSet = new Set();
+  // products.forEach(p => {
+  //   if (p.brand) brandsSet.add(p.brand);
+  // });
+  //
+  // const brands = Array.from(brandsSet).sort();
+  // const brandContainer = document.getElementById('brand-filters');
+  // brandContainer.innerHTML = '';
+  // brands.forEach(brand => {
+  //   const label = document.createElement('label');
+  //   label.className = 'brand-item';
+  //   label.innerHTML = `<input type="checkbox" value="${brand}" onchange="applyFilters()"><label>${brand}</label>`;
+  //   brandContainer.appendChild(label);
+  // });
 }
 
 function renderSidebarCategories() {
