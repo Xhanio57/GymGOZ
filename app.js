@@ -36,7 +36,7 @@ app.use((req, res, next) => {
 
 // Global Admin & Mutation API Firewall
 app.use((req, res, next) => {
-  const isApiMutation = req.path.startsWith('/api/') && req.method !== 'GET';
+  const isApiMutation = req.path.startsWith('/api/') && req.method !== 'GET' && !req.path.startsWith('/api/checkout/');
   const isAdminPath = req.path.startsWith('/admin') || req.path.startsWith('/pos');
 
   if (isApiMutation || isAdminPath) {
@@ -94,6 +94,7 @@ app.set('views', './views');
 app.use(require('./routes/viewRoutes'));
 app.use(require('./routes/productRoutes'));
 app.use(require('./routes/salesRoutes'));
+app.use(require('./routes/paymentRoutes'));
 
 // Placeholder Image Generator
 app.get('/images/placeholder/:text', (req, res) => {

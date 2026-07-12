@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Güvenli Ödeme | Öz Spor & Outdoor</title>
+  <link rel="icon" type="image/png" href="/images/default-product.png">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --black: #000000;
+      --white: #ffffff;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-400: #9ca3af;
+      --gray-500: #6b7280;
+      --gray-600: #4b5563;
+      --accent: #d4ff00;
+      --red: #dc2626;
+      --nav-h: 64px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Barlow', sans-serif;
+      background: var(--gray-50);
+      color: var(--black);
+      padding-top: var(--nav-h);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ===== NAVBAR ===== */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      height: var(--nav-h);
+      background: var(--black);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px;
+      border-bottom: 2px solid #1a1a1a;
+    }
+    .nav-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px; letter-spacing: 2px;
+      color: var(--white); text-decoration: none;
+    }
+    .nav-logo span { color: var(--accent); }
+    .back-btn {
+      color: var(--white);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+    .back-btn:hover {
+      color: var(--accent);
+    }
+
+    /* ===== MAIN CONTAINER ===== */
+    .checkout-container {
+      max-width: 1100px;
+      width: 100%;
+      margin: 40px auto;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 40px;
+      flex: 1;
+    }
+
+    @media (max-width: 900px) {
+      .checkout-container {
+        grid-template-columns: 1fr;
+        margin: 20px auto;
+      }
+    }
+
+    /* ===== CARDS & BOXES ===== */
+    .checkout-box {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      padding: 32px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+      border-radius: 4px;
+    }
+    .checkout-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 24px;
+      letter-spacing: 2px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--gray-200);
+      padding-bottom: 12px;
+      text-transform: uppercase;
+    }
+
+    /* ===== FORM FIELDS ===== */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group.full-width {
+      grid-column: span 2;
+    }
+    .form-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--gray-600);
+    }
+    .form-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid var(--gray-300);
+      background: var(--white);
+      font-size: 14px;
+      border-radius: 4px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus {
+      border-color: var(--black);
+    }
+
+    /* ===== CHECKOUT BUTTON ===== */
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      background: var(--black);
+      color: var(--white);
+      border: none;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      border-radius: 4px;
+    }
+    .submit-btn:hover {
+      background: #222;
+      color: var(--accent);
+    }
+
+    /* ===== ORDER SUMMARY ===== */
+    .summary-items {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .summary-item {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .summary-item img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid var(--gray-200);
+    }
+    .summary-item-details {
+      flex: 1;
+    }
+    .summary-item-name {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .summary-item-meta {
+      font-size: 11px;
+      color: var(--gray-500);
+      margin-top: 2px;
+    }
+    .summary-item-price {
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      color: var(--gray-600);
+      margin-bottom: 8px;
+    }
+    .price-row.total {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--black);
+      border-top: 1px solid var(--gray-200);
+      padding-top: 12px;
+      margin-top: 12px;
+    }
+
+    /* ===== IYZICO FORM WRAPPER ===== */
+    #payment-form-container {
+      margin-top: 24px;
+    }
+    .loader {
+      display: none;
+      border: 4px solid var(--gray-200);
+      border-top: 4px solid var(--black);
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .loader-text {
+      display: none;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      color: var(--gray-500);
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav>
+    <a href="/products" class="nav-logo">Öz Spor <span>&</span> Outdoor</a>
+    <a href="/products" class="back-btn">← Alışverişe Dön</a>
+  </nav>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <div class="checkout-container">
+    
+    <!-- LEFT COLUMN: Address Form & iyzico Iframe -->
+    <div>
+      <div class="checkout-box" id="address-box">
+        <h2 class="checkout-title">Teslimat & Fatura Adresi</h2>
+        <form id="checkout-form" onsubmit="initiatePayment(event)">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Ad Soyad</label>
+              <input type="text" id="customerName" class="form-input" required placeholder="Örn: Ahmet Yılmaz">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Telefon Numarası</label>
+              <input type="tel" id="customerPhone" class="form-input" required placeholder="Örn: 0507XXXXXXX">
+            </div>
+            <div class="form-group">
+              <label class="form-label">E-posta Adresi</label>
+              <input type="email" id="customerEmail" class="form-input" required placeholder="Örn: ahmet@gmail.com">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Posta Kodu</label>
+              <input type="text" id="shippingZip" class="form-input" placeholder="Örn: 34000">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Şehir</label>
+              <input type="text" id="shippingCity" class="form-input" required placeholder="Örn: İstanbul">
+            </div>
+            <div class="form-group">
+              <label class="form-label">İlçe</label>
+              <input type="text" id="shippingDistrict" class="form-input" required placeholder="Örn: Kadıköy">
+            </div>
+            <div class="form-group full-width">
+              <label class="form-label">Adres Detayı</label>
+              <textarea id="shippingAddress" class="form-input" rows="3" required placeholder="Örn: Moda Caddesi, No: 12, Daire: 4"></textarea>
+            </div>
+          </div>
+          <button type="submit" class="submit-btn" id="pay-submit-btn">Ödeme Bilgilerine Geç</button>
+        </form>
+      </div>
+
+      <!-- Spinner Loader -->
+      <div class="loader" id="checkout-loader"></div>
+      <div class="loader-text" id="checkout-loader-text">Ödeme güvenli kanalı açılıyor, lütfen bekleyin...</div>
+
+      <!-- Dynamic iyzico Form container -->
+      <div class="checkout-box" id="payment-form-container" style="display: none;">
+        <h2 class="checkout-title" style="border-bottom: 2px solid var(--accent);">🔒 Güvenli Kredi Kartı Ödemesi</h2>
+        <div id="iyzipay-checkout-form" class="responsive"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Order Summary -->
+    <div>
+      <div class="checkout-box">
+        <h2 class="checkout-title">Sipariş Özeti</h2>
+        <div class="summary-items" id="summaryItemsContainer">
+          <!-- Populated dynamically from localStorage -->
+        </div>
+        
+        <div class="price-row">
+          <span>Ara Toplam</span>
+          <span id="summarySubtotal">0.00 TL</span>
+        </div>
+        <div class="price-row">
+          <span>Kargo</span>
+          <span style="color: #2d8c40; font-weight: 700;">ÜCRETSİZ</span>
+        </div>
+        <div class="price-row total">
+          <span>Genel Toplam</span>
+          <span id="summaryTotal">0.00 TL</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let cart = [];
+
+    // Load cart items from localStorage on page load
+    function loadCheckoutSummary() {
+      const savedCart = localStorage.getItem('gymgoz_cart');
+      if (savedCart) {
+        try {
+          cart = JSON.parse(savedCart);
+        } catch (e) {
+          cart = [];
+        }
+      }
+
+      if (cart.length === 0) {
+        alert('Sepetiniz boş! Alışveriş sayfasına yönlendiriliyorsunuz.');
+        window.location.href = '/products';
+        return;
+      }
+
+      const container = document.getElementById('summaryItemsContainer');
+      container.innerHTML = cart.map(item => `
+        <div class="summary-item">
+          <img src="${item.image}" onerror="this.src='/images/default-product.png'">
+          <div class="summary-item-details">
+            <div class="summary-item-name">${item.name}</div>
+            <div class="summary-item-meta">Beden: ${item.size} | Adet: ${item.quantity}</div>
+            <div class="summary-item-price">${(item.price * item.quantity).toLocaleString('tr-TR')} TL</div>
+          </div>
+        </div>
+      `).join('');
+
+      const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      document.getElementById('summarySubtotal').textContent = total.toLocaleString('tr-TR') + ' TL';
+      document.getElementById('summaryTotal').textContent = total.toLocaleString('tr-TR') + ' TL';
+    }
+
+    async function initiatePayment(event) {
+      event.preventDefault();
+      
+      const submitBtn = document.getElementById('pay-submit-btn');
+      const loader = document.getElementById('checkout-loader');
+      const loaderText = document.getElementById('checkout-loader-text');
+      const paymentContainer = document.getElementById('payment-form-container');
+
+      // Show loader
+      submitBtn.disabled = true;
+      submitBtn.style.opacity = '0.5';
+      loader.style.display = 'block';
+      loaderText.style.display = 'block';
+
+      // Gather form inputs
+      const payload = {
+        customerName: document.getElementById('customerName').value,
+        customerPhone: document.getElementById('customerPhone').value,
+        customerEmail: document.getElementById('customerEmail').value,
+        shippingZip: document.getElementById('shippingZip').value,
+        shippingCity: document.getElementById('shippingCity').value,
+        shippingDistrict: document.getElementById('shippingDistrict').value,
+        shippingAddress: document.getElementById('shippingAddress').value,
+        items: cart.map(item => ({
+          productId: item.productId,
+          name: item.name,
+          size: item.size,
+          quantity: item.quantity
+        }))
+      };
+
+      try {
+        const response = await fetch('/api/checkout/initiate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (!result.success) {
+          alert('Ödeme başlatılamadı: ' + result.message);
+          submitBtn.disabled = false;
+          submitBtn.style.opacity = '1';
+          loader.style.display = 'none';
+          loaderText.style.display = 'none';
+          return;
+        }
+
+        // Hide form box and display payment form
+        document.getElementById('address-box').style.display = 'none';
+        loader.style.display = 'none';
+        loaderText.style.display = 'none';
+        paymentContainer.style.display = 'block';
+
+        // Render iyzico checkout form scripts
+        paymentContainer.innerHTML = `
+          <h2 class="checkout-title" style="border-bottom: 2px solid var(--accent);">🔒 Güvenli Kredi Kartı Ödemesi</h2>
+          ${result.checkoutFormContent}
+        `;
+
+        // Clear local storage cart once initiated successfully
+        localStorage.removeItem('gymgoz_cart');
+
+        // Dynamically execute scripts inside the injected HTML
+        const scripts = paymentContainer.querySelectorAll('script');
+        scripts.forEach(script => {
+          const newScript = document.createElement('script');
+          if (script.src) {
+            newScript.src = script.src;
+          } else {
+            newScript.textContent = script.textContent;
+          }
+          document.body.appendChild(newScript);
+        });
+
+      } catch (err) {
+        alert('İşlem başlatılırken sunucu hatası oluştu: ' + err.message);
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+        loader.style.display = 'none';
+        loaderText.style.display = 'none';
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', loadCheckoutSummary);
+  </script>
+</body>
+</html>

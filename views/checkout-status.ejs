@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> | Öz Spor & Outdoor</title>
+  <link rel="icon" type="image/png" href="/images/default-product.png">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --black: #000000;
+      --white: #ffffff;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-400: #9ca3af;
+      --gray-500: #6b7280;
+      --gray-600: #4b5563;
+      --accent: #d4ff00;
+      --green: #10b981;
+      --red: #ef4444;
+      --nav-h: 64px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Barlow', sans-serif;
+      background: var(--gray-50);
+      color: var(--black);
+      padding-top: var(--nav-h);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ===== NAVBAR ===== */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      height: var(--nav-h);
+      background: var(--black);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px;
+      border-bottom: 2px solid #1a1a1a;
+    }
+    .nav-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px; letter-spacing: 2px;
+      color: var(--white); text-decoration: none;
+    }
+    .nav-logo span { color: var(--accent); }
+
+    /* ===== CONTENT CARD ===== */
+    .status-card {
+      max-width: 600px;
+      width: 100%;
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      padding: 40px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+      border-radius: 4px;
+      text-align: center;
+      margin: 40px 24px;
+    }
+    
+    .status-icon {
+      font-size: 64px;
+      margin-bottom: 24px;
+    }
+    .status-icon.success { color: var(--green); }
+    .status-icon.error { color: var(--red); }
+
+    .status-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+    }
+    
+    .status-desc {
+      font-size: 15px;
+      color: var(--gray-600);
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    /* ===== INFO BLOCK ===== */
+    .info-block {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      padding: 20px;
+      text-align: left;
+      border-radius: 4px;
+      margin-bottom: 32px;
+      font-size: 13px;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--gray-200);
+    }
+    .info-row:last-child {
+      border-bottom: none;
+    }
+    .info-label {
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--gray-500);
+    }
+    .info-val {
+      font-weight: 600;
+      color: var(--black);
+    }
+
+    /* ===== ACTIONS ===== */
+    .btn-action {
+      display: inline-block;
+      padding: 14px 28px;
+      background: var(--black);
+      color: var(--white);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      transition: background 0.2s, color 0.2s;
+      border-radius: 4px;
+    }
+    .btn-action:hover {
+      background: #222;
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav>
+    <a href="/products" class="nav-logo">Öz Spor <span>&</span> Outdoor</a>
+  </nav>
+
+  <!-- ===== CONTENT CARD ===== -->
+  <div class="status-card">
+    <% if (status === 'success') { %>
+      <div class="status-icon success">✓</div>
+      <h2 class="status-title">Siparişiniz Alındı!</h2>
+      <p class="status-desc">
+        Ödemeniz başarıyla doğrulandı ve siparişiniz hazırlanma aşamasına alındı. <br>
+        Sipariş detaylarınızı aşağıda görebilirsiniz.
+      </p>
+
+      <div class="info-block">
+        <div class="info-row">
+          <span class="info-label">Sipariş No</span>
+          <span class="info-val" style="color: var(--green); font-family: monospace; font-size: 14px;"><%= order._id %></span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Alıcı</span>
+          <span class="info-val"><%= order.customerName %></span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Telefon</span>
+          <span class="info-val"><%= order.customerPhone %></span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">E-posta</span>
+          <span class="info-val"><%= order.customerEmail %></span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Teslimat Adresi</span>
+          <span class="info-val" style="text-align: right; max-width: 250px;"><%= order.shippingAddress %>, <%= order.shippingDistrict %> / <%= order.shippingCity %></span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Ödenen Tutar</span>
+          <span class="info-val" style="font-size: 15px; font-weight: 800;"><%= order.totalAmount.toLocaleString('tr-TR') %> TL</span>
+        </div>
+      </div>
+
+    <% } else { %>
+      <div class="status-icon error">✕</div>
+      <h2 class="status-title">Ödeme Başarısız</h2>
+      <p class="status-desc">
+        Ödeme işlemi gerçekleştirilirken bir hata oluştu veya işlem banka tarafından reddedildi. <br>
+        Hata Açıklaması: <strong><%= errorMsg %></strong>
+      </p>
+    <% } %>
+
+    <a href="/products" class="btn-action">Alışverişe Devam Et</a>
+  </div>
+
+</body>
+</html>

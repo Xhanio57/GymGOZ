@@ -545,6 +545,230 @@
     pointer-events: none;
     opacity: 0.6;
   }
+
+  /* ===== CART BUTTON & DRAWER ===== */
+  .cart-trigger {
+    position: relative;
+    background: none;
+    border: none;
+    color: var(--white);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    transition: transform 0.2s;
+  }
+  .cart-trigger:hover {
+    transform: scale(1.1);
+  }
+  .cart-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: var(--accent);
+    color: var(--black);
+    font-size: 10px;
+    font-weight: 800;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+  }
+
+  .cart-drawer {
+    position: fixed;
+    top: 0;
+    right: -400px;
+    width: 400px;
+    max-width: 100vw;
+    height: 100vh;
+    background: var(--white);
+    z-index: 1060;
+    box-shadow: -10px 0 30px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .cart-drawer.open {
+    right: 0;
+  }
+  .cart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--gray-200);
+    background: var(--black);
+    color: var(--white);
+  }
+  .cart-header h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+    margin: 0;
+  }
+  .cart-close-btn {
+    background: none;
+    border: none;
+    color: var(--white);
+    font-size: 20px;
+    cursor: pointer;
+  }
+  .cart-items-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .cart-item {
+    display: flex;
+    gap: 12px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .cart-item img {
+    width: 70px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 4px;
+    background: var(--gray-100);
+  }
+  .cart-item-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .cart-item-name {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--black);
+  }
+  .cart-item-size {
+    font-size: 11px;
+    color: var(--gray-500);
+    margin-top: 2px;
+  }
+  .cart-item-price {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--black);
+    margin-top: 4px;
+  }
+  .cart-item-qty-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .cart-qty-btn {
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--gray-300);
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+  }
+  .cart-qty-val {
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 16px;
+    text-align: center;
+  }
+  .cart-item-remove {
+    background: none;
+    border: none;
+    color: var(--red);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    align-self: flex-start;
+    margin-top: auto;
+  }
+  .cart-footer {
+    padding: 20px 24px;
+    border-top: 1px solid var(--gray-200);
+    background: var(--gray-50);
+  }
+  .cart-total-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+  .cart-checkout-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--black);
+    color: var(--white);
+    border: none;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s;
+    text-align: center;
+    display: block;
+    text-decoration: none;
+  }
+  .cart-checkout-btn:hover {
+    background: #222;
+    color: var(--accent);
+  }
+  .cart-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--gray-400);
+    gap: 12px;
+  }
+  .cart-empty-icon {
+    font-size: 40px;
+  }
+  .cart-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.5);
+    z-index: 1050;
+    display: none;
+  }
+
+  .btn-add-to-cart {
+    display: block; width: 100%;
+    background: var(--black); color: var(--white);
+    padding: 16px; text-align: center;
+    font-size: 12px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+    text-decoration: none; border: none; cursor: pointer;
+    transition: all .15s;
+    margin-bottom: 12px;
+  }
+  .btn-add-to-cart:hover { background: #222; color: var(--accent); }
+  .btn-add-to-cart.disabled {
+    background: var(--gray-300) !important;
+    color: var(--gray-500) !important;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
 </style>
 </head>
 <body>
@@ -552,7 +776,12 @@
 <!-- ===== NAVBAR ===== -->
 <nav>
   <a href="/" class="nav-logo">Öz Spor <span>&</span> Outdoor</a>
-  <button class="hamburger-icon" onclick="toggleMobileMenu()">☰</button>
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <button class="cart-trigger" onclick="toggleCart(true)">
+      🛒 <span class="cart-badge" id="cartBadge" style="display:none">0</span>
+    </button>
+    <button class="hamburger-icon" onclick="toggleMobileMenu()">☰</button>
+  </div>
   <div class="nav-links" id="navLinks">
     <div class="nav-item">
       <a href="/">Anasayfa</a>
@@ -696,13 +925,35 @@
         </div>
       </div>
 
-      <div>
-        <a id="popup-shopier-link" href="#" target="_blank" class="btn-shopier">
-          WhatsApp ile Sipariş Ver <span class="arrow">→</span>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <button id="btn-add-to-cart" class="btn-add-to-cart" onclick="addToCartClick()">
+          Sepete Ekle <span class="arrow">→</span>
+        </button>
+        <a id="popup-shopier-link" href="#" target="_blank" class="btn-shopier" style="margin-bottom: 8px; text-decoration: none;">
+          WhatsApp ile Sipariş Ver
         </a>
         <div class="shopier-note">WhatsApp Hızlı Sipariş Hattı</div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ===== CART DRAWER ===== -->
+<div class="cart-backdrop" id="cartBackdrop" onclick="toggleCart(false)"></div>
+<div class="cart-drawer" id="cartDrawer">
+  <div class="cart-header">
+    <h3>Alışveriş Sepetim</h3>
+    <button class="cart-close-btn" onclick="toggleCart(false)">✕</button>
+  </div>
+  <div class="cart-items-container" id="cartItemsContainer">
+    <!-- Populated dynamically -->
+  </div>
+  <div class="cart-footer">
+    <div class="cart-total-row">
+      <span>Genel Toplam</span>
+      <span id="cartTotalAmount">0.00 ₺</span>
+    </div>
+    <a href="/checkout" class="cart-checkout-btn" id="checkoutBtn">Güvenli Ödeme Yap</a>
   </div>
 </div>
 
@@ -711,6 +962,8 @@ let products = [];
 let categoriesList = [];
 let currentCat = 'all';
 let activeProduct = null;
+let selectedSize = null;
+let cart = [];
 let selectedFilters = {
   brands: [],
   sizes: [],
@@ -1148,6 +1401,7 @@ function openPopup(id) {
     setStockStatus(!isOutOfStock);
   }
 
+  selectedSize = defaultSize;
   updateWhatsAppLink(defaultSize);
 
   document.getElementById('popup-overlay').classList.add('open');
@@ -1160,6 +1414,7 @@ function selectSize(el, sizeName, stockCount) {
   document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
   
+  selectedSize = sizeName;
   setStockStatus(stockCount > 0);
   updateWhatsAppLink(sizeName);
 }
@@ -1238,10 +1493,149 @@ async function loadProducts() {
     } else {
       applyFilters();
     }
+
+    // Load cart from localStorage
+    loadCart();
   } catch (err) {
     console.error('Ürünler yüklenirken hata oluştu:', err);
     document.getElementById('product-grid').innerHTML = '<div class="empty-state"><h3>Hata Oluştu</h3><p>Ürünler veri tabanından yüklenemedi.</p></div>';
   }
+}
+
+/* =====================
+   CART MANAGEMENT
+===================== */
+function loadCart() {
+  const savedCart = localStorage.getItem('gymgoz_cart');
+  if (savedCart) {
+    try {
+      cart = JSON.parse(savedCart);
+    } catch (e) {
+      cart = [];
+    }
+  }
+  updateCartUI();
+}
+
+function saveCart() {
+  localStorage.setItem('gymgoz_cart', JSON.stringify(cart));
+  updateCartUI();
+}
+
+function toggleCart(show) {
+  const drawer = document.getElementById('cartDrawer');
+  const backdrop = document.getElementById('cartBackdrop');
+  if (!drawer || !backdrop) return;
+  if (show) {
+    drawer.classList.add('open');
+    backdrop.style.display = 'block';
+  } else {
+    drawer.classList.remove('open');
+    backdrop.style.display = 'none';
+  }
+}
+
+function addToCart(productId, name, size, price, image) {
+  if (!size) {
+    alert('Lütfen bir beden seçin!');
+    return;
+  }
+
+  const existingItem = cart.find(item => item.productId === productId && item.size === size);
+  if (existingItem) {
+    existingItem.quantity += 1;
+  } else {
+    cart.push({
+      productId,
+      name,
+      size,
+      price: parseFloat(price),
+      image,
+      quantity: 1
+    });
+  }
+  saveCart();
+  toggleCart(true);
+}
+
+function changeCartQty(productId, size, change) {
+  const item = cart.find(item => item.productId === productId && item.size === size);
+  if (item) {
+    item.quantity += change;
+    if (item.quantity <= 0) {
+      cart = cart.filter(x => !(x.productId === productId && x.size === size));
+    }
+    saveCart();
+  }
+}
+
+function removeFromCart(productId, size) {
+  cart = cart.filter(x => !(x.productId === productId && x.size === size));
+  saveCart();
+}
+
+function updateCartUI() {
+  const cartBadge = document.getElementById('cartBadge');
+  const cartItemsContainer = document.getElementById('cartItemsContainer');
+  const cartTotalAmount = document.getElementById('cartTotalAmount');
+  const checkoutBtn = document.getElementById('checkoutBtn');
+  
+  if (!cartBadge || !cartItemsContainer || !cartTotalAmount || !checkoutBtn) return;
+
+  const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+  cartBadge.textContent = totalItems;
+  if (totalItems > 0) {
+    cartBadge.style.display = 'flex';
+  } else {
+    cartBadge.style.display = 'none';
+  }
+
+  const totalPrice = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+  cartTotalAmount.textContent = totalPrice.toLocaleString('tr-TR') + ' TL';
+
+  if (cart.length === 0) {
+    cartItemsContainer.innerHTML = `
+      <div class="cart-empty">
+        <div class="cart-empty-icon">🛒</div>
+        <div>Sepetiniz Boş</div>
+      </div>
+    `;
+    checkoutBtn.style.pointerEvents = 'none';
+    checkoutBtn.style.opacity = '0.5';
+  } else {
+    checkoutBtn.style.pointerEvents = 'auto';
+    checkoutBtn.style.opacity = '1';
+    
+    cartItemsContainer.innerHTML = cart.map(item => {
+      return `
+        <div class="cart-item">
+          <img src="${item.image}" onerror="this.src='/images/default-product.png'">
+          <div class="cart-item-details">
+            <div class="cart-item-name">${item.name}</div>
+            <div class="cart-item-size">Beden: ${item.size}</div>
+            <div class="cart-item-price">${item.price.toLocaleString('tr-TR')} TL</div>
+            <div class="cart-item-qty-control">
+              <button class="cart-qty-btn" onclick="changeCartQty('${item.productId}', '${item.size}', -1)">-</button>
+              <span class="cart-qty-val">${item.quantity}</span>
+              <button class="cart-qty-btn" onclick="changeCartQty('${item.productId}', '${item.size}', 1)">+</button>
+            </div>
+          </div>
+          <button class="cart-item-remove" onclick="removeFromCart('${item.productId}', '${item.size}')">Kaldır</button>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+function addToCartClick() {
+  if (!activeProduct) return;
+  if (!selectedSize) {
+    alert('Lütfen bir beden seçin!');
+    return;
+  }
+  
+  addToCart(activeProduct.id, activeProduct.name, selectedSize, activeProduct.price, activeProduct.img);
+  closePopupDirect();
 }
 
 window.addEventListener('load', loadProducts);
