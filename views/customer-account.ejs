@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><%= title %> | Öz Spor & Outdoor</title>
+<link rel="icon" type="image/png" href="/images/default-product.png">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --black: #0a0a0a; --white: #f5f5f0; --accent: #d4ff00; --gray-400: #999990; --gray-600: #555550; }
+  body { font-family: 'Barlow', sans-serif; background: var(--black); color: var(--white); min-height: 100vh; }
+
+  /* Nav */
+  .acc-nav { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; border-bottom: 2px solid #1a1a1a; }
+  .nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; color: var(--white); text-decoration: none; }
+  .nav-logo span { color: var(--accent); }
+  .nav-links { display: flex; gap: 20px; align-items: center; }
+  .nav-link { color: var(--gray-400); text-decoration: none; font-size: 13px; font-weight: 500; transition: color .2s; }
+  .nav-link:hover { color: var(--accent); }
+  .nav-link-accent { color: var(--accent); }
+
+  /* Container */
+  .acc-container { max-width: 900px; margin: 0 auto; padding: 40px 28px 80px; }
+
+  /* Welcome */
+  .acc-welcome { margin-bottom: 40px; }
+  .acc-welcome h1 { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 2px; }
+  .acc-welcome h1 em { color: var(--accent); font-style: normal; }
+  .acc-welcome p { color: var(--gray-400); font-size: 14px; margin-top: 6px; }
+
+  /* Section */
+  .acc-section { margin-bottom: 40px; }
+  .acc-section-title { font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #222; }
+
+  /* Order cards */
+  .order-card {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; padding: 20px 24px; margin-bottom: 16px;
+    transition: border-color .2s;
+  }
+  .order-card:hover { border-color: rgba(255,255,255,0.15); }
+  .order-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+  .order-id { font-size: 12px; color: var(--gray-400); font-weight: 600; letter-spacing: 1px; }
+  .order-date { font-size: 12px; color: var(--gray-600); }
+  .order-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+  .badge {
+    padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+  }
+  .badge-paid { background: rgba(34,197,94,0.2); color: #86efac; }
+  .badge-pending { background: rgba(234,179,8,0.2); color: #fde047; }
+  .badge-failed { background: rgba(239,68,68,0.2); color: #fca5a5; }
+  .badge-preparing { background: rgba(59,130,246,0.2); color: #93c5fd; }
+  .badge-shipped { background: rgba(168,85,247,0.2); color: #c4b5fd; }
+  .badge-delivered { background: rgba(34,197,94,0.2); color: #86efac; }
+
+  .order-items { margin-bottom: 10px; }
+  .order-item { font-size: 13px; color: #ccc; padding: 3px 0; }
+  .order-item span { color: var(--gray-400); }
+  .order-total { font-size: 15px; font-weight: 700; color: var(--white); text-align: right; }
+  .order-cargo { font-size: 12px; color: var(--gray-400); margin-top: 8px; }
+
+  .no-orders { color: var(--gray-600); font-size: 14px; text-align: center; padding: 40px 0; }
+  .no-orders a { color: var(--accent); text-decoration: none; font-weight: 600; }
+
+  @media (max-width: 600px) {
+    .order-header { flex-direction: column; align-items: flex-start; }
+    .acc-container { padding: 24px 16px 60px; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="acc-nav">
+  <a href="/" class="nav-logo">Öz Spor <span>&</span> Outdoor</a>
+  <div class="nav-links">
+    <a href="/products" class="nav-link">Ürünler</a>
+    <a href="/account/logout" class="nav-link nav-link-accent">Çıkış Yap</a>
+  </div>
+</nav>
+
+<div class="acc-container">
+  <div class="acc-welcome">
+    <h1>Hoş geldin, <em><%= customer.firstName %></em> 👋</h1>
+    <p><%= customer.email %></p>
+  </div>
+
+  <div class="acc-section">
+    <div class="acc-section-title">📦 Siparişlerim</div>
+
+    <% if (orders && orders.length > 0) { %>
+      <% orders.forEach(function(order) { %>
+        <div class="order-card">
+          <div class="order-header">
+            <div>
+              <span class="order-id">#<%= order._id.toString().slice(-8).toUpperCase() %></span>
+              <span class="order-date" style="margin-left: 12px;"><%= new Date(order.createdAt).toLocaleDateString('tr-TR') %></span>
+            </div>
+            <div class="order-badges">
+              <% if (order.paymentStatus === 'paid') { %>
+                <span class="badge badge-paid">Ödendi</span>
+              <% } else if (order.paymentStatus === 'pending') { %>
+                <span class="badge badge-pending">Bekliyor</span>
+              <% } else { %>
+                <span class="badge badge-failed">Başarısız</span>
+              <% } %>
+
+              <% if (order.paymentStatus === 'paid') { %>
+                <% if (order.shippingStatus === 'preparing') { %>
+                  <span class="badge badge-preparing">Hazırlanıyor</span>
+                <% } else if (order.shippingStatus === 'shipped') { %>
+                  <span class="badge badge-shipped">Kargoda</span>
+                <% } else if (order.shippingStatus === 'delivered') { %>
+                  <span class="badge badge-delivered">Teslim Edildi</span>
+                <% } %>
+              <% } %>
+            </div>
+          </div>
+
+          <div class="order-items">
+            <% order.items.forEach(function(item) { %>
+              <div class="order-item">
+                <%= item.name %> <span>(<%= item.size %>) x<%= item.quantity %></span>
+                — <%= (item.price * item.quantity).toFixed(2) %> ₺
+              </div>
+            <% }); %>
+          </div>
+
+          <div class="order-total">Toplam: <%= order.totalAmount.toFixed(2) %> ₺</div>
+
+          <% if (order.cargoProvider || order.cargoTrackingNo) { %>
+            <div class="order-cargo">
+              🚚 <%= order.cargoProvider %> <% if (order.cargoTrackingNo) { %>— Takip: <%= order.cargoTrackingNo %><% } %>
+            </div>
+          <% } %>
+        </div>
+      <% }); %>
+    <% } else { %>
+      <div class="no-orders">
+        Henüz siparişiniz bulunmuyor.<br>
+        <a href="/products">Alışverişe Başla →</a>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+</body>
+</html>

@@ -4,12 +4,23 @@ const Iyzipay = require('iyzipay');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 
-// Initialize iyzico API client
-const iyzipay = new Iyzipay({
-  apiKey: process.env.IYZICO_API_KEY || 'sandbox-e9h5W7v2w7kI7uD8wF5q4g3h9s8f7k6j', // Sandbox Key fallback
-  secretKey: process.env.IYZICO_SECRET_KEY || 'sandbox-j6k7s8f9h4g5w6k7I7uD8wF5q4g3h9s8', // Sandbox Secret fallback
-  uri: process.env.IYZICO_BASE_URL || 'https://sandbox-api.iyzipay.com'
-});
+// iyzico API yapılandırması — lazy init (env yoksa uygulama çökmez)
+let iyzipay = null;
+
+function getIyzipay() {
+  if (iyzipay) return iyzipay;
+  const apiKey = process.env.IYZICO_API_KEY;
+  const secretKey = process.env.IYZICO_SECRET_KEY;
+  if (!apiKey || !secretKey) {
+    return null;
+  }
+  iyzipay = new Iyzipay({
+    apiKey: apiKey,
+    secretKey: secretKey,
+    uri: process.env.IYZICO_BASE_URL || 'https://sandbox-api.iyzipay.com'
+  });
+  return iyzipay;
+}
 
 // GET route to render checkout page
 router.get('/checkout', async (req, res) => {
@@ -179,7 +190,11 @@ router.post('/api/checkout/initiate', async (req, res) => {
     };
 
     // Initialize checkout form
-    iyzipay.checkoutFormInitialize.create(request, async function (err, result) {
+    const iyziClient = getIyzipay();
+    if (!iyziClient) {
+      return res.status(500).json({ success: false, message: 'Ödeme sistemi yapılandırılmamış. Lütfen yönetici ile iletişime geçin.' });
+    }
+    iyziClient.checkoutFormInitialize.create(request, async function (err, result) {
       if (err || result.status !== 'success') {
         console.error('iyzico Form Initialize Error:', err || result);
         return res.status(500).json({
@@ -215,7 +230,11 @@ router.post('/api/checkout/callback', async (req, res) => {
     }
 
     // Retrieve checkout form payment result
-    iyzipay.checkoutForm.retrieve({
+    const iyziClient = getIyzipay();
+    if (!iyziClient) {
+      return res.redirect('/checkout/error?msg=Ödeme sistemi yapılandırılmamış.');
+    }
+    iyziClient.checkoutForm.retrieve({
       locale: Iyzipay.LOCALE.TR,
       token: token
     }, async function (err, result) {

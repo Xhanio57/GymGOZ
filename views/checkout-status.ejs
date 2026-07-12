@@ -191,5 +191,12 @@
     <a href="/products" class="btn-action">Alışverişe Devam Et</a>
   </div>
 
+<% if (status === 'success') { %>
+<script>
+  // Ödeme başarılı olduktan sonra sepeti temizle
+  localStorage.removeItem('gymgoz_cart');
+</script>
+<% } %>
+
 </body>
 </html>

@@ -420,8 +420,7 @@
           ${result.checkoutFormContent}
         `;
 
-        // Clear local storage cart once initiated successfully
-        localStorage.removeItem('gymgoz_cart');
+        // Cart will be cleared on the success page, not here (payment not yet confirmed)
 
         // Dynamically execute scripts inside the injected HTML
         const scripts = paymentContainer.querySelectorAll('script');

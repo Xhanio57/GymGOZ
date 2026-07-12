@@ -1,5 +1,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
 require('dotenv').config();
 
 // Database bağlantısı
@@ -13,24 +16,66 @@ const app = express();
 
 const session = require('express-session');
 
-// Middleware
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// ===== SECURITY MIDDLEWARE =====
+
+// Helmet — HTTP güvenlik başlıkları (XSS, clickjacking, CSP vb.)
+app.use(helmet({
+  contentSecurityPolicy: false, // EJS inline scripts/styles için devre dışı
+  crossOriginEmbedderPolicy: false
+}));
+
+// NoSQL Injection koruması
+app.use(mongoSanitize());
+
+// Body parsers
+app.use(bodyParser.json({ limit: '2mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '2mb' }));
 app.use(express.static('public'));
 
-// Session Setup
+// Rate limiters
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 dakika
+  max: 10, // Pencere başına 10 deneme
+  message: { success: false, message: 'Çok fazla giriş denemesi. 15 dakika sonra tekrar deneyin.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+const paymentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { success: false, message: 'Çok fazla ödeme denemesi. Lütfen bekleyin.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+const generalApiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 dakika
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+app.use('/api/', generalApiLimiter);
+
+// Session Setup — güvenli ayarlar
 app.use(session({
   secret: process.env.SESSION_SECRET || 'GymGOZ_Fallback_Secret',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    maxAge: 1000 * 60 * 60 * 24 // 24 Hours
+    maxAge: 1000 * 60 * 60 * 24, // 24 Hours
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production'
   }
 }));
 
 // Expose auth state to EJS templates
 app.use((req, res, next) => {
   res.locals.isAdmin = req.session && req.session.isAdmin;
+  res.locals.customerName = req.session && req.session.customerName;
+  res.locals.customerId = req.session && req.session.customerId;
   next();
 });
 
@@ -38,8 +83,9 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
   const isApiMutation = req.path.startsWith('/api/') && req.method !== 'GET' && !req.path.startsWith('/api/checkout/');
   const isAdminPath = req.path.startsWith('/admin') || req.path.startsWith('/pos');
+  const isAdminApi = req.path.startsWith('/api/admin/');
 
-  if (isApiMutation || isAdminPath) {
+  if (isApiMutation || isAdminPath || isAdminApi) {
     if (req.session && req.session.isAdmin) {
       return next();
     }
@@ -59,8 +105,8 @@ app.get('/login', (req, res) => {
   res.render('login', { title: 'Yönetici Girişi', error: null });
 });
 
-// Login Action (POST)
-app.post('/login', (req, res) => {
+// Login Action (POST) — rate limited
+app.post('/login', loginLimiter, (req, res) => {
   const { username, password } = req.body;
   const expectedUser = process.env.ADMIN_USERNAME || 'admin';
   const expectedPass = process.env.ADMIN_PASSWORD || 'admin123';
@@ -95,16 +141,22 @@ app.use(require('./routes/viewRoutes'));
 app.use(require('./routes/productRoutes'));
 app.use(require('./routes/salesRoutes'));
 app.use(require('./routes/paymentRoutes'));
+app.use(require('./routes/customerRoutes'));
 
-// Placeholder Image Generator
+// Apply payment rate limiter
+app.use('/api/checkout/initiate', paymentLimiter);
+
+// Placeholder Image Generator — sanitized
 app.get('/images/placeholder/:text', (req, res) => {
-  const text = decodeURIComponent(req.params.text);
+  const rawText = decodeURIComponent(req.params.text);
+  // Sanitize: strip any HTML/XML tags and limit length
+  const text = rawText.replace(/[<>&"'/]/g, '').substring(0, 20);
   res.setHeader('Content-Type', 'image/svg+xml');
   res.send(`
     <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
       <rect width="200" height="200" fill="#e5e7eb"/>
       <text x="100" y="100" font-size="16" font-family="Arial" text-anchor="middle" fill="#6b7280" dominant-baseline="middle">
-        ${text.substring(0, 20)}
+        ${text}
       </text>
     </svg>
   `);
@@ -117,12 +169,15 @@ app.use((req, res) => {
   });
 });
 
-// Global Hata Handler
+// Global Hata Handler — production'da iç hata detayı sızdırmaz
 app.use((err, req, res, next) => {
   console.error(err.stack);
+  const message = process.env.NODE_ENV === 'production'
+    ? 'Bir sunucu hatası oluştu.'
+    : 'Sunucu hatası: ' + err.message;
   res.status(500).json({
     success: false,
-    message: 'Sunucu hatası: ' + err.message
+    message
   });
 });
 

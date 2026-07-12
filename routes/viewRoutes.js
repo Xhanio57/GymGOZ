@@ -49,4 +49,21 @@ router.get('/admin/settings', (req, res) => {
   });
 });
 
+// Yasal Sayfalar
+router.get('/privacy', (req, res) => {
+  res.render('privacy', { title: 'Gizlilik Politikası' });
+});
+
+router.get('/terms', (req, res) => {
+  res.render('terms', { title: 'Kullanım Koşulları' });
+});
+
+router.get('/refund-policy', (req, res) => {
+  res.render('refund-policy', { title: 'İade ve İptal Politikası' });
+});
+
+router.get('/kvkk', (req, res) => {
+  res.render('kvkk', { title: 'KVKK Aydınlatma Metni' });
+});
+
 module.exports = router;

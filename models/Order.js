@@ -35,12 +35,14 @@ const orderSchema = new mongoose.Schema({
   customerEmail: {
     type: String,
     required: [true, 'E-posta adresi zorunludur'],
-    trim: true
+    trim: true,
+    match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Geçerli bir e-posta adresi girin']
   },
   customerPhone: {
     type: String,
     required: [true, 'Telefon numarası zorunludur'],
-    trim: true
+    trim: true,
+    minlength: [10, 'Telefon numarası en az 10 karakter olmalıdır']
   },
   shippingAddress: {
     type: String,

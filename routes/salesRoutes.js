@@ -47,8 +47,8 @@ router.post('/api/sales', async (req, res) => {
       productName: product.name,
       size: size,
       quantity: parseInt(quantity),
-      price: product.price,
-      totalPrice: product.price * quantity,
+      price: product.finalPrice,
+      totalPrice: product.finalPrice * quantity,
       paymentMethod: paymentMethod || 'Nakit',
       cashier: cashier || 'Sistem'
     });
@@ -59,7 +59,7 @@ router.post('/api/sales', async (req, res) => {
       success: true,
       message: `Satış başarılı. ${product.name} (${size}) x${quantity}`,
       product,
-      totalPrice: product.price * quantity
+      totalPrice: product.finalPrice * quantity
     });
   } catch (error) {
     res.status(500).json({

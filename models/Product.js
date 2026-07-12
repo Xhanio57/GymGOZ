@@ -44,7 +44,9 @@ const productSchema = new mongoose.Schema(
     },
     discountValue: {
       type: Number,
-      default: 0
+      default: 0,
+      min: [0, 'İndirim değeri negatif olamaz'],
+      max: [100, 'Yüzdelik indirim 100\'ü geçemez']
     },
     discountLabel: {
       type: String,
