@@ -13,6 +13,7 @@ connectDB().then(() => {
 });
 
 const app = express();
+app.set('trust proxy', 1);
 
 const session = require('express-session');
 
