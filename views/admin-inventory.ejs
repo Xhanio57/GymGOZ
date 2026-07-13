@@ -46,8 +46,17 @@
     <div class="modal-content">
       <span class="close" onclick="closeM('m2')">&times;</span>
       <h3>✏️ Düzenle</h3>
-      <input type="text" id="n">
-      <input type="number" id="pr" step="0.01">
+      <input type="text" id="n" placeholder="Ürün Adı">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px">Satış Fiyatı (₺)</label>
+          <input type="number" id="pr" step="0.01" style="margin-bottom:0">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#059669;display:block;margin-bottom:4px">Alış Fiyatı (₺)</label>
+          <input type="number" id="costPriceEdit" step="0.01" placeholder="Maliyet" style="margin-bottom:0;border-color:#a7f3d0">
+        </div>
+      </div>
       <select id="c">
         <!-- Populated dynamically -->
       </select>
@@ -443,6 +452,7 @@
       const x = prods.find(function(z) { return z._id === id; });
       document.getElementById('n').value = x.name || '';
       document.getElementById('pr').value = x.price || 0;
+      document.getElementById('costPriceEdit').value = x.costPrice !== undefined ? x.costPrice : (x.price ? (x.price * 0.5).toFixed(2) : 0);
       document.getElementById('c').value = x.category || '';
       updateEditSubcategories();
       document.getElementById('discType').value = x.discountType || 'none';
@@ -469,6 +479,7 @@
         const formData = new FormData();
         formData.append('name', document.getElementById('n').value);
         formData.append('price', document.getElementById('pr').value);
+        formData.append('costPrice', document.getElementById('costPriceEdit').value);
         formData.append('category', document.getElementById('c').value);
         formData.append('discountType', document.getElementById('discType').value);
         formData.append('discountValue', parseFloat(document.getElementById('discValue').value) || 0);

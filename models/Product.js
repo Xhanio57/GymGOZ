@@ -37,6 +37,16 @@ const productSchema = new mongoose.Schema(
       required: [true, 'Fiyat zorunludur'],
       min: [0, 'Fiyat negatif olamaz']
     },
+    costPrice: {
+      type: Number,
+      default: 0,
+      min: [0, 'Alış fiyatı negatif olamaz']
+    },
+    costPrice: {
+      type: Number,
+      default: 0,
+      min: [0, 'Alış fiyatı negatif olamaz']
+    },
     discountType: {
       type: String,
       enum: ['none', 'percentage', 'fixed'],

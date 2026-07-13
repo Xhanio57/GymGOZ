@@ -6,25 +6,161 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <title><%= title %> | Öz Spor & Outdoor</title>
   <link rel="icon" type="image/png" href="/images/default-product.png">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/label-print.css">
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <style>
+    :root {
+      --adm-bg: #0d0d0f;
+      --adm-surface: #141418;
+      --adm-surface2: #1c1c22;
+      --adm-border: #2a2a32;
+      --adm-accent: #d4ff00;
+      --adm-accent-dim: rgba(212,255,0,0.12);
+      --adm-text: #f0f0ec;
+      --adm-muted: #888884;
+      --adm-danger: #ff4d4d;
+      --adm-success: #22c55e;
+      --adm-warning: #f59e0b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Barlow', 'Segoe UI', sans-serif;
+      background: var(--adm-bg);
+      color: var(--adm-text);
+      min-height: 100vh;
+    }
+    /* ===== NAVBAR ===== */
+    .navbar {
+      background: var(--adm-surface);
+      border-bottom: 1px solid var(--adm-border);
+      padding: 0;
+      margin-bottom: 0;
+      box-shadow: 0 1px 20px rgba(0,0,0,0.4);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .navbar .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 60px;
+    }
+    .logo h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 3px;
+      color: var(--adm-text);
+    }
+    .logo h1 span { color: var(--adm-accent); }
+    .nav-menu {
+      display: flex;
+      list-style: none;
+      gap: 4px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .nav-link {
+      color: var(--adm-muted);
+      text-decoration: none;
+      font-size: 12.5px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+    }
+    .nav-link:hover {
+      background: var(--adm-accent-dim);
+      color: var(--adm-accent);
+    }
+    .nav-link.active {
+      background: var(--adm-accent-dim);
+      color: var(--adm-accent);
+    }
+    .nav-link.danger {
+      color: var(--adm-danger);
+    }
+    .nav-link.danger:hover {
+      background: rgba(255,77,77,0.1);
+      color: var(--adm-danger);
+    }
+    /* ===== MAIN CONTENT ===== */
+    .container { max-width: 1400px; margin: 0 auto; padding: 0 24px; }
+    .main-content { padding: 28px 0; min-height: calc(100vh - 120px); }
+    /* ===== FOOTER ===== */
+    .footer {
+      background: var(--adm-surface);
+      border-top: 1px solid var(--adm-border);
+      text-align: center;
+      padding: 16px 24px;
+      color: var(--adm-muted);
+      font-size: 12px;
+      letter-spacing: 1px;
+    }
+    /* ===== MOBILE NAV ===== */
+    .nav-toggle { display: none; }
+    @media (max-width: 900px) {
+      .nav-toggle {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 6px;
+      }
+      .nav-toggle span {
+        width: 22px;
+        height: 2px;
+        background: var(--adm-text);
+        border-radius: 2px;
+        transition: all 0.3s;
+      }
+      .nav-menu {
+        display: none;
+        position: absolute;
+        top: 60px;
+        left: 0;
+        right: 0;
+        background: var(--adm-surface);
+        border-bottom: 1px solid var(--adm-border);
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 12px 16px;
+        gap: 2px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      }
+      .nav-menu.open { display: flex; }
+      .nav-link { width: 100%; padding: 10px 14px; }
+    }
+  </style>
 </head>
 <body>
   <nav class="navbar">
     <div class="container">
       <div class="logo">
-        <h1>�� Öz Spor & Outdoor</h1>
+        <h1>ÖZ SPOR <span>&</span> OUTDOOR</h1>
       </div>
+      <button class="nav-toggle" onclick="this.nextElementSibling.classList.toggle('open')" aria-label="Menü">
+        <span></span><span></span><span></span>
+      </button>
       <ul class="nav-menu">
-        <li><a href="/admin" class="nav-link">Ana Sayfa</a></li>
-        <li><a href="/admin/add-product" class="nav-link">➕ Ürün Ekle</a></li>
-        <li><a href="/admin/inventory" class="nav-link">📊 Stok Listesi</a></li>
-        <li><a href="/admin/sales-history" class="nav-link">📈 Satış Geçmişi</a></li>
-        <li><a href="/admin/orders" class="nav-link">📦 Siparişler</a></li>
-        <li><a href="/pos" class="nav-link">💰 POS Satış</a></li>
-        <li><a href="/admin/settings" class="nav-link">⚙️ Ayarlar</a></li>
-        <li><a href="/logout" class="nav-link" style="color: #f87171; font-weight: 600;">🚪 Çıkış Yap</a></li>
+        <li><a href="/admin" class="nav-link">Dashboard</a></li>
+        <li><a href="/admin/add-product" class="nav-link">+ Ürün Ekle</a></li>
+        <li><a href="/admin/inventory" class="nav-link">Stok</a></li>
+        <li><a href="/admin/stock-count" class="nav-link">Sayım</a></li>
+        <li><a href="/admin/sales-history" class="nav-link">Satışlar</a></li>
+        <li><a href="/admin/orders" class="nav-link">Siparişler</a></li>
+        <li><a href="/pos" class="nav-link">POS</a></li>
+        <li><a href="/admin/settings" class="nav-link">Ayarlar</a></li>
+        <li><a href="/logout" class="nav-link danger">Çıkış</a></li>
       </ul>
     </div>
   </nav>
@@ -34,7 +170,7 @@
   </div>
 
   <footer class="footer">
-    <p>&copy; 2026 Öz Spor & Outdoor. Tüm hakları saklıdır.</p>
+    &copy; 2026 Öz Spor & Outdoor — Admin Paneli
   </footer>
 </body>
 </html>

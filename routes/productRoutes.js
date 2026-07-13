@@ -104,6 +104,103 @@ async function uploadToCloudinaryAndCleanup(file) {
   }
 }
 
+// Label rendering helper functions
+function detectColor(productName, description) {
+  const commonColors = [
+    'Siyah', 'Beyaz', 'Gri', 'Kırmızı', 'Mavi', 'Yeşil', 'Sarı', 'Bej', 'Haki', 'Lacivert', 'Pembe', 
+    'Turuncu', 'Mor', 'Kahverengi', 'Ekru', 'Melanj', 'Füme', 'Bordo', 'Lila', 'Mürdüm'
+  ];
+  const searchStr = `${productName} ${description || ''}`.toLowerCase();
+  for (const color of commonColors) {
+    if (searchStr.includes(color.toLowerCase())) {
+      return color;
+    }
+  }
+  return 'Standart';
+}
+
+function generateLabelHtml(label, idx) {
+  const detectedColor = detectColor(label.name, label.labelNote || '');
+  const descText = label.labelNote || 'Spor ve outdoor giyim ekipmanı.';
+
+  let priceHtml = '';
+  if (label.oldPrice) {
+    priceHtml = `
+      <div class="price-row-original">${Number(label.oldPrice).toFixed(2)} TL</div>
+      <div class="price-row-final">
+        <span class="price-label">Fiyat</span>
+        <span class="price-value">${Number(label.price).toFixed(2)}</span>
+        <span class="price-currency">TL</span>
+      </div>
+    `;
+  } else if (label.discountInfo) {
+    priceHtml = `
+      <div class="price-row-original">${Number(label.price).toFixed(2)} TL</div>
+      <div class="price-row-final">
+        <span class="price-label">Fiyat</span>
+        <span class="price-value">${Number(label.finalPrice).toFixed(2)}</span>
+        <span class="price-currency">TL</span>
+      </div>
+    `;
+  } else {
+    priceHtml = `
+      <div class="price-row-final" style="margin-top: 1.5mm;">
+        <span class="price-label">Fiyat</span>
+        <span class="price-value">${Number(label.price).toFixed(2)}</span>
+        <span class="price-currency">TL</span>
+      </div>
+    `;
+  }
+
+  const sizes = label.allSizes || [];
+  let sizeListHtml = '';
+  if (sizes.length > 0) {
+    sizes.forEach(size => {
+      const isActive = String(size).trim().toLowerCase() === String(label.sizeLabel).trim().toLowerCase();
+      sizeListHtml += `<span class="size-item ${isActive ? 'active' : ''}">${size}</span>`;
+    });
+  } else {
+    sizeListHtml = `<span class="size-item active">STANDART</span>`;
+  }
+
+  return `
+    <div class="label">
+      <div class="label-punch-hole"></div>
+      <div class="label-top-row">
+        <div class="label-name-col">
+          <div class="label-name">${label.name}</div>
+        </div>
+        <div class="label-desc-col">
+          <div class="label-desc">${descText}</div>
+          <div class="label-color">Renk: ${detectedColor}</div>
+        </div>
+      </div>
+      
+      <div class="label-size-box">
+        <div class="label-size-title">BEDEN</div>
+        <div class="label-size-list">
+          ${sizeListHtml}
+        </div>
+      </div>
+      
+      <div class="label-bottom-row">
+        <div class="label-barcode-col">
+          <svg id="barcode-${idx}"></svg>
+          <div class="label-barcode-text">${label.barcode}</div>
+        </div>
+        <div class="label-price-col">
+          ${priceHtml}
+        </div>
+      </div>
+      
+      <div class="label-footer-bar">
+        WWW.OZSPOROUTDOOR.COM
+      </div>
+    </div>
+  `;
+}
+
+
 router.get('/api/products', async (req, res) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 });
@@ -200,11 +297,12 @@ router.post('/api/products', upload.single('imageFile'), async (req, res) => {
 router.put('/api/products/:id', upload.single('imageFile'), async (req, res) => {
   try {
     await convertHeicToJpeg(req.file);
-    const { name, price, category, image, description, discountType, discountValue, discountLabel, labelText, brand, shopierLink, features, subcat, badge } = req.body;
+    const { name, price, costPrice, category, image, description, discountType, discountValue, discountLabel, labelText, brand, shopierLink, features, subcat, badge } = req.body;
     
     const updateData = {
       name,
       price: parseFloat(price),
+      costPrice: costPrice !== undefined && costPrice !== '' ? parseFloat(costPrice) : undefined,
       category,
       description,
       discountType,
@@ -217,6 +315,8 @@ router.put('/api/products/:id', upload.single('imageFile'), async (req, res) => 
       subcat: subcat || '',
       badge: badge || ''
     };
+    // Remove undefined costPrice to avoid overwriting with undefined
+    if (updateData.costPrice === undefined) delete updateData.costPrice;
 
     if (req.file) {
       updateData.image = await uploadToCloudinaryAndCleanup(req.file);
@@ -532,27 +632,26 @@ router.get('/api/products/bulk-labels-pdf', async (req, res) => {
       }
 
       const sizeStockList = Array.isArray(product.sizeStock) ? product.sizeStock : [];
+      const allSizes = sizeStockList.map(s => s.size);
 
       if (useStock) {
         sizeStockList.forEach(sizeItem => {
           const stockQty = Number(sizeItem.stock) || 0;
           if (stockQty <= 0) return;
 
-          const sizeLabel = product.category === 'Çocuk Giyim'
-            ? sizeItem.size + ' Yaş'
-            : sizeItem.size;
+          // Çocuk Giyim vb. kategorilerde zaten 'Yaş' ibaresi veri tabanında bulunduğu için ekstra ekleme yapmıyoruz
+          const sizeLabel = sizeItem.size;
 
           for (let i = 0; i < stockQty; i++) {
             labels.push({
               name: product.name,
               category: product.category,
               sizeLabel: sizeLabel,
+              allSizes: allSizes,
               price: product.price,
               finalPrice: finalPrice,
               discountInfo: discountInfo,
               barcode: product.barcode,
-              image: product.image,
-              labelText: product.labelText || '',
               oldPrice: parsedOldPrice,
               labelNote: labelNote || ''
             });
@@ -563,12 +662,11 @@ router.get('/api/products/bulk-labels-pdf', async (req, res) => {
           name: product.name,
           category: product.category,
           sizeLabel: '',
+          allSizes: allSizes,
           price: product.price,
           finalPrice: finalPrice,
           discountInfo: discountInfo,
           barcode: product.barcode,
-          image: product.image,
-          labelText: product.labelText || '',
           oldPrice: parsedOldPrice,
           labelNote: labelNote || ''
         });
@@ -578,63 +676,7 @@ router.get('/api/products/bulk-labels-pdf', async (req, res) => {
     // HTML oluştur
     let labelHtml = '';
     labels.forEach((label, idx) => {
-      let priceHtml = '';
-      if (label.oldPrice) {
-        priceHtml = `
-          <div class="price-section">
-            <div class="price-original">
-              ${label.oldPrice.toFixed(2)} TL
-              <svg viewBox="0 0 100 2" preserveAspectRatio="none">
-                <line x1="0" y1="1" x2="100" y2="1" stroke="black" stroke-width="1.5"/>
-              </svg>
-            </div>
-            <div class="price-final">${label.price.toFixed(2)} TL</div>
-          </div>
-        `;
-      } else if (label.discountInfo) {
-        priceHtml = `
-          <div class="price-section">
-            <div class="price-original">
-              ${label.price.toFixed(2)} TL
-              <svg viewBox="0 0 100 2" preserveAspectRatio="none">
-                <line x1="0" y1="1" x2="100" y2="1" stroke="black" stroke-width="1.5"/>
-              </svg>
-            </div>
-            <div class="price-final">${label.finalPrice.toFixed(2)} TL</div>
-            <div class="discount-info">${label.discountInfo}</div>
-          </div>
-        `;
-      } else {
-        priceHtml = `<div class="price-section"><div class="price-final">${label.price.toFixed(2)} TL</div></div>`;
-      }
-
-      let specialText = '';
-      if (label.labelText) {
-        specialText = `<div class="label-special-text">${label.labelText}</div>`;
-      }
-
-      let noteHtml = '';
-      if (label.labelNote) {
-        noteHtml = `<div class="label-note">${label.labelNote}</div>`;
-      } else {
-        noteHtml = '<div class="label-note"></div>';
-      }
-
-      labelHtml += `
-        <div class="label">
-          <img src="/images/default-product.png" alt="${label.name}" class="label-image">
-          <div class="label-name">${label.name || ''}</div>
-          ${label.category ? '<div class="label-category">' + label.category + '</div>' : ''}
-          ${label.sizeLabel ? '<div class="label-size-badge">' + label.sizeLabel + '</div>' : ''}
-          ${priceHtml}
-          <div class="label-barcode-img">
-            <svg id="barcode-${idx}"></svg>
-          </div>
-          <div class="label-barcode-text">${label.barcode || ''}</div>
-          ${label.labelText ? '<div class="label-special-text">' + label.labelText + '</div>' : ''}
-          ${label.labelNote ? '<div class="label-note">' + label.labelNote + '</div>' : ''}
-        </div>
-      `;
+      labelHtml += generateLabelHtml(label, idx);
     });
 
     const html = `
@@ -649,136 +691,215 @@ router.get('/api/products/bulk-labels-pdf', async (req, res) => {
           body { 
             font-family: Arial, sans-serif; 
             background: #f5f5f5; 
-            padding: 5mm;
+            padding: 10mm 5mm;
             margin: 0;
           }
           .labels-container {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 5mm;
+            grid-template-columns: repeat(3, 60mm);
+            justify-content: center;
+            gap: 4mm;
             padding: 5mm;
           }
           .label {
-            width: 38mm;
-            height: 57mm;
-            border: 1px solid #111;
-            background: white;
+            width: 60mm;
+            height: 40mm;
+            border: 1.5px solid #000;
+            background: #faf9f5;
+            position: relative;
             display: flex;
             flex-direction: column;
-            align-items: stretch;
-            justify-content: flex-start;
-            padding: 1.5mm;
+            padding: 2.5mm 3.5mm 0mm 3.5mm;
+            box-sizing: border-box;
             overflow: hidden;
             page-break-inside: avoid;
-            gap: 1mm;
           }
-          .label-image {
-            width: 100%;
-            height: 14mm;
-            object-fit: contain;
-            border-radius: 1mm;
-            background: #fff;
-            flex-shrink: 0;
+          .label-punch-hole {
+            width: 3.5mm;
+            height: 3.5mm;
+            border: 1.5px solid #000;
+            border-radius: 50%;
+            position: absolute;
+            top: -2mm;
+            left: calc(50% - 1.75mm);
+            background: #faf9f5;
+            z-index: 10;
+          }
+          .label-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            height: 11mm;
+            overflow: hidden;
+            margin-bottom: 1mm;
+          }
+          .label-name-col {
+            width: 48%;
+            height: 100%;
+            display: flex;
+            align-items: center;
           }
           .label-name {
-            font-size: 9pt;
-            font-weight: 800;
-            text-align: center;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 8.5pt;
+            font-weight: 900;
             line-height: 1.1;
-            min-height: 8mm;
-            max-height: 8mm;
-            overflow: hidden;
+            text-transform: uppercase;
+            color: #000;
             word-break: break-word;
-            color: #111827;
-            border-bottom: 1px solid #e5e7eb;
-            padding-bottom: 1mm;
-            flex-shrink: 0;
-          }
-          .label-category {
-            font-size: 7.5pt;
-            color: #4b5563;
-            text-align: center;
-            line-height: 1.1;
-            min-height: 3.5mm;
-            max-height: 3.5mm;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
             overflow: hidden;
-            flex-shrink: 0;
           }
-          .price-section {
-            border-top: 0.5px solid #ddd;
-            border-bottom: 0.5px solid #ddd;
-            padding: 1.5mm 0;
-            position: relative;
+          .label-desc-col {
+            width: 48%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            text-align: right;
           }
-          .price-original {
-            font-size: 7px;
-            color: #999;
-            text-decoration: line-through;
-            position: relative;
+          .label-desc {
+            font-family: Georgia, 'Times New Roman', Times, serif;
+            font-size: 5pt;
+            font-style: italic;
+            line-height: 1.15;
+            color: #222;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
           }
-          .price-original svg {
-            position: absolute;
-            top: 50%;
-            left: 0;
-            transform: translateY(-50%);
-            width: 100%;
-            height: 2px;
-          }
-          .price-final {
-            font-size: 12px;
+          .label-color {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 6.5pt;
             font-weight: bold;
-            color: #2563eb;
+            color: #000;
           }
-          .discount-info {
-            font-size: 6px;
-            color: #dc2626;
-            text-align: center;
-            margin-top: 1mm;
-          }
-          .label-barcode-img {
+          .label-size-box {
             width: 100%;
-            height: 10mm;
+            height: 6mm;
+            border: 1px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2mm;
+            margin-bottom: 1mm;
+            box-sizing: border-box;
+          }
+          .label-size-title {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 6.5pt;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: #000;
+          }
+          .label-size-list {
+            display: flex;
+            gap: 2mm;
+            align-items: center;
+          }
+          .size-item {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 7.5pt;
+            font-weight: bold;
+            color: #555;
+          }
+          .size-item.active {
+            background: #000;
+            color: #fff;
+            padding: 0.2mm 1.5mm;
+            font-weight: 900;
+            border-radius: 0.4mm;
+          }
+          .label-bottom-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            height: 12mm;
+            margin-bottom: 1mm;
+          }
+          .label-barcode-col {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+          }
+          .label-barcode-col svg {
+            width: 100%;
+            height: 9.5mm;
+          }
+          .label-barcode-text {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 5.5pt;
+            font-weight: bold;
+            color: #000;
+            margin-top: 0.3mm;
+            letter-spacing: 0.3px;
+          }
+          .label-price-col {
+            width: 46%;
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: flex-end;
+          }
+          .price-row-original {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 6.5pt;
+            color: #777;
+            text-decoration: line-through;
+            margin-bottom: 0.2mm;
+          }
+          .price-row-final {
+            display: flex;
+            align-items: baseline;
+            justify-content: flex-end;
+          }
+          .price-label {
+            font-family: Georgia, 'Times New Roman', Times, serif;
+            font-size: 9pt;
+            font-style: italic;
+            margin-right: 1.5mm;
+            color: #222;
+          }
+          .price-value {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11pt;
+            font-weight: 900;
+            color: #000;
+          }
+          .price-currency {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 7.5pt;
+            font-weight: bold;
+            margin-left: 0.5px;
+          }
+          .label-footer-bar {
+            width: calc(100% + 7mm);
+            height: 4.5mm;
+            background: #000;
+            color: #fff;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 5pt;
+            font-weight: bold;
+            letter-spacing: 1.5px;
             display: flex;
             align-items: center;
             justify-content: center;
-          }
-          .label-barcode-img svg {
-            width: 100%;
-            height: 100%;
-          }
-          .label-barcode-text {
-            font-size: 6px;
-            text-align: center;
-            font-family: 'Courier New', monospace;
-            color: #333;
-            font-weight: bold;
-          }
-          .label-special-text {
-            font-size: 8px;
-            color: #10b981;
-            font-weight: bold;
-            text-align: center;
-            border-top: 0.5px solid #10b981;
-            padding-top: 1mm;
-          }
-          .label-note {
-            font-size: 7pt;
-            color: #444;
-            text-align: center;
+            margin-left: -3.5mm;
+            margin-right: -3.5mm;
             margin-top: auto;
-            min-height: 3mm;
-            max-height: 6mm;
-            overflow: hidden;
-            line-height: 1.05;
-            word-break: break-word;
-            border-top: 1px solid #e5e7eb;
-            padding-top: 1mm;
-            flex-shrink: 0;
           }
           @media print {
             body { background: white; padding: 0; margin: 0; }
-            .labels-container { gap: 0; padding: 0; }
-            .label { border: 2px solid #000; }
+            .labels-container { gap: 3mm; padding: 3mm 0; page-break-after: always; }
+            .label { border: 1.2px solid #000; background: #faf9f5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .label-footer-bar { background: #000 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .size-item.active { background: #000 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           }
         </style>
       </head>
@@ -791,8 +912,8 @@ router.get('/api/products/bulk-labels-pdf', async (req, res) => {
             try {
               JsBarcode('#barcode-' + i, labels[i].barcode, {
                 format: 'CODE128',
-                width: 1.2,
-                height: 24,
+                width: 1.1,
+                height: 26,
                 displayValue: false,
                 margin: 0
               });
@@ -823,6 +944,7 @@ router.get('/api/products/:id/label-pdf', async (req, res) => {
     const product = await Product.findById(req.params.id);
     const oldPrice = req.query.oldPrice ? parseFloat(req.query.oldPrice) : null;
     const labelNote = req.query.labelNote || '';
+    const activeSize = req.query.size || '';
     
     if (!product) {
       return res.status(404).json({ success: false, message: 'Ürün bulunamadı' });
@@ -837,8 +959,34 @@ router.get('/api/products/:id/label-pdf', async (req, res) => {
       discountInfo = `${product.price.toFixed(2)} TL → ${finalPrice.toFixed(2)} TL (-%${product.discountValue})`;
     } else if (product.discountType === 'fixed' && product.discountValue > 0) {
       finalPrice = Math.max(0, product.price - product.discountValue);
-      discountInfo = `${product.price.toFixed(2)} TL → ${finalPrice.toFixed(2)} TL (-${product.discountValue.toFixed(2)} TL)`;
+      discountInfo = `${product.price.toFixed(2)} TL → ${finalPrice.toFixed(2)} TL (-&{product.discountValue.toFixed(2)} TL)`;
     }
+
+    const sizeStockList = Array.isArray(product.sizeStock) ? product.sizeStock : [];
+    const allSizes = sizeStockList.map(s => s.size);
+
+    // Etiketleri oluştur
+    let labels = [];
+    for (let i = 0; i < 20; i++) {
+      labels.push({
+        name: product.name,
+        category: product.category,
+        sizeLabel: activeSize,
+        allSizes: allSizes,
+        price: product.price,
+        finalPrice: finalPrice,
+        discountInfo: discountInfo,
+        barcode: product.barcode,
+        oldPrice: oldPrice,
+        labelNote: labelNote || ''
+      });
+    }
+
+    // HTML oluştur
+    let labelHtml = '';
+    labels.forEach((label, idx) => {
+      labelHtml += generateLabelHtml(label, idx);
+    });
 
     const html = `
       <!DOCTYPE html>
@@ -852,228 +1000,234 @@ router.get('/api/products/:id/label-pdf', async (req, res) => {
           body { 
             font-family: Arial, sans-serif; 
             background: #f5f5f5; 
-            padding: 5mm;
+            padding: 10mm 5mm;
             margin: 0;
           }
           .labels-container {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 5mm;
+            grid-template-columns: repeat(3, 60mm);
+            justify-content: center;
+            gap: 4mm;
             padding: 5mm;
           }
           .label {
-            width: 40mm;
-            height: 60mm;
-            background: white;
-            border: 2px solid #000;
-            padding: 2.5mm;
+            width: 60mm;
+            height: 40mm;
+            border: 1.5px solid #000;
+            background: #faf9f5;
+            position: relative;
             display: flex;
             flex-direction: column;
-            gap: 1.5mm;
+            padding: 2.5mm 3.5mm 0mm 3.5mm;
             box-sizing: border-box;
+            overflow: hidden;
             page-break-inside: avoid;
-            position: relative;
           }
-          .label-image {
-            width: 100%;
-            height: 15mm;
-            object-fit: cover;
-            border: 0.5px solid #ddd;
-            border-radius: 2px;
+          .label-punch-hole {
+            width: 3.5mm;
+            height: 3.5mm;
+            border: 1.5px solid #000;
+            border-radius: 50%;
+            position: absolute;
+            top: -2mm;
+            left: calc(50% - 1.75mm);
+            background: #faf9f5;
+            z-index: 10;
+          }
+          .label-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            height: 11mm;
+            overflow: hidden;
+            margin-bottom: 1mm;
+          }
+          .label-name-col {
+            width: 48%;
+            height: 100%;
+            display: flex;
+            align-items: center;
           }
           .label-name {
-            font-size: 9px;
-            font-weight: bold;
-            color: #333;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 8.5pt;
+            font-weight: 900;
             line-height: 1.1;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            text-transform: uppercase;
+            color: #000;
+            word-break: break-word;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
+            overflow: hidden;
           }
-          .label-category {
-            font-size: 7px;
-            color: #666;
+          .label-desc-col {
+            width: 48%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            text-align: right;
           }
-          .price-section {
-            border-top: 0.5px solid #ddd;
-            border-bottom: 0.5px solid #ddd;
-            padding: 1.5mm 0;
-            position: relative;
+          .label-desc {
+            font-family: Georgia, 'Times New Roman', Times, serif;
+            font-size: 5pt;
+            font-style: italic;
+            line-height: 1.15;
+            color: #222;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
           }
-          .price-original {
-            font-size: 7px;
-            color: #999;
-            text-decoration: line-through;
-            position: relative;
-          }
-          .price-original svg {
-            position: absolute;
-            top: 50%;
-            left: 0;
-            transform: translateY(-50%);
-            width: 100%;
-            height: 2px;
-          }
-          .price-final {
-            font-size: 12px;
+          .label-color {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 6.5pt;
             font-weight: bold;
-            color: #2563eb;
+            color: #000;
           }
-          .discount-info {
-            font-size: 6px;
-            color: #dc2626;
-            text-align: center;
-            margin-top: 1mm;
-          }
-          .label-barcode-img {
+          .label-size-box {
             width: 100%;
-            height: 10mm;
+            height: 6mm;
+            border: 1px solid #000;
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
+            padding: 0 2mm;
+            margin-bottom: 1mm;
+            box-sizing: border-box;
           }
-          .label-barcode-img svg {
+          .label-size-title {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 6.5pt;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: #000;
+          }
+          .label-size-list {
+            display: flex;
+            gap: 2mm;
+            align-items: center;
+          }
+          .size-item {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 7.5pt;
+            font-weight: bold;
+            color: #555;
+          }
+          .size-item.active {
+            background: #000;
+            color: #fff;
+            padding: 0.2mm 1.5mm;
+            font-weight: 900;
+            border-radius: 0.4mm;
+          }
+          .label-bottom-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            height: 12mm;
+            margin-bottom: 1mm;
+          }
+          .label-barcode-col {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+          }
+          .label-barcode-col svg {
             width: 100%;
-            height: 100%;
+            height: 9.5mm;
           }
           .label-barcode-text {
-            font-size: 6px;
-            text-align: center;
-            font-family: 'Courier New', monospace;
-            color: #333;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 5.5pt;
             font-weight: bold;
+            color: #000;
+            margin-top: 0.3mm;
+            letter-spacing: 0.3px;
           }
-          .label-special-text {
-            font-size: 8px;
-            color: #10b981;
+          .label-price-col {
+            width: 46%;
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: flex-end;
+          }
+          .price-row-original {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 6.5pt;
+            color: #777;
+            text-decoration: line-through;
+            margin-bottom: 0.2mm;
+          }
+          .price-row-final {
+            display: flex;
+            align-items: baseline;
+            justify-content: flex-end;
+          }
+          .price-label {
+            font-family: Georgia, 'Times New Roman', Times, serif;
+            font-size: 9pt;
+            font-style: italic;
+            margin-right: 1.5mm;
+            color: #222;
+          }
+          .price-value {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11pt;
+            font-weight: 900;
+            color: #000;
+          }
+          .price-currency {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 7.5pt;
             font-weight: bold;
-            text-align: center;
-            border-top: 0.5px solid #10b981;
-            padding-top: 1mm;
+            margin-left: 0.5px;
           }
-          .label-note {
-            font-size: 8px;
-            color: #dc2626;
-            text-align: center;
-            border-top: 0.5px solid #ddd;
-            padding-top: 1mm;
-            flex-grow: 1;
+          .label-footer-bar {
+            width: calc(100% + 7mm);
+            height: 4.5mm;
+            background: #000;
+            color: #fff;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 5pt;
+            font-weight: bold;
+            letter-spacing: 1.5px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            line-height: 1.2;
+            margin-left: -3.5mm;
+            margin-right: -3.5mm;
+            margin-top: auto;
           }
           @media print {
             body { background: white; padding: 0; margin: 0; }
-            .labels-container { gap: 0; padding: 0; }
-            .label { border: 2px solid #000; }
+            .labels-container { gap: 3mm; padding: 3mm 0; page-break-after: always; }
+            .label { border: 1.2px solid #000; background: #faf9f5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .label-footer-bar { background: #000 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .size-item.active { background: #000 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           }
         </style>
       </head>
       <body>
-        <div class="labels-container" id="labels"></div>
+        <div class="labels-container" id="labels">${labelHtml}</div>
         <script>
-          const product = {
-            name: '${product.name.replace(/'/g, "\\'")}',
-            category: '${product.category.replace(/'/g, "\\'")}',
-            price: ${product.price},
-            finalPrice: ${finalPrice},
-            discountInfo: '${discountInfo.replace(/'/g, "\\'")}',
-            barcode: '${product.barcode}',
-            image: '${product.image}',
-            labelText: '${product.labelText ? product.labelText.replace(/'/g, "\\'") : ''}',
-            oldPrice: ${oldPrice || 'null'},
-            labelNote: '${labelNote.replace(/'/g, "\\'")}'
-          };
-
-          function createLabel(index) {
-            const label = document.createElement('div');
-            label.className = 'label';
-            
-            let priceHtml = '';
-            if (product.oldPrice) {
-              priceHtml = \`
-                <div class="price-section">
-                  <div class="price-original">
-                    \${product.oldPrice.toFixed(2)} TL
-                    <svg viewBox="0 0 100 2" preserveAspectRatio="none">
-                      <line x1="0" y1="1" x2="100" y2="1" stroke="black" stroke-width="1.5"/>
-                    </svg>
-                  </div>
-                  <div class="price-final">\${product.price.toFixed(2)} TL</div>
-                </div>
-              \`;
-            } else if (product.discountInfo) {
-              priceHtml = \`
-                <div class="price-section">
-                  <div class="price-original">
-                    \${product.price.toFixed(2)} TL
-                    <svg viewBox="0 0 100 2" preserveAspectRatio="none">
-                      <line x1="0" y1="1" x2="100" y2="1" stroke="black" stroke-width="1.5"/>
-                    </svg>
-                  </div>
-                  <div class="price-final">\${product.finalPrice.toFixed(2)} TL</div>
-                  <div class="discount-info">\${product.discountInfo}</div>
-                </div>
-              \`;
-            } else {
-              priceHtml = \`<div class="price-section"><div class="price-final">\${product.price.toFixed(2)} TL</div></div>\`;
-            }
-
-            let specialText = '';
-            if (product.labelText) {
-              specialText = \`<div class="label-special-text">\${product.labelText}</div>\`;
-            }
-
-            let noteHtml = '';
-            if (product.labelNote) {
-              noteHtml = \`<div class="label-note">\${product.labelNote}</div>\`;
-            } else {
-              noteHtml = '<div class="label-note"></div>';
-            }
-
-            label.innerHTML = \`
-              <img src="/images/default-product.png" alt="\${product.name}" class="label-image">
-              <div class="label-name">\${product.name}</div>
-              <div class="label-category">\${product.category}</div>
-              \${priceHtml}
-              <div class="label-barcode-img">
-                <svg id="barcode-\${index}"></svg>
-              </div>
-              <div class="label-barcode-text">\${product.barcode}</div>
-              \${specialText}
-              \${noteHtml}
-            \`;
-            return label;
-          }
-
-          const container = document.getElementById('labels');
+          const labels = ${JSON.stringify(labels)};
           
-          for (let i = 0; i < 20; i++) {
-            const label = createLabel(i);
-            container.appendChild(label);
-            
-            if ((i + 1) % 20 === 0 && i < 99) {
-              const pageBreak = document.createElement('div');
-              pageBreak.style.pageBreakAfter = 'always';
-              container.appendChild(pageBreak);
-            }
-          }
-
-          for (let i = 0; i < 20; i++) {
+          for (let i = 0; i < labels.length; i++) {
             try {
-              JsBarcode('#barcode-' + i, product.barcode, {
+              JsBarcode('#barcode-' + i, labels[i].barcode, {
                 format: 'CODE128',
-                width: 1.2,
-                height: 24,
+                width: 1.1,
+                height: 26,
                 displayValue: false,
                 margin: 0
               });
             } catch(e) {
-              console.error('Barkod hatası:', e);
+              console.error('Barkod hatasi:', e);
             }
           }
 
@@ -1277,6 +1431,76 @@ router.delete('/api/brands/:id', async (req, res) => {
     res.json({ success: true, message: 'Marka başarıyla silindi' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Marka silinemedi: ' + error.message });
+  }
+});
+
+// ========================
+// STOK SAYIM API
+// ========================
+const SalesHistory = require('../models/SalesHistory');
+
+// Confirm: stok tutuyorsa sadece onay kaydı
+router.post('/api/stock-count/confirm', async (req, res) => {
+  try {
+    const { productId } = req.body;
+    if (!productId) return res.status(400).json({ success: false, message: 'Ürün ID gerekli' });
+    const product = await Product.findById(productId);
+    if (!product) return res.status(404).json({ success: false, message: 'Ürün bulunamadı' });
+    res.json({ success: true, message: 'Stok onaylandı' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Onay hatası: ' + err.message });
+  }
+});
+
+// Update: stok farkı varsa güncelle + satış geçmişine kayıt yap
+router.post('/api/stock-count/update', async (req, res) => {
+  try {
+    const { productId, updates } = req.body;
+    if (!productId || !Array.isArray(updates)) {
+      return res.status(400).json({ success: false, message: 'Geçersiz veri' });
+    }
+    const product = await Product.findById(productId);
+    if (!product) return res.status(404).json({ success: false, message: 'Ürün bulunamadı' });
+
+    const historyRecords = [];
+
+    for (const update of updates) {
+      const { si, size, actualCount, systemCount } = update;
+      const diff = actualCount - systemCount;
+      if (diff !== 0) {
+        // Update stock to actual count
+        if (product.sizeStock[si] !== undefined) {
+          product.sizeStock[si].stock = actualCount;
+        } else {
+          const sizeItem = product.sizeStock.find(s => s.size === size);
+          if (sizeItem) sizeItem.stock = actualCount;
+        }
+        // Record discrepancy in SalesHistory (negative diff = lost stock)
+        if (diff < 0) {
+          historyRecords.push({
+            productId: product._id,
+            productName: product.name,
+            size: size,
+            quantity: Math.abs(diff),
+            price: product.price,
+            totalPrice: product.price * Math.abs(diff),
+            paymentMethod: 'Sayım Düzeltme',
+            cashier: 'Sayım Sistemi'
+          });
+        }
+      }
+    }
+
+    product.markModified('sizeStock');
+    await product.save();
+
+    if (historyRecords.length > 0) {
+      await SalesHistory.insertMany(historyRecords);
+    }
+
+    res.json({ success: true, message: 'Stok güncellendi', records: historyRecords.length });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Güncelleme hatası: ' + err.message });
   }
 });
 

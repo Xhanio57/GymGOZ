@@ -1,45 +1,248 @@
-<%- include('layout', { 
-  title: 'Ana Sayfa',
-  body: `
-    <div class="dashboard">
-      <h2 style="color: var(--primary-color); font-size: 2rem; margin-bottom: 2rem;">
-        🏪 Öz Spor & Outdoor Sistemine Hoş Geldiniz
-      </h2>
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> | Öz Spor & Outdoor</title>
+  <link rel="icon" type="image/png" href="/images/default-product.png">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    :root {
+      --adm-bg: #0d0d0f;
+      --adm-surface: #141418;
+      --adm-surface2: #1c1c22;
+      --adm-border: #2a2a32;
+      --adm-accent: #d4ff00;
+      --adm-accent-dim: rgba(212,255,0,0.12);
+      --adm-text: #f0f0ec;
+      --adm-muted: #888884;
+      --adm-danger: #ff4d4d;
+      --adm-success: #22c55e;
+      --adm-warning: #f59e0b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Barlow', 'Segoe UI', sans-serif; background: var(--adm-bg); color: var(--adm-text); min-height: 100vh; }
+    /* NAVBAR */
+    .navbar { background: var(--adm-surface); border-bottom: 1px solid var(--adm-border); position: sticky; top: 0; z-index: 1000; box-shadow: 0 1px 20px rgba(0,0,0,0.4); }
+    .nav-inner { display: flex; justify-content: space-between; align-items: center; max-width: 1400px; margin: 0 auto; padding: 0 24px; height: 60px; }
+    .nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 3px; color: var(--adm-text); }
+    .nav-logo span { color: var(--adm-accent); }
+    .nav-menu { display: flex; list-style: none; gap: 4px; align-items: center; flex-wrap: wrap; }
+    .nav-link { color: var(--adm-muted); text-decoration: none; font-size: 12.5px; font-weight: 600; letter-spacing: 0.5px; padding: 6px 12px; border-radius: 6px; transition: all 0.2s; text-transform: uppercase; }
+    .nav-link:hover, .nav-link.active { background: var(--adm-accent-dim); color: var(--adm-accent); }
+    .nav-link.danger { color: var(--adm-danger); }
+    .nav-link.danger:hover { background: rgba(255,77,77,0.1); }
+    .nav-toggle { display: none; }
+    @media (max-width: 900px) {
+      .nav-toggle { display: flex; flex-direction: column; gap: 5px; cursor: pointer; background: none; border: none; padding: 6px; }
+      .nav-toggle span { width: 22px; height: 2px; background: var(--adm-text); border-radius: 2px; }
+      .nav-menu { display: none; position: absolute; top: 60px; left: 0; right: 0; background: var(--adm-surface); border-bottom: 1px solid var(--adm-border); flex-direction: column; align-items: flex-start; padding: 12px 16px; gap: 2px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+      .nav-menu.open { display: flex; }
+      .nav-link { width: 100%; padding: 10px 14px; }
+    }
+    /* MAIN */
+    .page-wrap { max-width: 1400px; margin: 0 auto; padding: 28px 24px; }
+    .footer { background: var(--adm-surface); border-top: 1px solid var(--adm-border); text-align: center; padding: 16px 24px; color: var(--adm-muted); font-size: 12px; letter-spacing: 1px; }
+    /* DASHBOARD */
+    .dash-header { margin-bottom: 28px; }
+    .dash-header h2 { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 3px; color: var(--adm-text); margin-bottom: 4px; }
+    .dash-header p { color: var(--adm-muted); font-size: 14px; }
+    /* TABS */
+    .period-tabs { display: flex; gap: 6px; margin-bottom: 24px; flex-wrap: wrap; }
+    .period-tab { padding: 7px 18px; border: 1px solid var(--adm-border); border-radius: 100px; background: transparent; color: var(--adm-muted); font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px; }
+    .period-tab:hover { border-color: var(--adm-accent); color: var(--adm-accent); }
+    .period-tab.active { background: var(--adm-accent); color: #0d0d0f; border-color: var(--adm-accent); }
+    /* KPI GRID */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .kpi-card { background: var(--adm-surface); border: 1px solid var(--adm-border); border-radius: 12px; padding: 20px 22px; position: relative; overflow: hidden; transition: border-color 0.2s; }
+    .kpi-card:hover { border-color: rgba(212,255,0,0.3); }
+    .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--adm-accent), transparent); }
+    .kpi-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--adm-muted); margin-bottom: 8px; }
+    .kpi-value { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 1px; color: var(--adm-text); line-height: 1; }
+    .kpi-sub { font-size: 12px; color: var(--adm-muted); margin-top: 6px; }
+    .kpi-profit .kpi-value { color: var(--adm-success); }
+    /* CHARTS */
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+    @media(max-width: 768px) { .charts-grid { grid-template-columns: 1fr; } }
+    .chart-card { background: var(--adm-surface); border: 1px solid var(--adm-border); border-radius: 12px; padding: 20px; }
+    .chart-title { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 2px; color: var(--adm-text); margin-bottom: 16px; }
+    /* QUICK LINKS */
+    .quick-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 12px; }
+    .quick-link { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 20px 16px; background: var(--adm-surface); border: 1px solid var(--adm-border); border-radius: 12px; text-decoration: none; color: var(--adm-muted); font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; transition: all 0.2s; }
+    .quick-link:hover { border-color: var(--adm-accent); color: var(--adm-accent); background: rgba(212,255,0,0.05); transform: translateY(-2px); }
+    .quick-icon { font-size: 28px; }
+    /* ALERTS */
+    .alert-banner { border-radius: 8px; padding: 12px 16px; font-size: 13px; margin-bottom: 20px; }
+    .alert-error { background: rgba(255,77,77,0.1); border: 1px solid rgba(255,77,77,0.3); color: #ff8080; }
+    .alert-info { background: rgba(212,255,0,0.06); border: 1px solid rgba(212,255,0,0.2); color: var(--adm-muted); }
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="nav-inner">
+    <div class="nav-logo">ÖZ SPOR <span>&</span> OUTDOOR</div>
+    <button class="nav-toggle" onclick="this.nextElementSibling.classList.toggle('open')" aria-label="Menü">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-menu">
+      <li><a href="/admin" class="nav-link active">Dashboard</a></li>
+      <li><a href="/admin/add-product" class="nav-link">+ Ürün Ekle</a></li>
+      <li><a href="/admin/inventory" class="nav-link">Stok</a></li>
+      <li><a href="/admin/stock-count" class="nav-link">Sayım</a></li>
+      <li><a href="/admin/sales-history" class="nav-link">Satışlar</a></li>
+      <li><a href="/admin/orders" class="nav-link">Siparişler</a></li>
+      <li><a href="/pos" class="nav-link">POS</a></li>
+      <li><a href="/admin/settings" class="nav-link">Ayarlar</a></li>
+      <li><a href="/logout" class="nav-link danger">Çıkış</a></li>
+    </ul>
+  </div>
+</nav>
 
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem;">
-        
-        <div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center;">
-          <h3 style="font-size: 3rem; color: #3b82f6;">📦</h3>
-          <h3 style="margin: 1rem 0; color: var(--text-color);">Ürün Yönetimi</h3>
-          <p style="color: var(--dark-gray); margin-bottom: 1rem;">Yeni ürün ekleyin ve stoğunuzu yönetin</p>
-          <a href="/admin/add-product" class="btn btn-primary">Ürün Ekle →</a>
-        </div>
+<div class="page-wrap">
 
-        <div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center;">
-          <h3 style="font-size: 3rem; color: #10b981;">📊</h3>
-          <h3 style="margin: 1rem 0; color: var(--text-color);">Stok Listesi</h3>
-          <p style="color: var(--dark-gray); margin-bottom: 1rem;">Tüm ürünleri ve stok durumlarını görüntüleyin</p>
-          <a href="/admin/inventory" class="btn btn-primary">Listeyi Aç →</a>
-        </div>
+  <div class="dash-header">
+    <h2>Dashboard</h2>
+    <p>Öz Spor &amp; Outdoor — Yönetim Paneli</p>
+  </div>
 
-        <div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center;">
-          <h3 style="font-size: 3rem; color: #f59e0b;">💰</h3>
-          <h3 style="margin: 1rem 0; color: var(--text-color);">POS Satış</h3>
-          <p style="color: var(--dark-gray); margin-bottom: 1rem;">Hızl�� satış ekranına geçin ve barkod okutun</p>
-          <a href="/pos" class="btn btn-primary">POS Aç →</a>
-        </div>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="alert-banner alert-error">⚠️ İstatistik yüklenemedi: <%= error %></div>
+  <% } %>
 
-      </div>
+  <% if (typeof stats !== 'undefined' && stats) { %>
 
-      <div style="background: #f0f9ff; padding: 2rem; border-radius: 8px; margin-top: 2rem; border-left: 4px solid var(--primary-color);">
-        <h3 style="margin-bottom: 1rem;">ℹ️ Sistem Bilgisi</h3>
-        <ul style="list-style: none; color: var(--dark-gray);">
-          <li>✓ MongoDB bağlantısı aktif</li>
-          <li>✓ Otomatik barkod üretimi etkinleştirildi</li>
-          <li>✓ POS satış sistemi hazır</li>
-          <li>✓ JsBarcode kütüphanesi entegre edildi</li>
-        </ul>
-      </div>
+  <div class="period-tabs">
+    <button class="period-tab active" data-period="today">Bugün</button>
+    <button class="period-tab" data-period="week">Bu Hafta</button>
+    <button class="period-tab" data-period="month">Bu Ay</button>
+    <button class="period-tab" data-period="year">Bu Yıl</button>
+    <button class="period-tab" data-period="all">Tüm Zamanlar</button>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Toplam Ciro</div>
+      <div class="kpi-value" id="kpi-revenue">0 ₺</div>
+      <div class="kpi-sub" id="kpi-revenue-sub">Seçili dönem</div>
     </div>
-  ` 
-}) %>
+    <div class="kpi-card kpi-profit">
+      <div class="kpi-label">Net Kar</div>
+      <div class="kpi-value" id="kpi-profit">0 ₺</div>
+      <div class="kpi-sub" id="kpi-profit-sub">Ciro - Maliyet</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Satılan Adet</div>
+      <div class="kpi-value" id="kpi-items">0</div>
+      <div class="kpi-sub">Ürün adedi</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Online Sipariş</div>
+      <div class="kpi-value" id="kpi-orders">0</div>
+      <div class="kpi-sub">Ödendi</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Toplam Ürün</div>
+      <div class="kpi-value"><%= stats.totalProducts %></div>
+      <div class="kpi-sub">Katalogda</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Toplam Stok</div>
+      <div class="kpi-value"><%= stats.totalStock %></div>
+      <div class="kpi-sub">Adet</div>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Son 7 Gün — Günlük Ciro</div>
+      <canvas id="chartDaily" height="180"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Son 12 Ay — Aylık Ciro</div>
+      <canvas id="chartMonthly" height="180"></canvas>
+    </div>
+  </div>
+
+  <% } else { %>
+  <div class="alert-banner alert-info">📊 Henüz istatistik verisi yok.</div>
+  <% } %>
+
+  <div class="quick-grid">
+    <a href="/admin/add-product" class="quick-link"><span class="quick-icon">➕</span>Ürün Ekle</a>
+    <a href="/admin/inventory" class="quick-link"><span class="quick-icon">📦</span>Stok Listesi</a>
+    <a href="/admin/stock-count" class="quick-link"><span class="quick-icon">🔢</span>Stok Sayımı</a>
+    <a href="/admin/sales-history" class="quick-link"><span class="quick-icon">📈</span>Satışlar</a>
+    <a href="/admin/orders" class="quick-link"><span class="quick-icon">🛒</span>Siparişler</a>
+    <a href="/pos" class="quick-link"><span class="quick-icon">💰</span>POS Satış</a>
+  </div>
+
+</div>
+
+<footer class="footer">&copy; 2026 Öz Spor &amp; Outdoor — Admin Paneli</footer>
+
+<% if (typeof stats !== 'undefined' && stats) { %>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  const statsData = {
+    today: { revenue: <%= stats.today.revenue.toFixed(2) %>, profit: <%= stats.today.profit.toFixed(2) %>, items: <%= stats.today.items %>, orders: <%= stats.today.orders %> },
+    week:  { revenue: <%= stats.week.revenue.toFixed(2) %>,  profit: <%= stats.week.profit.toFixed(2) %>,  items: <%= stats.week.items %>,  orders: <%= stats.week.orders %> },
+    month: { revenue: <%= stats.month.revenue.toFixed(2) %>, profit: <%= stats.month.profit.toFixed(2) %>, items: <%= stats.month.items %>, orders: <%= stats.month.orders %> },
+    year:  { revenue: <%= stats.year.revenue.toFixed(2) %>,  profit: <%= stats.year.profit.toFixed(2) %>,  items: <%= stats.year.items %>,  orders: <%= stats.year.orders %> },
+    all:   { revenue: <%= stats.all.revenue.toFixed(2) %>,   profit: <%= stats.all.profit.toFixed(2) %>,   items: <%= stats.all.items %>,   orders: <%= stats.all.orders %> }
+  };
+  const chartDailyData   = <%- stats.chartDaily %>;
+  const chartMonthlyData = <%- stats.chartMonthly %>;
+
+  function updateKPIs(period) {
+    const d = statsData[period];
+    document.getElementById('kpi-revenue').textContent = d.revenue.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ₺';
+    document.getElementById('kpi-profit').textContent  = d.profit.toLocaleString('tr-TR',  { minimumFractionDigits: 2 }) + ' ₺';
+    document.getElementById('kpi-items').textContent   = d.items.toLocaleString('tr-TR');
+    document.getElementById('kpi-orders').textContent  = d.orders.toLocaleString('tr-TR');
+    const margin = d.revenue > 0 ? ((d.profit / d.revenue) * 100).toFixed(1) : 0;
+    document.getElementById('kpi-profit-sub').textContent = 'Kar marjı: %' + margin;
+  }
+
+  document.querySelectorAll('.period-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      updateKPIs(btn.dataset.period);
+    });
+  });
+  updateKPIs('today');
+
+  const chartDefaults = {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ctx.parsed.y.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ₺' } }
+    },
+    scales: {
+      x: { grid: { color: '#2a2a32' }, ticks: { color: '#888884', font: { size: 10 } } },
+      y: { grid: { color: '#2a2a32' }, ticks: { color: '#888884', font: { size: 10 }, callback: v => v.toLocaleString('tr-TR') + ' ₺' } }
+    }
+  };
+
+  new Chart(document.getElementById('chartDaily'), {
+    type: 'bar',
+    data: {
+      labels: chartDailyData.map(d => d.label),
+      datasets: [{ data: chartDailyData.map(d => d.revenue), backgroundColor: 'rgba(212,255,0,0.7)', borderColor: '#d4ff00', borderWidth: 1, borderRadius: 4 }]
+    },
+    options: chartDefaults
+  });
+
+  new Chart(document.getElementById('chartMonthly'), {
+    type: 'line',
+    data: {
+      labels: chartMonthlyData.map(d => d.label),
+      datasets: [{ data: chartMonthlyData.map(d => d.revenue), borderColor: '#d4ff00', backgroundColor: 'rgba(212,255,0,0.08)', fill: true, tension: 0.4, pointBackgroundColor: '#d4ff00', pointRadius: 3 }]
+    },
+    options: chartDefaults
+  });
+</script>
+<% } %>
+</body>
+</html>
