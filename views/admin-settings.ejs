@@ -233,14 +233,14 @@
           const subTags = (cat.subcategories || []).map(sub => 
             '<span class="subcategory-tag">' +
               sub.name +
-              '<button onclick="deleteSubcategory(\'' + cat._id + '\', \'' + sub._id + '\')" class="btn-remove-sub" title="Alt Kategoriyi Sil">×</button>' +
+              '<button onclick="deleteSubcategory(\\\'' + cat._id + '\\\', \\\'' + sub._id + '\\\')" class="btn-remove-sub" title="Alt Kategoriyi Sil">×</button>' +
             '</span>'
           ).join('');
 
           return '<div class="category-item">' +
               '<div class="item-header">' +
                 '<span class="item-title">' + cat.name + '</span>' +
-                '<button onclick="deleteCategory(\'' + cat._id + '\')" class="btn-delete-small">🗑️ Sil</button>' +
+                '<button onclick="deleteCategory(\\\'' + cat._id + '\\\')" class="btn-delete-small">🗑️ Sil</button>' +
               '</div>' +
               '<div class="item-details">' +
                 '<strong>Bedenler:</strong> ' + sizesText +
@@ -250,9 +250,8 @@
                 '<div class="subcategories-list">' +
                   (subTags || '<span style="font-size:11px; color:#94a3b8; font-style:italic;">Alt kategori eklenmemiş</span>') +
                 '</div>' +
-                '<div class="subcategory-add-form">' +
-                  '<input type="text" id="subInput_' + cat._id + '" placeholder="Yeni Alt Kategori Adı" required>' +
-                  '<button onclick="addSubcategory(\'' + cat._id + '\')" class="btn-add-sub">Ekle</button>' +
+                <truncated 37 bytes>
+                  '<button onclick="addSubcategory(\\\'' + cat._id + '\\\')" class="btn-add-sub">Ekle</button>' +
                 '</div>' +
               '</div>' +
             '</div>';
@@ -272,7 +271,7 @@
           '<div class="brand-item">' +
             '<div class="item-header">' +
               '<span class="item-title">' + brand.name + '</span>' +
-              '<button onclick="deleteBrand(\'' + brand._id + '\')" class="btn-delete-small">🗑️ Sil</button>' +
+              '<button onclick="deleteBrand(\\\'' + brand._id + '\\\')" class="btn-delete-small">🗑️ Sil</button>' +
             '</div>' +
           '</div>'
         ).join('');
