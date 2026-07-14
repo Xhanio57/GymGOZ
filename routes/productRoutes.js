@@ -402,193 +402,184 @@ router.delete('/api/products/:id', async (req, res) => {
   }
 });
 
-// PDF İndir - Tüm Ürünleri (HTML-PDF ile Türkçe Desteği)
+// PDF İndir - Tüm Ürünleri (pdfkit ile Türkçe Desteği ve Render Uyumlu)
 router.get('/api/products/export/pdf/:includeStock', async (req, res) => {
   try {
     const products = await Product.find().sort({ name: 1 });
     const includeStock = req.params.includeStock === 'true';
 
+    // Toplamları hesapla
     let totalStock = 0;
     let totalRevenue = 0;
-
-    const tableRows = products.map((p, idx) => {
+    products.forEach(p => {
       const sizeStock = Array.isArray(p.sizeStock) ? p.sizeStock : [];
       const prodTotalStock = sizeStock.reduce((a, b) => a + (b.stock || 0), 0);
-      const prodRevenue = Number(p.price || 0) * prodTotalStock;
-
       totalStock += prodTotalStock;
-      totalRevenue += prodRevenue;
+      totalRevenue += Number(p.price || 0) * prodTotalStock;
+    });
 
+    const doc = new PDFDocument({
+      size: 'A4',
+      margin: 30,
+      bufferPages: true
+    });
+
+    // HTTP başlıklarını ayarla
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="urunler.pdf"');
+    doc.pipe(res);
+
+    // Fontları kaydet
+    const regularFont = path.join(process.cwd(), 'public/fonts/Roboto-Regular.ttf');
+    const boldFont = path.join(process.cwd(), 'public/fonts/Roboto-Medium.ttf');
+    doc.registerFont('Roboto', regularFont);
+    doc.registerFont('Roboto-Bold', boldFont);
+
+    // Başlık
+    doc.font('Roboto-Bold').fontSize(16).fillColor('#111827').text('Öz Spor & Outdoor - Stok Envanteri', { align: 'center' });
+    
+    // Rapor Tarihi
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('tr-TR') + ' ' + now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+    doc.font('Roboto').fontSize(9).fillColor('#6b7280').text(`Rapor Tarihi: ${dateStr}`, { align: 'center' });
+    doc.moveDown(1.5);
+
+    // Özet Kutusu
+    doc.rect(30, 80, 535, 45).fillColor('#f8fafc').strokeColor('#e5e7eb').fillAndStroke();
+    
+    // Özet Metinleri
+    doc.font('Roboto-Bold').fontSize(9).fillColor('#2563eb');
+    doc.text('Toplam Ürün:', 45, 90, { lineBreak: false });
+    doc.font('Roboto').fillColor('#1f2937').text(` ${products.length}`, 115, 90, { lineBreak: false });
+
+    doc.font('Roboto-Bold').fillColor('#2563eb');
+    doc.text('Toplam Kategori:', 160, 90, { lineBreak: false });
+    const uniqueCats = new Set(products.map(p => p.category)).size;
+    doc.font('Roboto').fillColor('#1f2937').text(` ${uniqueCats}`, 245, 90, { lineBreak: false });
+
+    doc.font('Roboto-Bold').fillColor('#2563eb');
+    doc.text('Toplam Stok:', 290, 90, { lineBreak: false });
+    doc.font('Roboto').fillColor('#1f2937').text(` ${totalStock} adet`, 360, 90, { lineBreak: false });
+
+    doc.font('Roboto-Bold').fillColor('#2563eb');
+    doc.text('Potansiyel Ciro:', 420, 90, { lineBreak: false });
+    doc.font('Roboto').fillColor('#1f2937').text(` ${totalRevenue.toFixed(2)} TL`, 495, 90);
+
+    doc.moveDown(2);
+
+    // Tablo Kolonları
+    const columns = includeStock ? [
+      { name: '#', width: 25, align: 'center' },
+      { name: 'Ürün Adı', width: 180, align: 'left' },
+      { name: 'Kategori', width: 90, align: 'left' },
+      { name: 'Barkod', width: 75, align: 'center' },
+      { name: 'Fiyat', width: 60, align: 'right' },
+      { name: 'Stok', width: 35, align: 'center' },
+      { name: 'Beden Detayları', width: 70, align: 'left' }
+    ] : [
+      { name: '#', width: 30, align: 'center' },
+      { name: 'Ürün Adı', width: 215, align: 'left' },
+      { name: 'Kategori', width: 110, align: 'left' },
+      { name: 'Barkod', width: 90, align: 'center' },
+      { name: 'Fiyat', width: 55, align: 'right' },
+      { name: 'Stok', width: 35, align: 'center' }
+    ];
+
+    let startY = 145;
+    const rowHeight = 22;
+
+    function drawTableHeader(y) {
+      doc.rect(30, y, 535, rowHeight).fillColor('#2563eb').strokeColor('#dbeafe').fillAndStroke();
+      let currentX = 30;
+      doc.font('Roboto-Bold').fontSize(8.5).fillColor('#ffffff');
+      columns.forEach(col => {
+        const xOffset = col.align === 'center' ? (col.width / 2) : (col.align === 'right' ? col.width - 5 : 5);
+        doc.text(col.name, currentX + (col.align === 'center' ? 0 : (col.align === 'right' ? 0 : 5)), y + 6, {
+          width: col.width,
+          align: col.align
+        });
+        currentX += col.width;
+      });
+    }
+
+    drawTableHeader(startY);
+    startY += rowHeight;
+
+    // Satırları çiz
+    let y = startY;
+    let idx = 1;
+
+    for (const p of products) {
+      const sizeStock = Array.isArray(p.sizeStock) ? p.sizeStock : [];
+      const prodTotalStock = sizeStock.reduce((a, b) => a + (b.stock || 0), 0);
       const sizeDetails = sizeStock
         .filter(s => (s.stock || 0) > 0)
         .map(s => `${s.size}:${s.stock}`)
-        .join(' • ') || '-';
+        .join(', ') || '-';
 
-      const stockColor = prodTotalStock === 0
-        ? '#dc2626'
-        : prodTotalStock < 10
-          ? '#f59e0b'
-          : '#10b981';
-
-      const bgColor = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
-
-      return `
-        <tr style="background-color: ${bgColor};">
-          <td class="center">${idx + 1}</td>
-          <td class="name-cell">${p.name || ''}</td>
-          <td class="center">${p.category || ''}</td>
-          <td class="center barcode-cell">${p.barcode || ''}</td>
-          <td class="right">${Number(p.price || 0).toFixed(2)} TL</td>
-          <td class="center stock-cell" style="color:${stockColor};">${prodTotalStock}</td>
-          ${includeStock ? `<td class="sizes-cell">${sizeDetails}</td>` : ''}
-        </tr>
-      `;
-    }).join('');
-
-    const colgroup = includeStock
-      ? `
-        <th style="width:6%;">#</th>
-        <th style="width:30%;">Ürün Adı</th>
-        <th style="width:16%;">Kategori</th>
-        <th style="width:18%;">Barkod</th>
-        <th style="width:12%;">Fiyat</th>
-        <th style="width:8%;">Stok</th>
-        <th style="width:30%;">Beden Detayları</th>
-      `
-      : `
-        <th style="width:7%;">#</th>
-        <th style="width:39%;">Ürün Adı</th>
-        <th style="width:20%;">Kategori</th>
-        <th style="width:20%;">Barkod</th>
-        <th style="width:14%;">Fiyat</th>
-        <th style="width:10%;">Stok</th>
-      `;
-
-    const html = `
-      <!DOCTYPE html>
-      <html lang="tr">
-      <head>
-        <meta charset="UTF-8">
-        <title>Stok Envanteri</title>
-        <style>
-          @page {
-            size: A4 portrait;
-            margin: 8mm;
-          }
-          body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            color: #1f2937;
-            font-size: 10px;
-          }
-          h1 {
-            text-align: center;
-            font-size: 18px;
-            margin: 0 0 4px 0;
-            color: #111827;
-          }
-          .subtitle {
-            text-align: center;
-            font-size: 10px;
-            color: #6b7280;
-            margin-bottom: 10px;
-          }
-          .summary {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 6px;
-            margin-bottom: 10px;
-          }
-          .summary-item {
-            background: #f8fafc;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            padding: 6px 8px;
-            font-size: 10px;
-          }
-          .summary-item strong {
-            color: #2563eb;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed;
-          }
-          thead {
-            display: table-header-group;
-          }
-          tr {
-            page-break-inside: avoid;
-          }
-          th {
-            background-color: #2563eb;
-            color: white;
-            padding: 6px 5px;
-            text-align: left;
-            font-weight: bold;
-            font-size: 10px;
-            border: 1px solid #dbeafe;
-          }
-          td {
-            padding: 5px;
-            border: 1px solid #e5e7eb;
-            font-size: 9.5px;
-            vertical-align: top;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-          }
-          .center { text-align: center; }
-          .right { text-align: right; }
-          .stock-cell { font-weight: bold; }
-          .name-cell { font-weight: 600; }
-          .barcode-cell { font-size: 8.5px; }
-          .sizes-cell { font-size: 8.5px; line-height: 1.3; }
-        </style>
-      </head>
-      <body>
-        <h1>Öz Spor & Outdoor - Stok Envanteri</h1>
-        <div class="subtitle">Tarih: ${new Date().toLocaleDateString('tr-TR')} ${new Date().toLocaleTimeString('tr-TR')}</div>
-
-        <div class="summary">
-          <div class="summary-item">Toplam Ürün: <strong>${products.length}</strong></div>
-          <div class="summary-item">Toplam Kategori: <strong>${new Set(products.map(p => p.category)).size}</strong></div>
-          <div class="summary-item">Toplam Stok: <strong>${totalStock} adet</strong></div>
-          <div class="summary-item">Potansiyel Ciro: <strong>${totalRevenue.toFixed(2)} TL</strong></div>
-        </div>
-
-        <table>
-          <thead>
-            <tr>
-              ${colgroup}
-            </tr>
-          </thead>
-          <tbody>
-            ${tableRows}
-          </tbody>
-        </table>
-      </body>
-      </html>
-    `;
-
-    const options = {
-      format: 'A4',
-      orientation: 'portrait',
-      border: {
-        top: '6mm',
-        right: '6mm',
-        bottom: '6mm',
-        left: '6mm'
+      // Sayfa sonu kontrolü
+      if (y > 780) {
+        doc.addPage();
+        y = 40;
+        drawTableHeader(y);
+        y += rowHeight;
       }
-    };
 
-    htmlPdf.create(html, options).toStream((err, stream) => {
-      if (err) {
-        return res.status(500).json({ success: false, message: 'PDF oluşturma hatası: ' + err.message });
+      // Satır arka plan rengi
+      const bgColor = idx % 2 === 0 ? '#f8fafc' : '#ffffff';
+      doc.rect(30, y, 535, rowHeight).fillColor(bgColor).strokeColor('#e5e7eb').fillAndStroke();
+
+      doc.font('Roboto').fontSize(8).fillColor('#1f2937');
+      let currentX = 30;
+
+      // Sıra No
+      doc.text(idx.toString(), currentX, y + 6, { width: columns[0].width, align: 'center' });
+      currentX += columns[0].width;
+
+      // Ürün Adı
+      doc.font('Roboto-Bold').text(p.name || '', currentX + 5, y + 6, { width: columns[1].width - 10, height: 12, overflow: 'ellipses' });
+      doc.font('Roboto');
+      currentX += columns[1].width;
+
+      // Kategori
+      doc.text(p.category || '', currentX + 5, y + 6, { width: columns[2].width - 10, height: 12, overflow: 'ellipses' });
+      currentX += columns[2].width;
+
+      // Barkod
+      doc.text(p.barcode || '', currentX, y + 6, { width: columns[3].width, align: 'center' });
+      currentX += columns[3].width;
+
+      // Fiyat
+      doc.text(`${Number(p.price || 0).toFixed(2)} TL`, currentX, y + 6, { width: columns[4].width - 5, align: 'right' });
+      currentX += columns[4].width;
+
+      // Stok
+      let stockColor = '#10b981';
+      if (prodTotalStock === 0) stockColor = '#dc2626';
+      else if (prodTotalStock < 10) stockColor = '#f59e0b';
+      
+      doc.fillColor(stockColor).font('Roboto-Bold').text(prodTotalStock.toString(), currentX, y + 6, { width: columns[5].width, align: 'center' });
+      doc.fillColor('#1f2937').font('Roboto');
+      currentX += columns[5].width;
+
+      // Beden Detayları
+      if (includeStock) {
+        doc.fontSize(7.5).text(sizeDetails, currentX + 5, y + 6, { width: columns[6].width - 10, height: 12, overflow: 'ellipses' });
       }
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', 'attachment; filename="urunler.pdf"');
-      stream.pipe(res);
-    });
+
+      y += rowHeight;
+      idx++;
+    }
+
+    // Sayfa numaraları ekle
+    const range = doc.bufferedPageRange();
+    for (let i = range.start; i < range.start + range.count; i++) {
+      doc.switchToPage(i);
+      doc.font('Roboto').fontSize(8).fillColor('#9ca3af');
+      doc.text(`Sayfa ${i + 1} / ${range.count}`, 30, 810, { align: 'center' });
+    }
+
+    doc.end();
 
   } catch (error) {
     console.error('PDF hatası:', error);
