@@ -1,25 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const Iyzipay = require('iyzipay');
+const crypto = require('crypto');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 
-// iyzico API yapılandırması — lazy init (env yoksa uygulama çökmez)
-let iyzipay = null;
-
-function getIyzipay() {
-  if (iyzipay) return iyzipay;
-  const apiKey = process.env.IYZICO_API_KEY;
-  const secretKey = process.env.IYZICO_SECRET_KEY;
-  if (!apiKey || !secretKey) {
-    return null;
-  }
-  iyzipay = new Iyzipay({
-    apiKey: apiKey,
-    secretKey: secretKey,
-    uri: process.env.IYZICO_BASE_URL || 'https://sandbox-api.iyzipay.com'
-  });
-  return iyzipay;
+// PayTR API yapılandırması
+function getPaytrConfig() {
+  return {
+    merchantId: process.env.PAYTR_MERCHANT_ID || '123456',
+    merchantKey: process.env.PAYTR_MERCHANT_KEY || 'xxxxxx',
+    merchantSalt: process.env.PAYTR_MERCHANT_SALT || 'yyyyyy'
+  };
 }
 
 // GET route to render checkout page
@@ -58,7 +49,7 @@ router.get('/checkout/error', async (req, res) => {
   });
 });
 
-// POST route to initiate iyzico payment form
+// POST route to initiate PayTR payment
 router.post('/api/checkout/initiate', async (req, res) => {
   try {
     const {
@@ -75,11 +66,6 @@ router.post('/api/checkout/initiate', async (req, res) => {
     if (!customerName || !customerEmail || !customerPhone || !shippingAddress || !shippingCity || !shippingDistrict || !items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ success: false, message: 'Lütfen tüm alanları doldurun ve geçerli sepet ürünleri gönderin' });
     }
-
-    // Split customer name into Name and Surname
-    const nameParts = customerName.trim().split(' ');
-    const name = nameParts[0] || 'Müşteri';
-    const surname = nameParts.slice(1).join(' ') || 'Müşteri';
 
     let totalAmount = 0;
     const dbItems = [];
@@ -130,90 +116,92 @@ router.post('/api/checkout/initiate', async (req, res) => {
 
     await order.save();
 
-    // Prepare iyzico checkout form initialize payload
-    const callbackUrl = `${req.protocol}://${req.get('host')}/api/checkout/callback`;
-
-    // Map database order items to iyzico basket items
-    const basketItems = dbItems.map((item, idx) => {
-      return {
-        id: item.productId.toString() + '_' + item.size,
-        name: item.name + ' (' + item.size + ')',
-        category: 'Spor Giyim',
-        itemType: Iyzipay.BASKET_ITEM_TYPE.PHYSICAL,
-        price: (item.price * item.quantity).toFixed(2)
-      };
-    });
-
-    // Obtain client IP address
+    // Prepare PayTR token request
+    const paytrConfig = getPaytrConfig();
     const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
 
-    const request = {
-      locale: Iyzipay.LOCALE.TR,
-      conversationId: order._id.toString(),
-      price: totalAmount.toFixed(2),
-      paidPrice: totalAmount.toFixed(2),
-      currency: Iyzipay.CURRENCY.TRY,
-      basketId: order._id.toString(),
-      paymentGroup: Iyzipay.PAYMENT_GROUP.PRODUCT,
-      callbackUrl: callbackUrl,
-      enabledInstallments: [1, 2, 3, 6, 9],
-      buyer: {
-        id: order._id.toString(),
-        name: name,
-        surname: surname,
-        gsmNumber: customerPhone.startsWith('+') ? customerPhone : `+90${customerPhone.replace(/[^0-9]/g, '')}`,
-        email: customerEmail,
-        identityNumber: '11111111111', // Fake placeholder for sandbox compliance
-        lastLoginDate: '2026-01-01 00:00:00',
-        registrationDate: '2026-01-01 00:00:00',
-        registrationAddress: shippingAddress,
-        ip: clientIp,
-        city: shippingCity,
-        country: 'Turkey',
-        zipCode: shippingZip || '34000'
-      },
-      shippingAddress: {
-        contactName: customerName,
-        city: shippingCity,
-        country: 'Turkey',
-        address: shippingAddress,
-        zipCode: shippingZip || '34000'
-      },
-      billingAddress: {
-        contactName: customerName,
-        city: shippingCity,
-        country: 'Turkey',
-        address: shippingAddress,
-        zipCode: shippingZip || '34000'
-      },
-      basketItems: basketItems
+    // Map database order items to PayTR basket format
+    const basketData = dbItems.map(item => [
+      item.name + ' (' + item.size + ')',
+      item.price.toFixed(2),
+      item.quantity
+    ]);
+    const user_basket = Buffer.from(JSON.stringify(basketData)).toString('base64');
+
+    const merchant_oid = order._id.toString();
+    const payment_amount = Math.round(totalAmount * 100); // in kurus
+
+    const merchant_ok_url = `${req.protocol}://${req.get('host')}/checkout/success?id=${order._id}`;
+    const merchant_fail_url = `${req.protocol}://${req.get('host')}/checkout/error?msg=Odeme%20basarisiz.`;
+
+    const email = customerEmail;
+    const user_name = customerName;
+    const user_address = `${shippingAddress} ${shippingDistrict}/${shippingCity}`;
+    const user_phone = customerPhone;
+
+    const no_installment = 0; // Allow installments
+    const max_installment = 0; // Allow all installments
+    const currency = 'TL';
+    const test_mode = process.env.NODE_ENV === 'production' ? '0' : '1';
+    const timeout_limit = '30';
+    const debug_on = '1';
+
+    // Token calculation sequence:
+    // merchant_id + user_ip + merchant_oid + email + payment_amount + user_basket + no_installment + max_installment + currency + test_mode + merchant_salt
+    const hashStr = paytrConfig.merchantId + clientIp + merchant_oid + email + payment_amount + user_basket + no_installment + max_installment + currency + test_mode;
+    const paytr_token = crypto
+      .createHmac('sha256', paytrConfig.merchantKey)
+      .update(hashStr + paytrConfig.merchantSalt)
+      .digest('base64');
+
+    const paytrPayload = {
+      merchant_id: paytrConfig.merchantId,
+      user_ip: clientIp,
+      merchant_oid,
+      email,
+      payment_amount,
+      paytr_token,
+      user_basket,
+      merchant_ok_url,
+      merchant_fail_url,
+      user_name,
+      user_address,
+      user_phone,
+      currency,
+      test_mode,
+      no_installment,
+      max_installment,
+      timeout_limit,
+      debug_on
     };
 
-    // Initialize checkout form
-    const iyziClient = getIyzipay();
-    if (!iyziClient) {
-      return res.status(500).json({ success: false, message: 'Ödeme sistemi yapılandırılmamış. Lütfen yönetici ile iletişime geçin.' });
-    }
-    iyziClient.checkoutFormInitialize.create(request, async function (err, result) {
-      if (err || result.status !== 'success') {
-        console.error('iyzico Form Initialize Error:', err || result);
-        return res.status(500).json({
-          success: false,
-          message: 'Ödeme arayüzü başlatılamadı: ' + (result ? result.errorMessage : (err ? err.message : 'Bilinmeyen hata'))
-        });
-      }
+    const urlencoded = new URLSearchParams(paytrPayload).toString();
 
-      // Save token to the order
+    const response = await fetch('https://www.paytr.com/odeme/api/get-token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: urlencoded
+    });
+
+    const result = await response.json();
+
+    if (result.status === 'success') {
       order.paymentToken = result.token;
       await order.save();
 
       res.json({
         success: true,
-        token: result.token,
-        checkoutFormContent: result.checkoutFormContent,
-        paymentPageUrl: result.paymentPageUrl
+        token: result.token
       });
-    });
+    } else {
+      console.error('PayTR Token Request Failed:', result);
+      res.status(500).json({
+        success: false,
+        message: 'Ödeme arayüzü başlatılamadı: ' + (result.err_msg || 'Bilinmeyen hata')
+      });
+    }
 
   } catch (error) {
     console.error('Checkout initiate error:', error);
@@ -221,39 +209,39 @@ router.post('/api/checkout/initiate', async (req, res) => {
   }
 });
 
-// POST callback route called by iyzico checkout form redirect
+// POST callback route called by PayTR server
 router.post('/api/checkout/callback', async (req, res) => {
   try {
-    const { token } = req.body;
-    if (!token) {
-      return res.redirect('/checkout/error?msg=Ödeme doğrulama tokeni bulunamadı.');
+    const { merchant_oid, status, total_amount, hash } = req.body;
+
+    if (!merchant_oid || !status || !hash) {
+      return res.status(400).send('BAD REQUEST');
     }
 
-    // Retrieve checkout form payment result
-    const iyziClient = getIyzipay();
-    if (!iyziClient) {
-      return res.redirect('/checkout/error?msg=Ödeme sistemi yapılandırılmamış.');
+    const paytrConfig = getPaytrConfig();
+
+    // Hash verification: merchant_oid + merchant_salt + status + total_amount
+    const hashStr = merchant_oid + paytrConfig.merchantSalt + status + total_amount;
+    const calculatedHash = crypto
+      .createHmac('sha256', paytrConfig.merchantKey)
+      .update(hashStr)
+      .digest('base64');
+
+    if (calculatedHash !== hash) {
+      console.error('PayTR Callback Signature Mismatch');
+      return res.status(400).send('PAYTR notification failed: bad hash');
     }
-    iyziClient.checkoutForm.retrieve({
-      locale: Iyzipay.LOCALE.TR,
-      token: token
-    }, async function (err, result) {
-      if (err || result.status !== 'success') {
-        console.error('iyzico Result Retrieval Error:', err || result);
-        return res.redirect('/checkout/error?msg=Ödeme sonucu doğrulanamadı.');
-      }
 
-      const orderId = result.basketId;
-      const order = await Order.findById(orderId);
+    const order = await Order.findById(merchant_oid);
+    if (!order) {
+      console.error('PayTR Callback: Order not found:', merchant_oid);
+      return res.status(404).send('ORDER NOT FOUND');
+    }
 
-      if (!order) {
-        return res.redirect('/checkout/error?msg=Sipariş kaydı bulunamadı.');
-      }
-
-      if (result.paymentStatus === 'SUCCESS') {
-        // Payment success
+    if (status === 'success') {
+      if (order.paymentStatus !== 'paid') {
         order.paymentStatus = 'paid';
-        order.paymentId = result.paymentId;
+        order.paymentId = req.body.paymentId || 'PAYTR_' + merchant_oid;
         await order.save();
 
         // Update product stock counts
@@ -271,20 +259,18 @@ router.post('/api/checkout/callback', async (req, res) => {
             }
           }
         }
-
-        // Redirect to success page
-        res.redirect(`/checkout/success?id=${order._id}`);
-      } else {
-        // Payment failure
-        order.paymentStatus = 'failed';
-        await order.save();
-        res.redirect(`/checkout/error?msg=${encodeURIComponent(result.errorMessage || 'Ödeme reddedildi.')}`);
       }
-    });
+    } else {
+      order.paymentStatus = 'failed';
+      await order.save();
+    }
+
+    // Always respond with 'OK' as plain text to tell PayTR webhook was successfully processed
+    res.send('OK');
 
   } catch (error) {
     console.error('Payment callback error:', error);
-    res.redirect('/checkout/error?msg=Dönüş işlemi sırasında sunucu hatası oluştu.');
+    res.status(500).send('SERVER ERROR');
   }
 });
 

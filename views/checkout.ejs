@@ -414,25 +414,19 @@
         loaderText.style.display = 'none';
         paymentContainer.style.display = 'block';
 
-        // Render iyzico checkout form scripts
+        // Render PayTR iframe
         paymentContainer.innerHTML = `
-          <h2 class="checkout-title" style="border-bottom: 2px solid var(--accent);">🔒 Güvenli Kredi Kartı Ödemesi</h2>
-          ${result.checkoutFormContent}
+          <h2 class="checkout-title" style="border-bottom: 2px solid var(--accent); margin-bottom: 20px;">🔒 Güvenli Kredi Kartı Ödemesi</h2>
+          <iframe src="https://www.paytr.com/odeme/guvenli/${result.token}" id="paytriframe" frameborder="0" scrolling="no" style="width: 100%; min-height: 600px;"></iframe>
         `;
 
-        // Cart will be cleared on the success page, not here (payment not yet confirmed)
-
-        // Dynamically execute scripts inside the injected HTML
-        const scripts = paymentContainer.querySelectorAll('script');
-        scripts.forEach(script => {
-          const newScript = document.createElement('script');
-          if (script.src) {
-            newScript.src = script.src;
-          } else {
-            newScript.textContent = script.textContent;
-          }
-          document.body.appendChild(newScript);
-        });
+        // Dynamically load PayTR iframe resizer script to dynamically adjust iframe height
+        const iframeScript = document.createElement('script');
+        iframeScript.src = "https://www.paytr.com/js/iframeResizer.min.js";
+        document.body.appendChild(iframeScript);
+        iframeScript.onload = () => {
+          iFrameResize({}, '#paytriframe');
+        };
 
       } catch (err) {
         alert('İşlem başlatılırken sunucu hatası oluştu: ' + err.message);
