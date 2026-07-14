@@ -187,7 +187,7 @@
               '<input type="text" class="cargo-inp" id="provider-' + order._id + '" placeholder="Kargo Firması" value="' + cargoProvider + '"><br>' +
               '<input type="text" class="cargo-inp" id="tracking-' + order._id + '" style="margin-top:4px;" placeholder="Takip No" value="' + cargoTrackingNo + '">' +
             '</td>' +
-            '<td><button class="save-btn" onclick="saveCargoDetails(\'' + order._id + '\')">Kaydet</button></td>' +
+            '<td><button class="save-btn" onclick="saveCargoDetails(\\\'' + order._id + '\\\')">Kaydet</button></td>' +
             '</tr>';
         }).join('');
 

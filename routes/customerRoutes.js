@@ -151,7 +151,7 @@ router.get('/account', isCustomerAuth, async (req, res) => {
     }
 
     const Order = require('../models/Order');
-    const orders = await Order.find({ customerEmail: customer.email }).sort({ createdAt: -1 });
+    const orders = await Order.find({ customerEmail: customer.email, paymentStatus: 'paid' }).sort({ createdAt: -1 });
 
     res.render('customer-account', { title: 'Hesabım', customer, orders });
   } catch (err) {
