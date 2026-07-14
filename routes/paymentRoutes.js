@@ -15,7 +15,27 @@ function getPaytrConfig() {
 
 // GET route to render checkout page
 router.get('/checkout', async (req, res) => {
-  res.render('checkout', { title: 'Güvenli Ödeme' });
+  if (!req.session || !req.session.customerId) {
+    return res.redirect('/account/login?redirect=checkout');
+  }
+
+  try {
+    const Customer = require('../models/Customer');
+    const customer = await Customer.findById(req.session.customerId);
+    if (!customer) {
+      req.session.customerId = null;
+      req.session.customerName = null;
+      return res.redirect('/account/login?redirect=checkout');
+    }
+    
+    res.render('checkout', { 
+      title: 'Güvenli Ödeme',
+      customer
+    });
+  } catch (err) {
+    console.error('Checkout page load error:', err);
+    res.redirect('/');
+  }
 });
 
 // GET route for success page

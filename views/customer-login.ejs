@@ -104,6 +104,7 @@
 
     <!-- LOGIN FORM -->
     <form class="auth-form <%= tab === 'login' ? 'active' : '' %>" id="loginForm" method="POST" action="/account/login">
+      <input type="hidden" name="redirect" value="<%= redirect %>">
       <div class="form-group">
         <label>E-posta</label>
         <input type="email" name="email" placeholder="ornek@mail.com" required>
@@ -117,6 +118,7 @@
 
     <!-- REGISTER FORM -->
     <form class="auth-form <%= tab === 'register' ? 'active' : '' %>" id="registerForm" method="POST" action="/account/register">
+      <input type="hidden" name="redirect" value="<%= redirect %>">
       <div class="form-row">
         <div class="form-group">
           <label>Ad</label>

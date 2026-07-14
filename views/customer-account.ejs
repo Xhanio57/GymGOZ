@@ -143,6 +143,63 @@
       </div>
     <% } %>
   </div>
+
+  <div class="acc-section">
+    <div class="acc-section-title">📍 Teslimat ve Adres Bilgilerim</div>
+
+    <div class="address-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 30px;">
+      <% if (customer.addresses && customer.addresses.length > 0) { %>
+        <% customer.addresses.forEach(function(addr, idx) { %>
+          <div class="address-card" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px; position: relative;">
+            <h3 style="font-size: 15px; color: var(--accent); margin-bottom: 8px;"><%= addr.title %></h3>
+            <p style="font-size: 13px; color: #ccc; line-height: 1.5; margin-bottom: 12px;"><%= addr.fullAddress %></p>
+            <p style="font-size: 12px; color: var(--gray-400); font-weight: 600;"><%= addr.district %> / <%= addr.city %> <% if (addr.zipCode) { %>— <%= addr.zipCode %><% } %></p>
+            
+            <form action="/account/address/<%= idx %>/delete" method="POST" style="position: absolute; top: 15px; right: 15px;">
+              <button type="submit" style="background: none; border: none; color: #ff4d4d; font-size: 11px; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;">Sil</button>
+            </form>
+          </div>
+        <% }); %>
+      <% } else { %>
+        <div class="no-orders" style="grid-column: 1/-1; text-align: left; padding: 10px 0;">Kayıtlı adresiniz bulunmuyor. Lütfen aşağıdaki formdan yeni bir adres ekleyin.</div>
+      <% } %>
+    </div>
+
+    <div class="add-address-box" style="background: rgba(255,255,255,0.02); border: 1px solid #222; border-radius: 12px; padding: 24px;">
+      <h3 style="font-size: 14px; font-weight: 700; text-transform: uppercase; color: var(--white); margin-bottom: 20px; letter-spacing: 1px;">➕ Yeni Adres Ekle</h3>
+      
+      <form action="/account/address" method="POST">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+          <div>
+            <label style="display: block; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--gray-400); margin-bottom: 6px;">Adres Başlığı</label>
+            <input type="text" name="title" placeholder="Örn: Evim, İş Yerim" required style="width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: white; font-family: inherit; font-size: 13px;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--gray-400); margin-bottom: 6px;">Posta Kodu</label>
+            <input type="text" name="zipCode" placeholder="Örn: 34000" style="width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: white; font-family: inherit; font-size: 13px;">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+          <div>
+            <label style="display: block; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--gray-400); margin-bottom: 6px;">İlçe</label>
+            <input type="text" name="district" placeholder="İlçe" required style="width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: white; font-family: inherit; font-size: 13px;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--gray-400); margin-bottom: 6px;">Şehir</label>
+            <input type="text" name="city" placeholder="Şehir" required style="width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: white; font-family: inherit; font-size: 13px;">
+          </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--gray-400); margin-bottom: 6px;">Açık Adres</label>
+          <textarea name="fullAddress" placeholder="Sokak, mahalle, bina no, daire no vb. açık adresiniz..." required style="width: 100%; height: 80px; padding: 10px 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: white; font-family: inherit; font-size: 13px; resize: none;"></textarea>
+        </div>
+
+        <button type="submit" style="padding: 10px 24px; background: var(--accent); color: var(--black); border: none; border-radius: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; cursor: pointer;">Kaydet</button>
+      </form>
+    </div>
+  </div>
 </div>
 
 </body>

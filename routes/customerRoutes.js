@@ -10,34 +10,37 @@ function isCustomerAuth(req, res, next) {
 
 // GET — Giriş sayfası
 router.get('/account/login', (req, res) => {
-  if (req.session && req.session.customerId) return res.redirect('/account');
-  res.render('customer-login', { title: 'Giriş Yap', error: null, success: null, tab: 'login' });
+  const redirect = req.query.redirect || '';
+  if (req.session && req.session.customerId) return res.redirect(redirect || '/account');
+  res.render('customer-login', { title: 'Giriş Yap', error: null, success: null, tab: 'login', redirect });
 });
 
 // GET — Kayıt sayfası
 router.get('/account/register', (req, res) => {
-  if (req.session && req.session.customerId) return res.redirect('/account');
-  res.render('customer-login', { title: 'Üye Ol', error: null, success: null, tab: 'register' });
+  const redirect = req.query.redirect || '';
+  if (req.session && req.session.customerId) return res.redirect(redirect || '/account');
+  res.render('customer-login', { title: 'Üye Ol', error: null, success: null, tab: 'register', redirect });
 });
 
 // POST — Kayıt işlemi
 router.post('/account/register', async (req, res) => {
+  const redirect = req.body.redirect || '';
   try {
     const { firstName, lastName, email, phone, password, passwordConfirm } = req.body;
 
     if (!firstName || !lastName || !email || !password) {
-      return res.render('customer-login', { title: 'Üye Ol', error: 'Tüm zorunlu alanları doldurun.', success: null, tab: 'register' });
+      return res.render('customer-login', { title: 'Üye Ol', error: 'Tüm zorunlu alanları doldurun.', success: null, tab: 'register', redirect });
     }
     if (password.length < 6) {
-      return res.render('customer-login', { title: 'Üye Ol', error: 'Şifre en az 6 karakter olmalıdır.', success: null, tab: 'register' });
+      return res.render('customer-login', { title: 'Üye Ol', error: 'Şifre en az 6 karakter olmalıdır.', success: null, tab: 'register', redirect });
     }
     if (password !== passwordConfirm) {
-      return res.render('customer-login', { title: 'Üye Ol', error: 'Şifreler eşleşmiyor.', success: null, tab: 'register' });
+      return res.render('customer-login', { title: 'Üye Ol', error: 'Şifreler eşleşmiyor.', success: null, tab: 'register', redirect });
     }
 
     const existing = await Customer.findOne({ email: email.toLowerCase().trim() });
     if (existing) {
-      return res.render('customer-login', { title: 'Üye Ol', error: 'Bu e-posta adresi zaten kayıtlı.', success: null, tab: 'register' });
+      return res.render('customer-login', { title: 'Üye Ol', error: 'Bu e-posta adresi zaten kayıtlı.', success: null, tab: 'register', redirect });
     }
 
     const customer = new Customer({
@@ -53,39 +56,87 @@ router.post('/account/register', async (req, res) => {
       title: 'Giriş Yap',
       error: null,
       success: 'Hesabınız oluşturuldu! Şimdi giriş yapabilirsiniz.',
-      tab: 'login'
+      tab: 'login',
+      redirect
     });
   } catch (err) {
     console.error('Register error:', err);
-    return res.render('customer-login', { title: 'Üye Ol', error: 'Kayıt sırasında bir hata oluştu.', success: null, tab: 'register' });
+    return res.render('customer-login', { title: 'Üye Ol', error: 'Kayıt sırasında bir hata oluştu.', success: null, tab: 'register', redirect });
   }
 });
 
 // POST — Giriş işlemi
 router.post('/account/login', async (req, res) => {
+  const redirect = req.body.redirect || '';
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.render('customer-login', { title: 'Giriş Yap', error: 'E-posta ve şifre gerekli.', success: null, tab: 'login' });
+      return res.render('customer-login', { title: 'Giriş Yap', error: 'E-posta ve şifre gerekli.', success: null, tab: 'login', redirect });
     }
 
     const customer = await Customer.findOne({ email: email.toLowerCase().trim(), isActive: true });
     if (!customer) {
-      return res.render('customer-login', { title: 'Giriş Yap', error: 'E-posta veya şifre hatalı.', success: null, tab: 'login' });
+      return res.render('customer-login', { title: 'Giriş Yap', error: 'E-posta veya şifre hatalı.', success: null, tab: 'login', redirect });
     }
 
     const isMatch = await customer.comparePassword(password);
     if (!isMatch) {
-      return res.render('customer-login', { title: 'Giriş Yap', error: 'E-posta veya şifre hatalı.', success: null, tab: 'login' });
+      return res.render('customer-login', { title: 'Giriş Yap', error: 'E-posta veya şifre hatalı.', success: null, tab: 'login', redirect });
     }
 
     req.session.customerId = customer._id;
     req.session.customerName = customer.firstName + ' ' + customer.lastName;
-    return res.redirect('/account');
+    return res.redirect(redirect || '/account');
   } catch (err) {
     console.error('Login error:', err);
-    return res.render('customer-login', { title: 'Giriş Yap', error: 'Giriş sırasında bir hata oluştu.', success: null, tab: 'login' });
+    return res.render('customer-login', { title: 'Giriş Yap', error: 'Giriş sırasında bir hata oluştu.', success: null, tab: 'login', redirect });
+  }
+});
+
+// POST — Adres Ekleme
+router.post('/account/address', isCustomerAuth, async (req, res) => {
+  try {
+    const { title, fullAddress, city, district, zipCode } = req.body;
+    if (!fullAddress || !city || !district) {
+      return res.redirect('/account');
+    }
+
+    const customer = await Customer.findById(req.session.customerId);
+    if (!customer) return res.redirect('/account/login');
+
+    customer.addresses.push({
+      title: title || 'Ev',
+      fullAddress,
+      city,
+      district,
+      zipCode: zipCode || ''
+    });
+
+    await customer.save();
+    res.redirect('/account');
+  } catch (err) {
+    console.error('Add address error:', err);
+    res.redirect('/account');
+  }
+});
+
+// POST — Adres Silme
+router.post('/account/address/:index/delete', isCustomerAuth, async (req, res) => {
+  try {
+    const index = parseInt(req.params.index);
+    const customer = await Customer.findById(req.session.customerId);
+    if (!customer) return res.redirect('/account/login');
+
+    if (index >= 0 && index < customer.addresses.length) {
+      customer.addresses.splice(index, 1);
+      await customer.save();
+    }
+
+    res.redirect('/account');
+  } catch (err) {
+    console.error('Delete address error:', err);
+    res.redirect('/account');
   }
 });
 
