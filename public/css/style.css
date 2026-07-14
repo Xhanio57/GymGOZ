@@ -1058,7 +1058,9 @@ body {
 .discount-box,
 .item,
 .size-btn,
-.card {
+.card,
+.category-item,
+.brand-item {
   background: var(--adm-surface) !important;
   color: var(--adm-text) !important;
   border-color: var(--adm-border) !important;
@@ -1071,7 +1073,9 @@ body {
 .discount-box,
 .card,
 .pos-container .left,
-.pos-container .right {
+.pos-container .right,
+.category-item,
+.brand-item {
   background: var(--adm-surface2) !important;
   border: 1px solid var(--adm-border) !important;
 }

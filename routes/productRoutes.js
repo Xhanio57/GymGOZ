@@ -324,6 +324,49 @@ router.put('/api/products/:id', upload.single('imageFile'), async (req, res) => 
       updateData.image = image || '/images/default-product.png';
     }
 
+    const oldProduct = await Product.findById(req.params.id);
+    if (!oldProduct) {
+      return res.status(404).json({ success: false, message: 'Ürün bulunamadı' });
+    }
+
+    // Kategori/alt kategori veya beden seçimleri değiştiyse beden listesini güncelle
+    if (req.body.sizes) {
+      try {
+        const sizesArray = JSON.parse(req.body.sizes);
+        if (Array.isArray(sizesArray)) {
+          const currentSizeStockMap = {};
+          (oldProduct.sizeStock || []).forEach(s => {
+            currentSizeStockMap[s.size] = s.stock;
+          });
+
+          updateData.sizeStock = sizesArray.map(size => ({
+            size,
+            stock: currentSizeStockMap[size] !== undefined ? currentSizeStockMap[size] : 0
+          }));
+        }
+      } catch (e) {
+        console.error('Beden listesi ayrıştırılamadı:', e);
+      }
+    } else if (oldProduct.category !== category || oldProduct.subcat !== subcat) {
+      const Category = require('../models/Category');
+      const catDoc = await Category.findOne({ name: category });
+      let newSizes = ['Tek Boyut'];
+      if (catDoc) {
+        newSizes = catDoc.sizes || ['Tek Boyut'];
+        if (subcat && catDoc.subcategories) {
+          const sub = catDoc.subcategories.find(s => s.slug === subcat);
+          if (sub && sub.sizes && sub.sizes.length > 0) {
+            newSizes = sub.sizes;
+          }
+        }
+      }
+      
+      updateData.sizeStock = newSizes.map(size => ({
+        size,
+        stock: 0
+      }));
+    }
+
     const product = await Product.findByIdAndUpdate(
       req.params.id,
       updateData,
@@ -1327,7 +1370,7 @@ router.delete('/api/categories/:id', async (req, res) => {
 
 router.post('/api/categories/:id/subcategories', async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, sizes } = req.body;
     if (!name) {
       return res.status(400).json({ success: false, message: 'Alt kategori adı zorunludur' });
     }
@@ -1351,11 +1394,63 @@ router.post('/api/categories/:id/subcategories', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Bu alt kategori zaten mevcut' });
     }
 
-    category.subcategories.push({ name, slug });
+    let parsedSizes = ['Tek Boyut'];
+    if (sizes && sizes.trim()) {
+      parsedSizes = sizes.split(',').map(s => s.trim()).filter(Boolean);
+    }
+
+    category.subcategories.push({ name, slug, sizes: parsedSizes });
     await category.save();
     res.status(201).json({ success: true, message: 'Alt kategori başarıyla eklendi', category });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Alt kategori eklenemedi: ' + error.message });
+  }
+});
+
+router.put('/api/categories/:id/sizes', async (req, res) => {
+  try {
+    const { sizes } = req.body;
+    const category = await Category.findById(req.params.id);
+    if (!category) {
+      return res.status(404).json({ success: false, message: 'Kategori bulunamadı' });
+    }
+
+    let parsedSizes = ['Tek Boyut'];
+    if (sizes && sizes.trim()) {
+      parsedSizes = sizes.split(',').map(s => s.trim()).filter(Boolean);
+    }
+
+    category.sizes = parsedSizes;
+    await category.save();
+    res.json({ success: true, message: 'Kategori bedenleri başarıyla güncellendi', category });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Bedenler güncellenemedi: ' + error.message });
+  }
+});
+
+router.put('/api/categories/:id/subcategories/:subId/sizes', async (req, res) => {
+  try {
+    const { sizes } = req.body;
+    const category = await Category.findById(req.params.id);
+    if (!category) {
+      return res.status(404).json({ success: false, message: 'Kategori bulunamadı' });
+    }
+
+    const subcategory = category.subcategories.id(req.params.subId);
+    if (!subcategory) {
+      return res.status(404).json({ success: false, message: 'Alt kategori bulunamadı' });
+    }
+
+    let parsedSizes = ['Tek Boyut'];
+    if (sizes && sizes.trim()) {
+      parsedSizes = sizes.split(',').map(s => s.trim()).filter(Boolean);
+    }
+
+    subcategory.sizes = parsedSizes;
+    await category.save();
+    res.json({ success: true, message: 'Alt kategori bedenleri başarıyla güncellendi', category });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Alt kategori bedenleri güncellenemedi: ' + error.message });
   }
 });
 
@@ -1410,6 +1505,21 @@ router.post('/api/brands', async (req, res) => {
     res.status(201).json({ success: true, message: 'Marka başarıyla oluşturuldu', brand: newBrand });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Marka oluşturulamadı: ' + error.message });
+  }
+});
+
+router.put('/api/brands/:id/visibility', async (req, res) => {
+  try {
+    const { isVisible } = req.body;
+    const brand = await Brand.findById(req.params.id);
+    if (!brand) {
+      return res.status(404).json({ success: false, message: 'Marka bulunamadı' });
+    }
+    brand.isVisible = isVisible;
+    await brand.save();
+    res.json({ success: true, message: 'Marka görünürlüğü güncellendi', brand });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Marka görünürlüğü güncellenemedi: ' + error.message });
   }
 });
 

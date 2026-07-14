@@ -54,14 +54,17 @@
 
   <style>
     .settings-container {
-      background: white;
+      background: var(--adm-surface, #141418);
       padding: 30px;
       border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      color: var(--adm-text, #f0f0ec);
     }
     .settings-container h2 {
       margin-bottom: 25px;
-      color: #1e3a8a;
+      color: var(--adm-accent, #d4ff00);
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: 2px;
+      font-size: 32px;
     }
     .settings-grid {
       display: grid;
@@ -69,20 +72,24 @@
       gap: 30px;
     }
     .settings-card {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
+      background: var(--adm-surface2, #1c1c22);
+      border: 1px solid var(--adm-border, #2a2a32);
       border-radius: 8px;
       padding: 20px;
+      color: var(--adm-text, #f0f0ec);
     }
     .settings-card h3 {
       margin-top: 0;
-      color: #334155;
+      color: var(--adm-accent, #d4ff00);
       margin-bottom: 15px;
-      border-bottom: 2px solid #cbd5e1;
+      border-bottom: 2px solid var(--adm-border, #2a2a32);
       padding-bottom: 8px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px;
+      letter-spacing: 1px;
     }
     .settings-card h4 {
-      color: #475569;
+      color: var(--adm-text, #f0f0ec);
       margin-bottom: 12px;
     }
     .settings-form {
@@ -95,16 +102,18 @@
       display: block;
       font-weight: 600;
       margin-bottom: 6px;
-      color: #374151;
+      color: var(--adm-muted, #888884);
       font-size: 13px;
     }
     .form-group input {
       width: 100%;
       padding: 8px 12px;
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--adm-border, #2a2a32);
       border-radius: 6px;
       font-size: 14px;
       box-sizing: border-box;
+      background: var(--adm-bg, #0d0d0f);
+      color: var(--adm-text, #f0f0ec);
     }
     .w-100 {
       width: 100%;
@@ -115,10 +124,11 @@
       gap: 15px;
     }
     .category-item, .brand-item {
-      background: white;
-      border: 1px solid #e2e8f0;
+      background: var(--adm-surface, #141418);
+      border: 1px solid var(--adm-border, #2a2a32);
       border-radius: 6px;
       padding: 12px;
+      color: var(--adm-text, #f0f0ec);
     }
     .item-header {
       display: flex;
@@ -131,11 +141,11 @@
     }
     .item-title {
       font-weight: bold;
-      color: #1e293b;
+      color: var(--adm-text, #f0f0ec);
       font-size: 15px;
     }
     .btn-delete-small {
-      background: #ef4444;
+      background: var(--adm-danger, #ff4d4d);
       color: white;
       border: none;
       padding: 4px 8px;
@@ -144,18 +154,19 @@
       cursor: pointer;
     }
     .btn-delete-small:hover {
-      background: #dc2626;
+      opacity: 0.9;
     }
     .item-details {
       font-size: 12px;
-      color: #64748b;
+      color: var(--adm-text, #f0f0ec);
       margin-bottom: 8px;
-      background: #f1f5f9;
+      background: var(--adm-surface2, #1c1c22);
       padding: 6px;
       border-radius: 4px;
+      border: 1px solid var(--adm-border, #2a2a32);
     }
     .subcategories-section {
-      border-top: 1px dashed #e2e8f0;
+      border-top: 1px dashed var(--adm-border, #2a2a32);
       padding-top: 8px;
       margin-top: 8px;
     }
@@ -166,8 +177,8 @@
       margin-bottom: 8px;
     }
     .subcategory-tag {
-      background: #e0f2fe;
-      color: #0369a1;
+      background: var(--adm-surface2, #1c1c22);
+      color: var(--adm-text, #f0f0ec);
       padding: 3px 8px;
       border-radius: 4px;
       font-size: 11px;
@@ -175,11 +186,12 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      border: 1px solid var(--adm-border, #2a2a32);
     }
     .btn-remove-sub {
       background: none;
       border: none;
-      color: #ef4444;
+      color: var(--adm-danger, #ff4d4d);
       cursor: pointer;
       font-weight: bold;
       padding: 0;
@@ -192,13 +204,16 @@
     .subcategory-add-form input {
       flex: 1;
       padding: 4px 8px;
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--adm-border, #2a2a32);
       border-radius: 4px;
       font-size: 12px;
+      background: var(--adm-bg, #0d0d0f);
+      color: var(--adm-text, #f0f0ec);
     }
     .btn-add-sub {
-      background: #10b981;
-      color: white;
+      background: var(--adm-accent, #d4ff00);
+      color: #0d0d0f;
+      font-weight: 600;
       border: none;
       padding: 4px 8px;
       border-radius: 4px;
@@ -206,7 +221,7 @@
       cursor: pointer;
     }
     .btn-add-sub:hover {
-      background: #059669;
+      background: #c8f000;
     }
     @media (max-width: 992px) {
       .settings-grid {
@@ -228,31 +243,38 @@
         const container = document.getElementById('categoriesList');
         
         container.innerHTML = categories.map(cat => {
-          const sizesText = cat.sizes && cat.sizes.length > 0 ? cat.sizes.join(', ') : 'Belirtilmemiş';
-          
-          const subTags = (cat.subcategories || []).map(sub => 
-            '<span class="subcategory-tag">' +
-              sub.name +
-              '<button onclick="deleteSubcategory(\\\'' + cat._id + '\\\', \\\'' + sub._id + '\\\')" class="btn-remove-sub" title="Alt Kategoriyi Sil">×</button>' +
-            '</span>'
-          ).join('');
+          const subRows = (cat.subcategories || []).map(sub => {
+            const subSizesVal = (sub.sizes || []).join(', ');
+            return '<div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; background:rgba(255,255,255,0.03); padding:6px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">' +
+              '<span style="font-weight:600; font-size:12px; color:var(--adm-text, #333); width:100px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + sub.name + '</span>' +
+              '<input type="text" id="subSizesInput_' + cat._id + '_' + sub._id + '" value="' + subSizesVal + '" placeholder="Bedenler (örn: S, M, L)" style="flex:1; padding:4px 8px; font-size:11px; border:1px solid var(--adm-border, #cbd5e1); border-radius:4px; box-sizing:border-box; background:rgba(0,0,0,0.2); color:inherit;">' +
+              '<button onclick="updateSubcategorySizes(\\\'' + cat._id + '\\\', \\\'' + sub._id + '\\\')" class="btn-add-sub" style="padding:4px 8px; font-size:11px; background:#2563eb; color:white; border-radius:4px; border:none; cursor:pointer;">Güncelle</button>' +
+              '<button onclick="deleteSubcategory(\\\'' + cat._id + '\\\', \\\'' + sub._id + '\\\')" class="btn-remove-sub" style="font-size:14px; padding:0 4px; color:#ef4444; border:none; background:none; cursor:pointer;" title="Alt Kategoriyi Sil">×</button>' +
+            '</div>';
+          }).join('');
 
           return '<div class="category-item">' +
               '<div class="item-header">' +
                 '<span class="item-title">' + cat.name + '</span>' +
                 '<button onclick="deleteCategory(\\\'' + cat._id + '\\\')" class="btn-delete-small">🗑️ Sil</button>' +
               '</div>' +
-              '<div class="item-details">' +
-                '<strong>Bedenler:</strong> ' + sizesText +
+              '<div class="item-details" style="display:flex; align-items:center; gap:8px; margin-bottom:12px; border-bottom:1px dashed var(--adm-border, #cbd5e1); padding-bottom:12px;">' +
+                '<strong style="font-size:12px; color:var(--adm-text, #374151); min-width:60px;">Bedenler:</strong>' +
+                '<input type="text" id="catSizesInput_' + cat._id + '" value="' + (cat.sizes || []).join(', ') + '" style="flex:1; padding:4px 8px; font-size:11px; border:1px solid var(--adm-border, #cbd5e1); border-radius:4px; background:rgba(0,0,0,0.2); color:inherit;">' +
+                '<button onclick="updateCategorySizes(\\\'' + cat._id + '\\\')" class="btn-add-sub" style="padding:4px 8px; font-size:11px; background:#2563eb; color:white; border-radius:4px; border:none; cursor:pointer;">Güncelle</button>' +
               '</div>' +
               '<div class="subcategories-section">' +
-                '<div style="font-size: 12px; font-weight: bold; margin-bottom: 6px; color: #475569;">Alt Kategoriler:</div>' +
-                '<div class="subcategories-list">' +
-                  (subTags || '<span style="font-size:11px; color:#94a3b8; font-style:italic;">Alt kategori eklenmemiş</span>') +
+                '<div style="font-size: 12px; font-weight: bold; margin-bottom: 8px; color: var(--adm-text, #475569);">Alt Kategoriler:</div>' +
+                '<div class="subcategories-list-wrapper" style="margin-bottom:8px;">' +
+                  (subRows || '<span style="font-size:11px; color:#94a3b8; font-style:italic; display:block; margin-bottom:8px;">Alt kategori eklenmemiş</span>') +
                 '</div>' +
-                '<div class="subcategory-add-form">' +
-                  '<input type="text" id="subInput_' + cat._id + '" placeholder="Yeni Alt Kategori Adı" required>' +
-                  '<button onclick="addSubcategory(\\\'' + cat._id + '\\\')" class="btn-add-sub">Ekle</button>' +
+                '<div class="subcategory-add-form" style="display:flex; flex-direction:column; gap:6px; margin-top:10px; border-top:1px dashed var(--adm-border, #cbd5e1); padding-top:10px;">' +
+                  '<div style="font-size: 11px; font-weight: bold; color: var(--adm-text, #475569);">Yeni Alt Kategori Ekle:</div>' +
+                  '<div style="display:flex; gap:6px;">' +
+                    '<input type="text" id="subInput_' + cat._id + '" placeholder="Alt Kategori Adı" required style="flex:1; padding:4px 8px; font-size:12px; border:1px solid var(--adm-border, #cbd5e1); border-radius:4px; background:rgba(0,0,0,0.2); color:inherit;">' +
+                    '<input type="text" id="subSizesAdd_' + cat._id + '" placeholder="Bedenler (örn: S,M,L) (opsiyonel)" style="flex:1; padding:4px 8px; font-size:12px; border:1px solid var(--adm-border, #cbd5e1); border-radius:4px; background:rgba(0,0,0,0.2); color:inherit;">' +
+                    '<button onclick="addSubcategory(\\\'' + cat._id + '\\\')" class="btn-add-sub" style="padding:4px 10px; font-size:12px; background:#10b981; color:white; border:none; border-radius:4px; cursor:pointer;">Ekle</button>' +
+                  '</div>' +
                 '</div>' +
               '</div>' +
             '</div>';
@@ -268,14 +290,21 @@
         const brands = await response.json();
         const container = document.getElementById('brandsList');
         
-        container.innerHTML = brands.map(brand => 
-          '<div class="brand-item">' +
+        container.innerHTML = brands.map(brand => {
+          const isVisible = brand.isVisible !== false; // default true
+          const visibilityBtnText = isVisible ? '👁️ Açık' : '🙈 Gizli';
+          const visibilityBtnColor = isVisible ? 'rgba(34,197,94,0.2)' : 'rgba(245,158,11,0.2)';
+          const visibilityTxtColor = isVisible ? 'var(--adm-success, #22c55e)' : 'var(--adm-warning, #f59e0b)';
+          return '<div class="brand-item">' +
             '<div class="item-header">' +
               '<span class="item-title">' + brand.name + '</span>' +
-              '<button onclick="deleteBrand(\\\'' + brand._id + '\\\')" class="btn-delete-small">🗑️ Sil</button>' +
+              '<div style="display:flex; gap:6px;">' +
+                '<button onclick="toggleBrandVisibility(\\\'' + brand._id + '\\\', ' + !isVisible + ')" class="btn-add-sub" style="padding:4px 8px; font-size:11px; background:' + visibilityBtnColor + '; color:' + visibilityTxtColor + '; border-radius:4px; font-weight:600; border:1px solid ' + visibilityTxtColor + '; cursor:pointer;">' + visibilityBtnText + '</button>' +
+                '<button onclick="deleteBrand(\\\'' + brand._id + '\\\')" class="btn-delete-small">🗑️ Sil</button>' +
+              '</div>' +
             '</div>' +
-          '</div>'
-        ).join('');
+          '</div>';
+        }).join('');
       } catch (err) {
         console.error('Markalar yüklenemedi:', err);
       }
@@ -322,10 +351,56 @@
       }
     }
 
+    // Category Sizes Update
+    async function updateCategorySizes(catId) {
+      const input = document.getElementById('catSizesInput_' + catId);
+      const sizes = input.value.trim();
+      try {
+        const res = await fetch('/api/categories/' + catId + '/sizes', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sizes })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          alert('✅ Kategori bedenleri başarıyla güncellendi.');
+          loadCategories();
+        } else {
+          alert('Hata: ' + data.message);
+        }
+      } catch (err) {
+        alert('Güncelleme başarısız');
+      }
+    }
+
+    // Subcategory Sizes Update
+    async function updateSubcategorySizes(catId, subId) {
+      const input = document.getElementById('subSizesInput_' + catId + '_' + subId);
+      const sizes = input.value.trim();
+      try {
+        const res = await fetch('/api/categories/' + catId + '/subcategories/' + subId + '/sizes', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sizes })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          alert('✅ Alt kategori bedenleri başarıyla güncellendi.');
+          loadCategories();
+        } else {
+          alert('Hata: ' + data.message);
+        }
+      } catch (err) {
+        alert('Güncelleme başarısız');
+      }
+    }
+
     // Subcategory Add
     async function addSubcategory(catId) {
       const input = document.getElementById('subInput_' + catId);
+      const sizesInput = document.getElementById('subSizesAdd_' + catId);
       const name = input.value.trim();
+      const sizes = sizesInput.value.trim();
       if (!name) {
         alert('Lütfen bir alt kategori adı girin');
         return;
@@ -334,11 +409,12 @@
         const res = await fetch('/api/categories/' + catId + '/subcategories', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name })
+          body: JSON.stringify({ name, sizes })
         });
         const data = await res.json();
         if (res.ok) {
           input.value = '';
+          sizesInput.value = '';
           loadCategories();
         } else {
           alert('Hata: ' + data.message);
@@ -386,6 +462,25 @@
         alert('İşlem başarısız');
       }
     });
+
+    // Brand Visibility Toggle
+    async function toggleBrandVisibility(id, isVisible) {
+      try {
+        const res = await fetch('/api/brands/' + id + '/visibility', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isVisible })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          loadBrands();
+        } else {
+          alert('Hata: ' + data.message);
+        }
+      } catch (err) {
+        alert('İşlem başarısız');
+      }
+    }
 
     // Brand Delete
     async function deleteBrand(id) {

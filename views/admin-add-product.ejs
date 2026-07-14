@@ -151,31 +151,47 @@
       }
     }
 
-    function renderSizes(categoryName) {
+    function renderSizes(categoryName, subcatSlug) {
       const wrapper = document.getElementById('sizeWrapper');
       const container = document.getElementById('sizeContainer');
       container.innerHTML = '';
 
       const category = categoriesList.find(c => c.name === categoryName);
-      if (!category || !category.sizes || category.sizes.length === 0) {
+      if (!category) {
+        wrapper.style.display = 'none';
+        return;
+      }
+
+      // Determine active sizes (subcat sizes or category sizes)
+      let activeSizes = category.sizes || [];
+      if (subcatSlug && category.subcategories) {
+        const sub = category.subcategories.find(s => s.slug === subcatSlug);
+        if (sub && sub.sizes && sub.sizes.length > 0) {
+          activeSizes = sub.sizes;
+        }
+      }
+
+      if (activeSizes.length === 0) {
         wrapper.style.display = 'none';
         return;
       }
 
       wrapper.style.display = 'block';
 
-      // Update subcategories select dropdown dynamically
-      const subcatSelect = document.getElementById('subcat');
-      if (category.subcategories && category.subcategories.length > 0) {
-        subcatSelect.innerHTML = '<option value="">Vitrin Alt Kategorisi Seç (Opsiyonel)</option>' +
-          category.subcategories.map(function(sub) {
-            return '<option value="' + sub.slug + '">' + sub.name + '</option>';
-          }).join('');
-      } else {
-        subcatSelect.innerHTML = '<option value="">Alt Kategori Yok</option>';
+      // Update subcategories select dropdown dynamically ONLY if subcatSlug is not passed
+      if (subcatSlug === undefined) {
+        const subcatSelect = document.getElementById('subcat');
+        if (category.subcategories && category.subcategories.length > 0) {
+          subcatSelect.innerHTML = '<option value="">Vitrin Alt Kategorisi Seç (Opsiyonel)</option>' +
+            category.subcategories.map(function(sub) {
+              return '<option value="' + sub.slug + '">' + sub.name + '</option>';
+            }).join('');
+        } else {
+          subcatSelect.innerHTML = '<option value="">Alt Kategori Yok</option>';
+        }
       }
 
-      category.sizes.forEach(function(size) {
+      activeSizes.forEach(function(size) {
         const itemDiv = document.createElement('div');
         itemDiv.className = 'size-item';
         itemDiv.style.display = 'flex';
@@ -230,6 +246,11 @@
 
     document.getElementById('category').addEventListener('change', function() {
       renderSizes(this.value);
+    });
+
+    document.getElementById('subcat').addEventListener('change', function() {
+      const category = document.getElementById('category').value;
+      renderSizes(category, this.value);
     });
 
     document.getElementById('productForm').addEventListener('submit', async function(e) {

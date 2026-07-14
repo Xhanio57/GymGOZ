@@ -2,7 +2,8 @@ const mongoose = require('mongoose');
 
 const subcategorySchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
-  slug: { type: String, required: true, trim: true }
+  slug: { type: String, required: true, trim: true },
+  sizes: { type: [String], default: ['Tek Boyut'] }
 });
 
 const categorySchema = new mongoose.Schema({

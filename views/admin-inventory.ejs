@@ -75,6 +75,12 @@
         <option value="">Vitrin Alt Kategorisi Seç</option>
         <!-- Populated dynamically -->
       </select>
+      
+      <div id="editSizeWrapper" style="margin-bottom: 15px; display: none; text-align: left;">
+        <label style="display:block; font-weight:600; margin-bottom:8px; color:var(--adm-text, #374151);">Ürünün Sahip Olduğu Bedenler</label>
+        <div id="editSizeContainer" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(100px, 1fr)); gap:10px; max-height:150px; overflow-y:auto; padding:10px; border:1px solid var(--adm-border, #2a2a32); border-radius:6px; background:var(--adm-bg, rgba(0,0,0,0.2));"></div>
+      </div>
+
       <input type="text" id="shopierLink" placeholder="Shopier Satış Linki">
       <input type="text" id="badge" placeholder="Ürün Rozeti (Örn: YENİ)">
       <input type="text" id="features" placeholder="Özellikler (virgülle ayırın, Örn: Su geçirmez, Nefes alan)">
@@ -450,6 +456,7 @@
     function oe(id) {
       cid = id;
       const x = prods.find(function(z) { return z._id === id; });
+      cp = x;
       document.getElementById('n').value = x.name || '';
       document.getElementById('pr').value = x.price || 0;
       document.getElementById('costPriceEdit').value = x.costPrice !== undefined ? x.costPrice : (x.price ? (x.price * 0.5).toFixed(2) : 0);
@@ -471,7 +478,75 @@
       document.getElementById('editImageFile').value = '';
       document.getElementById('editImage').value = x.image || '';
 
+      // Populate sizes checkboxes
+      renderEditSizes(x.category, x.subcat, x.sizeStock);
+
       document.getElementById('m2').classList.remove('hidden');
+    }
+
+    function renderEditSizes(categoryName, subcatSlug, currentSizeStock) {
+      const wrapper = document.getElementById('editSizeWrapper');
+      const container = document.getElementById('editSizeContainer');
+      container.innerHTML = '';
+
+      const category = categoriesList.find(c => c.name === categoryName);
+      if (!category) {
+        wrapper.style.display = 'none';
+        return;
+      }
+
+      // Determine active sizes (subcat sizes or category sizes)
+      let activeSizes = category.sizes || [];
+      if (subcatSlug && category.subcategories) {
+        const sub = category.subcategories.find(s => s.slug === subcatSlug);
+        if (sub && sub.sizes && sub.sizes.length > 0) {
+          activeSizes = sub.sizes;
+        }
+      }
+
+      if (activeSizes.length === 0) {
+        wrapper.style.display = 'none';
+        return;
+      }
+
+      wrapper.style.display = 'block';
+
+      // Current size names map
+      const currentSizesMap = {};
+      (currentSizeStock || []).forEach(s => {
+        currentSizesMap[s.size] = s.stock;
+      });
+
+      activeSizes.forEach(function(size) {
+        const itemDiv = document.createElement('div');
+        itemDiv.style.display = 'flex';
+        itemDiv.style.alignItems = 'center';
+        itemDiv.style.gap = '6px';
+
+        const label = document.createElement('label');
+        label.style.display = 'flex';
+        label.style.alignItems = 'center';
+        label.style.gap = '6px';
+        label.style.cursor = 'pointer';
+        label.style.margin = '0';
+        label.style.fontSize = '12px';
+
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.name = 'editSizes';
+        input.value = size;
+        if (currentSizesMap[size] !== undefined) {
+          input.checked = true;
+        }
+
+        const text = document.createElement('span');
+        text.textContent = size + (currentSizesMap[size] !== undefined ? ' (' + currentSizesMap[size] + ')' : '');
+
+        label.appendChild(input);
+        label.appendChild(text);
+        itemDiv.appendChild(label);
+        container.appendChild(itemDiv);
+      });
     }
 
     async function editS() {
@@ -491,6 +566,9 @@
         formData.append('badge', document.getElementById('badge').value);
         formData.append('features', document.getElementById('features').value);
         formData.append('image', document.getElementById('editImage').value);
+
+        const editSizes = Array.from(document.querySelectorAll('input[name="editSizes"]:checked')).map(el => el.value);
+        formData.append('sizes', JSON.stringify(editSizes));
 
         const fileInput = document.getElementById('editImageFile');
         if (fileInput.files.length > 0) {
@@ -599,6 +677,12 @@
 
     document.getElementById('search').addEventListener('keyup', render);
     document.getElementById('catFilter').addEventListener('change', render);
+
+    document.getElementById('subcat').addEventListener('change', function() {
+      const editCatVal = document.getElementById('c').value;
+      const currentSizeStock = (cp && cp.category === editCatVal && cp.subcat === this.value) ? cp.sizeStock : [];
+      renderEditSizes(editCatVal, this.value, currentSizeStock);
+    });
 
     document.getElementById('chkOldPrice').addEventListener('change', function() {
       document.getElementById('oldPrice').disabled = !this.checked;

@@ -8,8 +8,23 @@ require('dotenv').config();
 // Database bağlantısı
 const connectDB = require('./config/database');
 const seedData = require('./config/seedData');
-connectDB().then(() => {
+connectDB().then(async () => {
   seedData();
+  try {
+    const Category = require('./models/Category');
+    const hiddenCategory = await Category.findOne({ name: 'müşteri göremez' });
+    if (!hiddenCategory) {
+      await Category.create({
+        name: 'müşteri göremez',
+        slug: 'musteri-goremez',
+        sizes: ['Tek Boyut'],
+        subcategories: []
+      });
+      console.log('🌱 "müşteri göremez" kategorisi veritabanında oluşturuldu.');
+    }
+  } catch (err) {
+    console.error('Gizli kategori tohumlama hatası:', err);
+  }
 });
 
 const app = express();

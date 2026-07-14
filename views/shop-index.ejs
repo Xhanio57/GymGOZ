@@ -304,7 +304,9 @@
       if (dropdown && categories.length > 0) {
         var html = '';
         categories.forEach(function(cat) {
-          html += '<a onclick="filterFromNav(\'' + cat.name + '\')"><span class="dot"></span>' + cat.name + '</a>';
+          if (cat.name.toLowerCase() !== 'müşteri göremez') {
+            html += '<a onclick="filterFromNav(\'' + cat.name + '\')"><span class="dot"></span>' + cat.name + '</a>';
+          }
         });
         dropdown.innerHTML = html;
       }

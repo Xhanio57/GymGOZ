@@ -310,7 +310,8 @@
 </div>
 
 <div class="sc-list" id="productList">
-  <% products.forEach((product, pi) => { %>
+  <% const activeProducts = products.filter(p => (p.sizeStock || []).reduce((t, s) => t + (s.stock || 0), 0) > 0); %>
+  <% activeProducts.forEach((product, pi) => { %>
   <div class="sc-card" id="card-<%= product._id %>" data-name="<%= product.name.toLowerCase() %>" data-cat="<%= product.category %>" data-index="<%= pi %>">
     <div class="sc-card-header">
       <img class="sc-card-img" src="<%= product.image %>" alt="<%= product.name %>" onerror="this.src='/images/default-product.png'">
@@ -321,7 +322,8 @@
       <span class="sc-card-badge sc-badge-pending" id="badge-<%= product._id %>">Bekliyor</span>
     </div>
     <div class="sc-sizes">
-      <% product.sizeStock.forEach((ss, si) => { %>
+      <% const activeSizeStocks = product.sizeStock.filter(ss => ss.stock > 0); %>
+      <% activeSizeStocks.forEach((ss, si) => { %>
       <div class="sc-size-row">
         <div class="sc-size-label"><%= ss.size %></div>
         <div class="sc-size-system">Sistem: <span><%= ss.stock %></span></div>

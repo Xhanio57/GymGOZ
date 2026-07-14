@@ -1011,21 +1011,29 @@ function toggleSidebar(open) {
 /* =====================
    INITIALIZE FILTERS
 ===================== */
-function initializeFilters() {
-  // const brandsSet = new Set();
-  // products.forEach(p => {
-  //   if (p.brand) brandsSet.add(p.brand);
-  // });
-  //
-  // const brands = Array.from(brandsSet).sort();
-  // const brandContainer = document.getElementById('brand-filters');
-  // brandContainer.innerHTML = '';
-  // brands.forEach(brand => {
-  //   const label = document.createElement('label');
-  //   label.className = 'brand-item';
-  //   label.innerHTML = `<input type="checkbox" value="${brand}" onchange="applyFilters()"><label>${brand}</label>`;
-  //   brandContainer.appendChild(label);
-  // });
+async function initializeFilters() {
+  try {
+    const res = await fetch('/api/brands');
+    const brands = await res.json();
+    const brandContainer = document.getElementById('brand-filters');
+    if (brandContainer) {
+      brandContainer.innerHTML = '';
+      const activeBrands = brands.filter(b => b.isVisible !== false);
+      if (activeBrands.length > 0) {
+        brandContainer.parentElement.style.display = 'block';
+        activeBrands.forEach(brand => {
+          const label = document.createElement('label');
+          label.className = 'brand-item';
+          label.innerHTML = `<input type="checkbox" value="${brand.name}" onchange="applyFilters()"><label>${brand.name}</label>`;
+          brandContainer.appendChild(label);
+        });
+      } else {
+        brandContainer.parentElement.style.display = 'none';
+      }
+    }
+  } catch (err) {
+    console.error('Failed to initialize brand filters:', err);
+  }
 }
 
 function renderSidebarCategories() {
@@ -1039,6 +1047,7 @@ function renderSidebarCategories() {
   `;
 
   categoriesList.forEach(cat => {
+    if (cat.name.toLowerCase() === 'müşteri göremez') return;
     const catCount = products.filter(p => p.cat === cat.name).length;
     const subHtml = (cat.subcategories || []).map(sub => {
       const subCount = products.filter(p => p.subcat === sub.slug).length;
@@ -1202,8 +1211,8 @@ function getFilteredSortedProducts() {
 
 function applyFilters() {
   currentPage = 1;
-  updateActiveFilters();
   const items = getFilteredSortedProducts();
+  updateActiveFilters();
   renderProducts(items);
   toggleSidebar(false);
 }
@@ -1370,31 +1379,24 @@ function openPopup(id) {
 
   document.getElementById('popup-features').innerHTML = p.features.map(f => `<li>${f}</li>`).join('');
 
-  const sizeStockList = p.sizeStock || [];
+  // Filter out sizes with 0 stock
+  const sizeStockList = (p.sizeStock || []).filter(item => (item.stock || 0) > 0);
   let selectedIndex = -1;
   let defaultSize = 'Tek Boyut';
 
   if (sizeStockList.length > 0) {
     document.getElementById('popup-sizes').innerHTML = sizeStockList.map((item, idx) => {
-      const isOutOfStock = (item.stock || 0) <= 0;
       let isSelectedClass = '';
-      if (!isOutOfStock && selectedIndex === -1) {
+      if (selectedIndex === -1) {
         selectedIndex = idx;
         isSelectedClass = 'selected';
       }
-      return `<div class="size-btn ${isSelectedClass} ${isOutOfStock ? 'out-of-stock' : ''}" 
+      return `<div class="size-btn ${isSelectedClass}" 
                    onclick="selectSize(this, '${item.size}', ${item.stock || 0})">${item.size}</div>`;
     }).join('');
 
-    if (selectedIndex === -1) {
-      const firstBtn = document.querySelector('#popup-sizes .size-btn');
-      if (firstBtn) firstBtn.classList.add('selected');
-      setStockStatus(false);
-      defaultSize = sizeStockList[0].size;
-    } else {
-      setStockStatus(true);
-      defaultSize = sizeStockList[selectedIndex].size;
-    }
+    setStockStatus(true);
+    defaultSize = sizeStockList[selectedIndex].size;
   } else {
     const isOutOfStock = !p.stock;
     document.getElementById('popup-sizes').innerHTML = `<div class="size-btn selected ${isOutOfStock ? 'out-of-stock' : ''}" 
@@ -1444,6 +1446,9 @@ async function loadProducts() {
     const dbProducts = await res.json();
     
     const inStockDbProducts = dbProducts.filter(p => {
+      if (p.category && p.category.toLowerCase() === 'müşteri göremez') {
+        return false;
+      }
       const sizeStock = Array.isArray(p.sizeStock) ? p.sizeStock : [];
       const totalStock = sizeStock.reduce((total, item) => total + (item.stock || 0), 0);
       return totalStock > 0;
