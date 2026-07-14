@@ -1442,11 +1442,20 @@ async function loadProducts() {
     const catRes = await fetch('/api/categories');
     categoriesList = await catRes.json();
 
+    const brandRes = await fetch('/api/brands');
+    const brandsListLocal = await brandRes.json();
+    const hiddenBrands = new Set(
+      brandsListLocal.filter(b => b.isVisible === false).map(b => b.name.toLowerCase())
+    );
+
     const res = await fetch('/api/products');
     const dbProducts = await res.json();
     
     const inStockDbProducts = dbProducts.filter(p => {
       if (p.category && p.category.toLowerCase() === 'müşteri göremez') {
+        return false;
+      }
+      if (p.brand && hiddenBrands.has(p.brand.toLowerCase())) {
         return false;
       }
       const sizeStock = Array.isArray(p.sizeStock) ? p.sizeStock : [];
