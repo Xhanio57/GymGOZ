@@ -250,7 +250,8 @@
                 '<div class="subcategories-list">' +
                   (subTags || '<span style="font-size:11px; color:#94a3b8; font-style:italic;">Alt kategori eklenmemiş</span>') +
                 '</div>' +
-                <truncated 37 bytes>
+                '<div class="subcategory-add-form">' +
+                  '<input type="text" id="subInput_' + cat._id + '" placeholder="Yeni Alt Kategori Adı" required>' +
                   '<button onclick="addSubcategory(\\\'' + cat._id + '\\\')" class="btn-add-sub">Ekle</button>' +
                 '</div>' +
               '</div>' +
