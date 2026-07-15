@@ -15,6 +15,9 @@ async function sendOrderConfirmationEmail(order) {
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS
+      },
+      tls: {
+        rejectUnauthorized: false
       }
     });
 
@@ -97,6 +100,9 @@ async function sendOrderFailureEmail(order, reason = '') {
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS
+      },
+      tls: {
+        rejectUnauthorized: false
       }
     });
 
