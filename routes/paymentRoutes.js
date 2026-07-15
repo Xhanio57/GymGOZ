@@ -264,6 +264,10 @@ router.post('/api/checkout/callback', async (req, res) => {
         order.paymentId = req.body.paymentId || 'PAYTR_' + merchant_oid;
         await order.save();
 
+        // Send order confirmation email
+        const { sendOrderConfirmationEmail } = require('../utils/email');
+        sendOrderConfirmationEmail(order).catch(err => console.error('E-posta gönderimi başarısız:', err));
+
         // Update product stock counts
         for (const item of order.items) {
           const product = await Product.findById(item.productId);
@@ -281,8 +285,15 @@ router.post('/api/checkout/callback', async (req, res) => {
         }
       }
     } else {
-      order.paymentStatus = 'failed';
-      await order.save();
+      if (order.paymentStatus !== 'failed') {
+        order.paymentStatus = 'failed';
+        await order.save();
+
+        // Send payment failure / on-hold email
+        const { sendOrderFailureEmail } = require('../utils/email');
+        const reason = req.body.failed_reason_msg || 'Ödeme sağlayıcı veya banka tarafından işlem reddedildi / bekletiliyor.';
+        sendOrderFailureEmail(order, reason).catch(err => console.error('E-posta gönderimi başarısız:', err));
+      }
     }
 
     // Always respond with 'OK' as plain text to tell PayTR webhook was successfully processed
@@ -354,6 +365,21 @@ router.post('/api/admin/orders/:id/return', async (req, res) => {
   } catch (err) {
     console.error('İade durumu güncellenirken hata:', err);
     res.status(500).json({ success: false, message: 'İade durumu güncellenemedi.' });
+  }
+});
+
+// DELETE route to delete an order from database
+router.delete('/api/admin/orders/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const order = await Order.findByIdAndDelete(id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Sipariş bulunamadı.' });
+    }
+    res.json({ success: true, message: 'Sipariş başarıyla silindi.' });
+  } catch (err) {
+    console.error('Sipariş silinirken hata:', err);
+    res.status(500).json({ success: false, message: 'Sipariş silinemedi.' });
   }
 });
 

@@ -218,7 +218,10 @@
               '<input type="text" class="cargo-inp" id="tracking-' + order._id + '" style="margin-top:4px;" placeholder="Takip No" value="' + cargoTrackingNo + '">' +
             '</td>' +
             '<td>' + returnHtml + '</td>' +
-            '<td><button class="save-btn" onclick="saveCargoDetails(\\\'' + order._id + '\\\')">Kaydet</button></td>' +
+            '<td>' +
+              '<button class="save-btn" onclick="saveCargoDetails(\\\'' + order._id + '\\\')">Kaydet</button>' +
+              '<button class="save-btn" onclick="deleteOrder(\\\'' + order._id + '\\\')" style="background:#ef4444; margin-top:6px; display:block; width:100%;">🗑️ Sil</button>' +
+            '</td>' +
             '</tr>';
         }).join('');
 
@@ -285,6 +288,26 @@
           const result = await res.json();
           if (result.success) {
             alert('✅ İade durumu güncellendi.');
+            loadAllOrders();
+          } else {
+            alert('Hata: ' + result.message);
+          }
+        } catch (err) {
+          alert('Bağlantı hatası: ' + err.message);
+        }
+      }
+
+      async function deleteOrder(id) {
+        if (!confirm('Bu siparişi kalıcı olarak silmek istediğinize emin misiniz? (Bu işlem geri alınamaz!)')) return;
+
+        try {
+          const res = await fetch('/api/admin/orders/' + id, {
+            method: 'DELETE'
+          });
+
+          const result = await res.json();
+          if (result.success) {
+            alert('✅ Sipariş başarıyla silindi.');
             loadAllOrders();
           } else {
             alert('Hata: ' + result.message);
