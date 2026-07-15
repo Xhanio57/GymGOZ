@@ -54,6 +54,16 @@
   .badge-preparing { background: rgba(59,130,246,0.2); color: #93c5fd; }
   .badge-shipped { background: rgba(168,85,247,0.2); color: #c4b5fd; }
   .badge-delivered { background: rgba(34,197,94,0.2); color: #86efac; }
+  .badge-return-requested { background: rgba(245,158,11,0.2); color: #fdba74; }
+  .badge-return-approved { background: rgba(16,185,129,0.2); color: #6ee7b7; }
+  .badge-return-rejected { background: rgba(239,68,68,0.2); color: #fca5a5; }
+  .btn-return {
+    display: inline-block; padding: 6px 12px; border-radius: 6px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    text-decoration: none; background: #1a1a1a; color: var(--gray-400); border: 1px solid #222;
+    transition: all .2s; cursor: pointer; margin-top: 10px;
+  }
+  .btn-return:hover { background: var(--accent); color: var(--black); border-color: var(--accent); }
 
   .order-items { margin-bottom: 10px; }
   .order-item { font-size: 13px; color: #ccc; padding: 3px 0; }
@@ -115,6 +125,16 @@
                   <span class="badge badge-delivered">Teslim Edildi</span>
                 <% } %>
               <% } %>
+
+              <% if (order.returnStatus && order.returnStatus !== 'none') { %>
+                <% if (order.returnStatus === 'requested') { %>
+                  <span class="badge badge-return-requested">İade Talebi Alındı</span>
+                <% } else if (order.returnStatus === 'approved') { %>
+                  <span class="badge badge-return-approved">İade Edildi</span>
+                <% } else if (order.returnStatus === 'rejected') { %>
+                  <span class="badge badge-return-rejected">İade Reddedildi</span>
+                <% } %>
+              <% } %>
             </div>
           </div>
 
@@ -128,6 +148,12 @@
           </div>
 
           <div class="order-total">Toplam: <%= order.totalAmount.toFixed(2) %> ₺</div>
+
+          <% if (order.paymentStatus === 'paid' && (!order.returnStatus || order.returnStatus === 'none')) { %>
+            <div style="text-align: right;">
+              <a href="/account/orders/<%= order._id %>/return" class="btn-return">İade Talebi Oluştur</a>
+            </div>
+          <% } %>
 
           <% if (order.cargoProvider || order.cargoTrackingNo) { %>
             <div class="order-cargo">

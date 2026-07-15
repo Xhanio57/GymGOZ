@@ -333,4 +333,28 @@ router.post('/api/admin/orders/:id/shipping', async (req, res) => {
   }
 });
 
+// POST route to update return status (approved / rejected)
+router.post('/api/admin/orders/:id/return', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { returnStatus } = req.body;
+
+    if (!['approved', 'rejected'].includes(returnStatus)) {
+      return res.status(400).json({ success: false, message: 'Geçersiz iade durumu.' });
+    }
+
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Sipariş bulunamadı.' });
+    }
+
+    order.returnStatus = returnStatus;
+    await order.save();
+    res.json({ success: true, order });
+  } catch (err) {
+    console.error('İade durumu güncellenirken hata:', err);
+    res.status(500).json({ success: false, message: 'İade durumu güncellenemedi.' });
+  }
+});
+
 module.exports = router;

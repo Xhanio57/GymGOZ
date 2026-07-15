@@ -37,12 +37,13 @@
             <th>Ödeme</th>
             <th>Kargo Durumu</th>
             <th>Kargo Takip No</th>
+            <th>İade Durumu</th>
             <th>İşlem</th>
           </tr>
         </thead>
         <tbody id="orders-list">
           <tr>
-            <td colspan="9" style="text-align: center; padding: 40px; color: #888;">Yükleniyor...</td>
+            <td colspan="10" style="text-align: center; padding: 40px; color: #888;">Yükleniyor...</td>
           </tr>
         </tbody>
       </table>
@@ -120,7 +121,7 @@
         const shipVal = document.getElementById('filterShipping').value;
 
         if (allOrders.length === 0) {
-          container.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: #888;">Henüz kayıtlı bir sipariş bulunmuyor.</td></tr>';
+          container.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px; color: #888;">Henüz kayıtlı bir sipariş bulunmuyor.</td></tr>';
           updateSummary([]);
           return;
         }
@@ -133,7 +134,7 @@
         });
 
         if (filtered.length === 0) {
-          container.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: #888;">Filtrelere uygun sipariş bulunamadı.</td></tr>';
+          container.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px; color: #888;">Filtrelere uygun sipariş bulunamadı.</td></tr>';
           updateSummary([]);
           return;
         }
@@ -170,6 +171,35 @@
           const cargoProvider = order.cargoProvider || '';
           const cargoTrackingNo = order.cargoTrackingNo || '';
 
+          // Return status html
+          let returnHtml = '';
+          if (order.returnStatus && order.returnStatus !== 'none') {
+            let badgeClass = '';
+            let returnText = '';
+            if (order.returnStatus === 'requested') {
+              badgeClass = 'badge-warning';
+              returnText = 'İADE TALEBİ';
+            } else if (order.returnStatus === 'approved') {
+              badgeClass = 'badge-success';
+              returnText = 'İADE EDİLDİ';
+            } else if (order.returnStatus === 'rejected') {
+              badgeClass = 'badge-danger';
+              returnText = 'İADE REDDEDİLDİ';
+            }
+            returnHtml = '<div style="margin-bottom:6px;"><span class="badge ' + badgeClass + '">' + returnText + '</span></div>' +
+              '<span style="font-size:11px; display:block; color:#555;"><strong>Neden:</strong> ' + (order.returnReason || '') + '</span>' +
+              (order.returnNote ? '<span style="font-size:11px; display:block; color:#777; max-width:180px; white-space:normal;"><strong>Not:</strong> ' + order.returnNote + '</span>' : '');
+            
+            if (order.returnStatus === 'requested') {
+              returnHtml += '<div style="margin-top:8px; display:flex; gap:6px;">' +
+                '<button onclick="handleReturn(\\\'' + order._id + '\\\', \\\'approved\\\')" class="save-btn" style="background:#10b981; padding:4px 8px; font-size:10px;">Onayla</button>' +
+                '<button onclick="handleReturn(\\\'' + order._id + '\\\', \\\'rejected\\\')" class="save-btn" style="background:#ef4444; padding:4px 8px; font-size:10px;">Reddet</button>' +
+                '</div>';
+            }
+          } else {
+            returnHtml = '<span style="color:#aaa; font-style:italic; font-size:12px;">Yok</span>';
+          }
+
           return '<tr>' +
             '<td>' + dt + '</td>' +
             '<td style="font-family: monospace; font-size: 11px;">' + order._id + '</td>' +
@@ -187,6 +217,7 @@
               '<input type="text" class="cargo-inp" id="provider-' + order._id + '" placeholder="Kargo Firması" value="' + cargoProvider + '"><br>' +
               '<input type="text" class="cargo-inp" id="tracking-' + order._id + '" style="margin-top:4px;" placeholder="Takip No" value="' + cargoTrackingNo + '">' +
             '</td>' +
+            '<td>' + returnHtml + '</td>' +
             '<td><button class="save-btn" onclick="saveCargoDetails(\\\'' + order._id + '\\\')">Kaydet</button></td>' +
             '</tr>';
         }).join('');
@@ -232,6 +263,29 @@
           if (result.success) {
             alert('✅ Kargo detayları başarıyla kaydedildi.');
             loadAllOrders(); // Reload list
+          } else {
+            alert('Hata: ' + result.message);
+          }
+        } catch (err) {
+          alert('Bağlantı hatası: ' + err.message);
+        }
+      }
+
+      async function handleReturn(id, status) {
+        const text = status === 'approved' ? 'İadeyi onaylamak istediğinize emin misiniz?' : 'İadeyi reddetmek istediğinize emin misiniz?';
+        if (!confirm(text)) return;
+
+        try {
+          const res = await fetch('/api/admin/orders/' + id + '/return', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ returnStatus: status })
+          });
+
+          const result = await res.json();
+          if (result.success) {
+            alert('✅ İade durumu güncellendi.');
+            loadAllOrders();
           } else {
             alert('Hata: ' + result.message);
           }

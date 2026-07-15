@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><%= title %> | Öz Spor & Outdoor</title>
+<link rel="icon" type="image/png" href="/images/default-product.png">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --black: #0a0a0a; --white: #f5f5f0; --accent: #d4ff00; --gray-400: #999990; --gray-600: #555550; --danger: #ff4d4d; }
+  body { font-family: 'Barlow', sans-serif; background: var(--black); color: var(--white); min-height: 100vh; }
+
+  /* Nav */
+  .acc-nav { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; border-bottom: 2px solid #1a1a1a; }
+  .nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; color: var(--white); text-decoration: none; }
+  .nav-logo span { color: var(--accent); }
+  .nav-links { display: flex; gap: 20px; align-items: center; }
+  .nav-link { color: var(--gray-400); text-decoration: none; font-size: 13px; font-weight: 500; transition: color .2s; }
+  .nav-link:hover { color: var(--accent); }
+
+  /* Container */
+  .return-container { max-width: 600px; margin: 0 auto; padding: 40px 28px 80px; }
+
+  /* Header */
+  .return-header { margin-bottom: 30px; }
+  .return-header h1 { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 2px; margin-bottom: 6px; }
+  .return-header h1 span { color: var(--accent); }
+  .return-header p { color: var(--gray-400); font-size: 14px; }
+
+  /* Card */
+  .return-card {
+    background: rgba(255,255,255,0.02); border: 1px solid #1a1a1a;
+    border-radius: 12px; padding: 24px; margin-bottom: 24px;
+  }
+  .card-section-title {
+    font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 16px; border-bottom: 1px dashed #222; padding-bottom: 8px;
+  }
+
+  /* Order details */
+  .order-item-list { margin-bottom: 20px; }
+  .order-item { font-size: 13px; color: #ccc; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+  .order-item:last-child { border-bottom: none; }
+  .order-item span { color: var(--gray-400); }
+  .order-total { font-size: 14px; font-weight: 700; color: var(--white); text-align: right; margin-top: 10px; }
+
+  /* Form */
+  .form-group { margin-bottom: 20px; }
+  .form-group label {
+    display: block; font-size: 11px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--gray-400); margin-bottom: 8px;
+  }
+  .form-select, .form-textarea {
+    width: 100%; padding: 12px 14px; background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: white;
+    font-family: inherit; font-size: 13px; outline: none; transition: border-color .2s;
+  }
+  .form-select option { background: var(--black); color: var(--white); }
+  .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+  .form-textarea { height: 100px; resize: none; }
+
+  /* Buttons */
+  .btn-row { display: flex; gap: 12px; margin-top: 30px; }
+  .btn {
+    flex: 1; padding: 12px 24px; border: none; border-radius: 6px;
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; cursor: pointer; text-align: center; text-decoration: none;
+    transition: all .2s;
+  }
+  .btn-submit { background: var(--accent); color: var(--black); }
+  .btn-submit:hover { background: #c8f000; box-shadow: 0 4px 15px rgba(212, 255, 0, 0.15); }
+  .btn-cancel { background: #1a1a1a; color: var(--gray-400); border: 1px solid #222; }
+  .btn-cancel:hover { background: #222; color: var(--white); }
+
+  /* Message */
+  .error-box {
+    background: rgba(255, 77, 77, 0.1); border: 1px solid rgba(255, 77, 77, 0.2);
+    color: var(--danger); padding: 12px 16px; border-radius: 6px; font-size: 13px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 600px) {
+    .return-container { padding: 24px 16px 60px; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="acc-nav">
+  <a href="/" class="nav-logo">Öz Spor <span>&</span> Outdoor</a>
+  <div class="nav-links">
+    <a href="/account" class="nav-link">← Hesabım</a>
+  </div>
+</nav>
+
+<div class="return-container">
+  <div class="return-header">
+    <h1>İade <span>Talebi</span></h1>
+    <p>Aşağıdaki siparişiniz için kolay iade işlemi başlatabilirsiniz.</p>
+  </div>
+
+  <% if (error) { %>
+    <div class="error-box">⚠️ <%= error %></div>
+  <% } %>
+
+  <div class="return-card">
+    <div class="card-section-title">Sipariş Bilgileri</div>
+    <div style="font-size: 13px; color: var(--gray-400); margin-bottom: 12px; display: flex; justify-content: space-between;">
+      <span><strong>Sipariş No:</strong> #<%= order._id.toString().slice(-8).toUpperCase() %></span>
+      <span><strong>Tarih:</strong> <%= new Date(order.createdAt).toLocaleDateString('tr-TR') %></span>
+    </div>
+    
+    <div class="order-item-list">
+      <% order.items.forEach(function(item) { %>
+        <div class="order-item">
+          <%= item.name %> <span>(<%= item.size %>) x<%= item.quantity %></span>
+          <span style="float: right;"><%= (item.price * item.quantity).toFixed(2) %> ₺</span>
+        </div>
+      <% }); %>
+    </div>
+    <div class="order-total">Toplam Tutar: <%= order.totalAmount.toFixed(2) %> ₺</div>
+  </div>
+
+  <form action="/account/orders/<%= order._id %>/return" method="POST" class="return-card">
+    <div class="card-section-title">İade Detayları</div>
+    
+    <div class="form-group">
+      <label for="reason">İade Nedeni</label>
+      <select name="reason" id="reason" class="form-select" required>
+        <option value="" disabled selected>Lütfen bir neden seçin...</option>
+        <option value="Beden Uymadı">Beden Uymadı / Küçük veya Büyük Geldi</option>
+        <option value="Defolu/Hasarlı Ürün">Defolu / Hasarlı Ürün Geldi</option>
+        <option value="Beklediğim Gibi Değil">Ürün Beklediğim Gibi Değil / Kalitesini Beğenmedim</option>
+        <option value="Yanlış Ürün Gönderildi">Farklı / Yanlış Ürün Gönderildi</option>
+        <option value="Vazgeçtim">Alışverişten Vazgeçtim</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="note">Ek Açıklama (Opsiyonel)</label>
+      <textarea name="note" id="note" class="form-textarea" placeholder="Lütfen iade talebinizle ilgili eklemek istediğiniz detayları buraya yazın (Örn: banka hesabı, değişim isteği vb.)..."></textarea>
+    </div>
+
+    <div class="btn-row">
+      <a href="/account" class="btn btn-cancel">İptal</a>
+      <button type="submit" class="btn btn-submit">İade Talebini Gönder</button>
+    </div>
+  </form>
+</div>
+
+</body>
+</html>

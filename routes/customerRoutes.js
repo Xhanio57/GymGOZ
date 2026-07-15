@@ -160,6 +160,61 @@ router.get('/account', isCustomerAuth, async (req, res) => {
   }
 });
 
+// GET — İade Talebi Sayfası
+router.get('/account/orders/:id/return', isCustomerAuth, async (req, res) => {
+  try {
+    const customer = await Customer.findById(req.session.customerId);
+    if (!customer) return res.redirect('/account/login');
+
+    const Order = require('../models/Order');
+    const order = await Order.findById(req.params.id);
+    
+    if (!order || order.customerEmail !== customer.email || order.paymentStatus !== 'paid' || order.returnStatus !== 'none') {
+      return res.redirect('/account');
+    }
+
+    res.render('customer-return', { title: 'İade Talebi Oluştur', customer, order, error: null });
+  } catch (err) {
+    console.error('Order return view error:', err);
+    res.redirect('/account');
+  }
+});
+
+// POST — İade Talebi Gönderme
+router.post('/account/orders/:id/return', isCustomerAuth, async (req, res) => {
+  try {
+    const customer = await Customer.findById(req.session.customerId);
+    if (!customer) return res.redirect('/account/login');
+
+    const Order = require('../models/Order');
+    const order = await Order.findById(req.params.id);
+
+    if (!order || order.customerEmail !== customer.email || order.paymentStatus !== 'paid' || order.returnStatus !== 'none') {
+      return res.redirect('/account');
+    }
+
+    const { reason, note } = req.body;
+    if (!reason) {
+      return res.render('customer-return', { 
+        title: 'İade Talebi Oluştur', 
+        customer, 
+        order, 
+        error: 'Lütfen bir iade nedeni seçin.' 
+      });
+    }
+
+    order.returnStatus = 'requested';
+    order.returnReason = reason;
+    order.returnNote = note || '';
+    await order.save();
+
+    res.redirect('/account');
+  } catch (err) {
+    console.error('Submit return error:', err);
+    res.redirect('/account');
+  }
+});
+
 // GET — Çıkış
 router.get('/account/logout', (req, res) => {
   req.session.customerId = null;
