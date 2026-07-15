@@ -153,6 +153,12 @@ router.get('/admin/settings', (req, res) => {
   });
 });
 
+router.get('/admin/coupons', (req, res) => {
+  res.render('admin-coupons', {
+    title: 'Kupon Yönetimi'
+  });
+});
+
 // Yasal Sayfalar
 router.get('/privacy', (req, res) => {
   res.render('privacy', { title: 'Gizlilik Politikası' });
@@ -168,6 +174,14 @@ router.get('/refund-policy', (req, res) => {
 
 router.get('/kvkk', (req, res) => {
   res.render('kvkk', { title: 'KVKK Aydınlatma Metni' });
+});
+
+router.get('/mss', (req, res) => {
+  res.render('mss', { title: 'Mesafeli Satış Sözleşmesi' });
+});
+
+router.get('/obf', (req, res) => {
+  res.render('obf', { title: 'Ön Bilgilendirme Formu' });
 });
 
 module.exports = router;

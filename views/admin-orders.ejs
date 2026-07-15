@@ -8,10 +8,11 @@
         <div class="filter-group">
           <label>Ödeme Durumu:</label>
           <select id="filterPayment" onchange="renderOrders()">
-            <option value="all">Tümü</option>
-            <option value="paid" selected>Ödendi (Başarılı)</option>
+            <option value="all" selected>Tümü</option>
+            <option value="paid">Ödendi (Başarılı)</option>
             <option value="pending">Beklemede</option>
             <option value="failed">Başarısız / Hata</option>
+            <option value="cancelled">İptal Edildi</option>
           </select>
         </div>
         <div class="filter-group">
@@ -152,8 +153,14 @@
             payBadge = '<span class="badge badge-success">ÖDENDİ</span>';
           } else if (order.paymentStatus === 'pending') {
             payBadge = '<span class="badge badge-warning">BEKLEMEDE</span>';
+          } else if (order.paymentStatus === 'cancelled') {
+            payBadge = '<span class="badge" style="background:#6b7280; color:white;">İPTAL EDİLDİ</span>';
           } else {
             payBadge = '<span class="badge badge-danger">HATA</span>';
+          }
+
+          if (order.failedReason && order.paymentStatus !== 'paid') {
+            payBadge += '<span style="font-size:10px; display:block; color:#ef4444; max-width:130px; margin-top:4px; white-space:normal;">' + order.failedReason + '</span>';
           }
 
           // Selects
@@ -220,6 +227,11 @@
             '<td>' + returnHtml + '</td>' +
             '<td>' +
               '<button class="save-btn" onclick="saveCargoDetails(\\\'' + order._id + '\\\')">Kaydet</button>' +
+              (order.paymentStatus === 'paid' ? 
+                '<a href="/admin/orders/' + order._id + '/invoice" target="_blank" class="save-btn" style="background:#4b5563; margin-top:6px; display:block; text-align:center; text-decoration:none;">📄 Fatura</a>' +
+                '<a href="/admin/orders/' + order._id + '/shipping-label" target="_blank" class="save-btn" style="background:#8b5cf6; margin-top:6px; display:block; text-align:center; text-decoration:none;">🏷️ Kargo</a>'
+                : ''
+              ) +
               '<button class="save-btn" onclick="deleteOrder(\\\'' + order._id + '\\\')" style="background:#ef4444; margin-top:6px; display:block; width:100%;">🗑️ Sil</button>' +
             '</td>' +
             '</tr>';

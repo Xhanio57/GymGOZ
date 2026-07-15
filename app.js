@@ -158,6 +158,7 @@ app.use(require('./routes/productRoutes'));
 app.use(require('./routes/salesRoutes'));
 app.use(require('./routes/paymentRoutes'));
 app.use(require('./routes/customerRoutes'));
+app.use(require('./routes/couponRoutes'));
 
 // Apply payment rate limiter
 app.use('/api/checkout/initiate', paymentLimiter);

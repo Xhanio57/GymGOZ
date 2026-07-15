@@ -70,9 +70,29 @@ const orderSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
+  subtotalAmount: {
+    type: Number,
+    default: 0
+  },
+  discountAmount: {
+    type: Number,
+    default: 0
+  },
+  vatAmount: {
+    type: Number,
+    default: 0
+  },
+  couponCode: {
+    type: String,
+    default: ''
+  },
+  invoicePdfUrl: {
+    type: String,
+    default: ''
+  },
   paymentStatus: {
     type: String,
-    enum: ['pending', 'paid', 'failed'],
+    enum: ['pending', 'paid', 'failed', 'cancelled'],
     default: 'pending'
   },
   paymentToken: {
@@ -80,6 +100,10 @@ const orderSchema = new mongoose.Schema({
     default: ''
   },
   paymentId: {
+    type: String,
+    default: ''
+  },
+  failedReason: {
     type: String,
     default: ''
   },

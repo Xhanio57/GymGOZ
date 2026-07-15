@@ -291,6 +291,16 @@
                 </label>
               <% }); %>
             </div>
+            <div style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; font-size: 12px; color: var(--gray-600);">
+              <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="chkKvkk" required style="margin-top: 3px; accent-color: var(--black);">
+                <span><a href="/kvkk" target="_blank" style="color: var(--black); font-weight: 600; text-decoration: underline;">KVKK Aydınlatma Metni</a>'ni okudum ve verilerimin işlenmesini kabul ediyorum.</span>
+              </label>
+              <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="chkMss" required style="margin-top: 3px; accent-color: var(--black);">
+                <span><a href="/mss" target="_blank" style="color: var(--black); font-weight: 600; text-decoration: underline;">Mesafeli Satış Sözleşmesi</a>'ni ve <a href="/obf" target="_blank" style="color: var(--black); font-weight: 600; text-decoration: underline;">Ön Bilgilendirme Formu</a>'nu okudum, onaylıyorum.</span>
+              </label>
+            </div>
             <button type="submit" class="submit-btn" id="pay-submit-btn">Ödeme Bilgilerine Geç</button>
           <% } else { %>
             <div style="padding: 24px; border: 1px dashed var(--red); border-radius: 8px; background: rgba(220, 38, 38, 0.02); text-align: center; margin-bottom: 24px;">
@@ -323,8 +333,16 @@
         </div>
         
         <div class="price-row">
-          <span>Ara Toplam</span>
+          <span>Ara Toplam (KDV Hariç)</span>
           <span id="summarySubtotal">0.00 TL</span>
+        </div>
+        <div class="price-row" id="couponDiscountRow" style="display: none; color: #ff4d4d;">
+          <span>Kupon İndirimi (<span id="couponCodeLabel"></span>)</span>
+          <span id="summaryDiscount">-0.00 TL</span>
+        </div>
+        <div class="price-row">
+          <span>KDV (%20)</span>
+          <span id="summaryVat">0.00 TL</span>
         </div>
         <div class="price-row">
           <span>Kargo</span>
@@ -334,6 +352,10 @@
           <span>Genel Toplam</span>
           <span id="summaryTotal">0.00 TL</span>
         </div>
+        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--gray-200); display: flex; gap: 8px;">
+          <input type="text" id="couponCodeInp" placeholder="KUPON KODU" style="flex: 1; padding: 10px; border: 1px solid var(--gray-300); border-radius: 6px; text-transform: uppercase; font-family: inherit; font-size: 13px;">
+          <button type="button" onclick="applyCoupon()" style="padding: 10px 16px; background: var(--black); color: var(--accent); border: 1px solid var(--black); border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 12px; text-transform: uppercase;">Uygula</button>
+        </div>
       </div>
     </div>
 
@@ -341,6 +363,8 @@
 
   <script>
     let cart = [];
+    let appliedCoupon = null;
+    let discountAmount = 0;
 
     // Load cart items from localStorage on page load
     function loadCheckoutSummary() {
@@ -371,9 +395,57 @@
         </div>
       `).join('');
 
-      const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-      document.getElementById('summarySubtotal').textContent = total.toLocaleString('tr-TR') + ' TL';
-      document.getElementById('summaryTotal').textContent = total.toLocaleString('tr-TR') + ' TL';
+      updatePrices();
+    }
+
+    function updatePrices() {
+      const baseTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const finalTotal = baseTotal - discountAmount;
+      
+      const subtotal = finalTotal / 1.2;
+      const vat = finalTotal - subtotal;
+
+      document.getElementById('summarySubtotal').textContent = subtotal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
+      document.getElementById('summaryVat').textContent = vat.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
+      document.getElementById('summaryTotal').textContent = finalTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
+
+      if (discountAmount > 0) {
+        document.getElementById('couponCodeLabel').textContent = appliedCoupon.code;
+        document.getElementById('summaryDiscount').textContent = '-' + discountAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
+        document.getElementById('couponDiscountRow').style.display = 'flex';
+      } else {
+        document.getElementById('couponDiscountRow').style.display = 'none';
+      }
+    }
+
+    async function applyCoupon() {
+      const code = document.getElementById('couponCodeInp').value.trim();
+      if (!code) {
+        alert('Lütfen geçerli bir kupon kodu girin.');
+        return;
+      }
+
+      const cartAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+      try {
+        const res = await fetch('/api/coupons/apply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, cartAmount })
+        });
+        const result = await res.json();
+        if (result.success) {
+          appliedCoupon = result.coupon;
+          discountAmount = result.discountAmount;
+          
+          alert(`Kupon uygulandı! İndirim: ${discountAmount.toFixed(2)} ₺`);
+          updatePrices();
+        } else {
+          alert(result.message);
+        }
+      } catch (err) {
+        alert('Kupon kontrol edilirken hata oluştu.');
+      }
     }
 
     async function initiatePayment(event) {
@@ -405,6 +477,7 @@
         shippingCity: selectedRadio.dataset.city,
         shippingDistrict: selectedRadio.dataset.district,
         shippingAddress: selectedRadio.dataset.address,
+        couponCode: appliedCoupon ? appliedCoupon.code : '',
         items: cart.map(item => ({
           productId: item.productId,
           name: item.name,
@@ -424,12 +497,21 @@
 
         if (!result.success) {
           alert('Ödeme başlatılamadı: ' + result.message);
-          submitBtn.disabled = false;
-          submitBtn.style.opacity = '1';
-          loader.style.display = 'none';
-          loaderText.style.display = 'none';
+          if (result.orderCreated) {
+            // Since the order was created in DB, clear the cart and redirect to account retry page
+            localStorage.removeItem('gymgoz_cart');
+            window.location.href = '/account';
+          } else {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            loader.style.display = 'none';
+            loaderText.style.display = 'none';
+          }
           return;
         }
+
+        // Clear customer cart since the order has been created and registered
+        localStorage.removeItem('gymgoz_cart');
 
         // Hide form box and display payment form
         document.getElementById('address-box').style.display = 'none';

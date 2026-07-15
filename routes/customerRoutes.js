@@ -151,12 +151,45 @@ router.get('/account', isCustomerAuth, async (req, res) => {
     }
 
     const Order = require('../models/Order');
-    const orders = await Order.find({ customerEmail: customer.email, paymentStatus: 'paid' }).sort({ createdAt: -1 });
+    const orders = await Order.find({ customerEmail: customer.email, paymentStatus: { $ne: 'cancelled' } }).sort({ createdAt: -1 });
 
     res.render('customer-account', { title: 'Hesabım', customer, orders });
   } catch (err) {
     console.error('Account error:', err);
     res.redirect('/account/login');
+  }
+});
+
+// POST — Siparişi iptal et (Sadece ödenmemiş siparişler için)
+router.post('/account/orders/:id/cancel', isCustomerAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const Order = require('../models/Order');
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).send('Sipariş bulunamadı.');
+    }
+
+    // Ensure order belongs to logged in customer
+    const customer = await Customer.findById(req.session.customerId);
+    if (!customer || order.customerEmail.toLowerCase() !== customer.email.toLowerCase()) {
+      return res.status(403).send('Bu işlem için yetkiniz yok.');
+    }
+
+    // Only allowed if NOT paid
+    if (order.paymentStatus === 'paid') {
+      return res.status(400).send('Ödenmiş siparişler iptal edilemez.');
+    }
+
+    // Set status to cancelled and save the order (do not delete so admin can see it)
+    order.paymentStatus = 'cancelled';
+    order.failedReason = 'Müşteri tarafından iptal edildi.';
+    await order.save();
+
+    res.redirect('/account');
+  } catch (err) {
+    console.error('Cancel order error:', err);
+    res.redirect('/account');
   }
 });
 

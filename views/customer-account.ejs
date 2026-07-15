@@ -149,9 +149,29 @@
 
           <div class="order-total">Toplam: <%= order.totalAmount.toFixed(2) %> ₺</div>
 
-          <% if (order.paymentStatus === 'paid' && (!order.returnStatus || order.returnStatus === 'none')) { %>
-            <div style="text-align: right;">
-              <a href="/account/orders/<%= order._id %>/return" class="btn-return">İade Talebi Oluştur</a>
+          <% if (order.paymentStatus === 'paid') { %>
+            <div style="text-align: right; display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;">
+              <a href="/account/orders/<%= order._id %>/invoice" class="btn-return" style="background: rgba(212,255,0,0.1); color: var(--accent); border-color: rgba(212,255,0,0.2);">📄 E-Fatura İndir</a>
+              <% if (!order.returnStatus || order.returnStatus === 'none') { %>
+                <a href="/account/orders/<%= order._id %>/return" class="btn-return">İade Talebi Oluştur</a>
+              <% } %>
+            </div>
+          <% } else if (order.paymentStatus !== 'paid') { %>
+            <div style="margin-top: 14px; padding: 12px 16px; background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.15); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+              <div style="font-size: 13px; color: #fca5a5; max-width: 60%;">
+                <strong>Ödeme Sorunu:</strong> 
+                <% if (order.failedReason) { %>
+                  <%= order.failedReason %>
+                <% } else { %>
+                  Ödeme işlemi tamamlanamadı veya yarıda kaldı.
+                <% } %>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <form action="/account/orders/<%= order._id %>/cancel" method="POST" style="display: inline;" onsubmit="return confirm('Bu siparişi iptal etmek istediğinizden emin misiniz?');">
+                  <button type="submit" class="btn-return" style="margin-top: 0; background: rgba(239,68,68,0.15); color: #fca5a5; border-color: rgba(239,68,68,0.3); cursor: pointer;">İptal Et</button>
+                </form>
+                <a href="/checkout/retry/<%= order._id %>" class="btn-return" style="margin-top: 0; background: var(--accent); color: var(--black); border-color: var(--accent); display: inline-block; font-weight: 700;">Ödeme Yap</a>
+              </div>
             </div>
           <% } %>
 
