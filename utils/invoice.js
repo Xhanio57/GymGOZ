@@ -71,16 +71,21 @@ function generateInvoicePDF(order, outputPath) {
 
     doc.font('CustomRegular');
 
-    // --- Header Banner ---
-    doc.rect(40, 40, 515, 60).fill('#141418');
+    // --- Header Logo & Title ---
+    const logoPath = path.join(__dirname, '../public/images/logo.png');
+    let textStartX = 40;
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 40, 40, { width: 50 });
+      textStartX = 100;
+    }
     
-    // Logo text
-    doc.fillColor('#d4ff00').font('CustomBold').fontSize(16).text('ÖZ SPOR & OUTDOOR', 55, 52);
-    doc.fillColor('#888884').font('CustomRegular').fontSize(9).text('SPOR VE OUTDOOR EKİPMANLARI', 55, 72);
+    // Logo text / Brand Name
+    doc.fillColor('#000000').font('CustomBold').fontSize(15).text('ÖZ SPOR & OUTDOOR', textStartX, 46);
+    doc.fillColor('#666666').font('CustomRegular').fontSize(8).text('SPOR VE OUTDOOR EKİPMANLARI', textStartX, 64);
 
     // Document Title
-    doc.fillColor('#f0f0ec').font('CustomBold').fontSize(14).text('E-ARŞİV FATURA', 400, 52, { align: 'right', width: 140 });
-    doc.fillColor('#888884').font('CustomRegular').fontSize(8).text(`Sipariş No: ${order._id}`, 400, 72, { align: 'right', width: 140 });
+    doc.fillColor('#000000').font('CustomBold').fontSize(14).text('E-ARŞİV FATURA', 400, 46, { align: 'right', width: 155 });
+    doc.fillColor('#666666').font('CustomRegular').fontSize(8).text(`Sipariş No: ${order._id}`, 400, 64, { align: 'right', width: 155 });
 
     // Reset Color
     doc.fillColor('#333333');
