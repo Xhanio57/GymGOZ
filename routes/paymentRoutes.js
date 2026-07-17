@@ -668,52 +668,35 @@ router.delete('/api/admin/orders/:id', async (req, res) => {
   }
 });
 
-// Diagnostic route to test SMTP email settings
+// Diagnostic route to test Resend API email settings
 router.get('/api/test-email', async (req, res) => {
-  const nodemailer = require('nodemailer');
+  const { sendResendEmail } = require('../utils/email');
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT) || 465,
-      secure: parseInt(process.env.SMTP_PORT) === 465,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      },
-      tls: {
-        rejectUnauthorized: false
-      }
-    });
-
-    await transporter.verify();
-
-    const info = await transporter.sendMail({
-      from: process.env.SMTP_FROM || `"Öz Spor & Outdoor" <${process.env.SMTP_USER}>`,
-      to: process.env.SMTP_USER,
-      subject: 'GymGOZ E-Posta Testi',
-      text: 'E-posta SMTP bağlantısı başarıyla kuruldu!'
+    const toEmail = req.query.to || process.env.SMTP_USER || 'baranakpinar57@gmail.com';
+    
+    await sendResendEmail({
+      to: toEmail,
+      subject: 'GymGOZ Resend API Testi',
+      html: '<h3>Resend API entegrasyonu başarılı!</h3><p>E-posta gönderim altyapısı HTTPS protokolü üzerinden sorunsuz çalışıyor.</p>'
     });
 
     res.json({
       success: true,
-      message: 'SMTP Bağlantısı ve E-posta gönderimi başarılı!',
-      info
+      message: 'Resend API testi tetiklendi. Lütfen e-postanızı (ve spam/onboarding) kontrol edin.',
+      config: {
+        resend_from: process.env.RESEND_FROM || 'onboarding@resend.dev',
+        smtp_from: process.env.SMTP_FROM,
+        resend_key_configured: !!process.env.RESEND_API_KEY,
+        resend_key_prefix: process.env.RESEND_API_KEY ? process.env.RESEND_API_KEY.slice(0, 5) : 'None'
+      }
     });
   } catch (err) {
     console.error('Test email error:', err);
     res.json({
       success: false,
-      message: 'SMTP E-posta bağlantı hatası oluştu.',
+      message: 'Resend API test hatası oluştu.',
       error: err.message,
-      stack: err.stack,
-      config: {
-        host: process.env.SMTP_HOST,
-        port: process.env.SMTP_PORT,
-        user: process.env.SMTP_USER,
-        from: process.env.SMTP_FROM,
-        pass_configured: !!process.env.SMTP_PASS,
-        pass_length: process.env.SMTP_PASS ? process.env.SMTP_PASS.length : 0
-      }
+      stack: err.stack
     });
   }
 });

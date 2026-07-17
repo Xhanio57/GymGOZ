@@ -1,26 +1,74 @@
-const nodemailer = require('nodemailer');
+const fs = require('fs');
 
-async function sendOrderConfirmationEmail(order) {
-  // Check if SMTP is configured
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || process.env.SMTP_USER.includes('your-email')) {
-    console.warn('⚠️ SMTP ayarları yapılandırılmadığı için e-posta bildirimi gönderilemedi.');
+async function sendResendEmail({ to, subject, html, attachments }) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.warn('⚠️ RESEND_API_KEY ayarlanmadığı için e-posta gönderilemedi.');
     return;
   }
 
+  // Fallback to onboarding@resend.dev if custom domain is not verified
+  const from = process.env.RESEND_FROM || process.env.SMTP_FROM || 'onboarding@resend.dev';
+
+  const payload = {
+    from,
+    to: Array.isArray(to) ? to : [to],
+    subject,
+    html
+  };
+
+  if (attachments && attachments.length > 0) {
+    payload.attachments = attachments.map(att => {
+      const fileBuffer = fs.readFileSync(att.path);
+      return {
+        filename: att.filename,
+        content: fileBuffer.toString('base64')
+      };
+    });
+  }
+
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT) || 465,
-      secure: parseInt(process.env.SMTP_PORT) === 465, // true for 465, false for other ports
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
       },
-      tls: {
-        rejectUnauthorized: false
-      }
+      body: JSON.stringify(payload)
     });
 
+    const result = await response.json();
+    if (response.ok) {
+      console.log(`✉️ E-posta başarıyla gönderildi (Resend): ${to}. Message ID: ${result.id}`);
+    } else {
+      console.error('❌ Resend E-posta gönderim hatası:', result);
+      // If it fails because of sender email verification, retry using onboarding@resend.dev
+      if (result.message && result.message.includes('onboarding@resend.dev') && from !== 'onboarding@resend.dev') {
+        console.warn('⚠️ Alan adı doğrulanmadığı için onboarding@resend.dev ile tekrar deneniyor...');
+        payload.from = 'onboarding@resend.dev';
+        const retryRes = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+        const retryResult = await retryRes.json();
+        if (retryRes.ok) {
+          console.log(`✉️ E-posta başarıyla gönderildi (Resend onboarding): ${to}`);
+        } else {
+          console.error('❌ Resend onboarding denemesi de başarısız:', retryResult);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('❌ Resend API bağlantı hatası:', err);
+  }
+}
+
+async function sendOrderConfirmationEmail(order) {
+  try {
     const itemsHtml = order.items.map(item => `
       <tr>
         <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.name} (${item.size})</td>
@@ -81,41 +129,19 @@ async function sendOrderConfirmationEmail(order) {
       });
     }
 
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || `"Öz Spor & Outdoor" <${process.env.SMTP_USER}>`,
+    await sendResendEmail({
       to: order.customerEmail,
       subject: `Siparişiniz Onaylandı! #${order._id.toString().slice(-8).toUpperCase()}`,
       html: emailHtml,
-      attachments: attachments
+      attachments
     });
-
-    console.log(`✉️ Sipariş onay e-postası başarıyla gönderildi: ${order.customerEmail}`);
   } catch (error) {
-    console.error('❌ E-posta gönderim hatası:', error);
+    console.error('❌ Sipariş onay e-postası gönderme hatası:', error);
   }
 }
 
 async function sendOrderFailureEmail(order, reason = '') {
-  // Check if SMTP is configured
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || process.env.SMTP_USER.includes('your-email')) {
-    console.warn('⚠️ SMTP ayarları yapılandırılmadığı için e-posta bildirimi gönderilemedi.');
-    return;
-  }
-
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT) || 465,
-      secure: parseInt(process.env.SMTP_PORT) === 465,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      },
-      tls: {
-        rejectUnauthorized: false
-      }
-    });
-
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">
         <div style="background-color: #0a0a0a; color: #fff; padding: 20px; text-align: center;">
@@ -143,39 +169,18 @@ async function sendOrderFailureEmail(order, reason = '') {
       </div>
     `;
 
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || `"Öz Spor & Outdoor" <${process.env.SMTP_USER}>`,
+    await sendResendEmail({
       to: order.customerEmail,
       subject: `Ödeme Başarısız / Beklemede #${order._id.toString().slice(-8).toUpperCase()}`,
       html: emailHtml
     });
-
-    console.log(`✉️ Ödeme başarısız/beklemede e-postası başarıyla gönderildi: ${order.customerEmail}`);
   } catch (error) {
-    console.error('❌ E-posta gönderim hatası:', error);
+    console.error('❌ Ödeme başarısız e-postası gönderme hatası:', error);
   }
 }
 
 async function sendOrderPendingEmail(order) {
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || process.env.SMTP_USER.includes('your-email')) {
-    console.warn('⚠️ SMTP ayarları yapılandırılmadığı için sipariş alındı e-postası gönderilemedi.');
-    return;
-  }
-
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT) || 465,
-      secure: parseInt(process.env.SMTP_PORT) === 465,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      },
-      tls: {
-        rejectUnauthorized: false
-      }
-    });
-
     const itemsHtml = order.items.map(item => `
       <tr>
         <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.name} (${item.size})</td>
@@ -225,39 +230,18 @@ async function sendOrderPendingEmail(order) {
       </div>
     `;
 
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || `"Öz Spor & Outdoor" <${process.env.SMTP_USER}>`,
+    await sendResendEmail({
       to: order.customerEmail,
       subject: `Sipariş Talebiniz Alındı #${order._id.toString().slice(-8).toUpperCase()}`,
       html: emailHtml
     });
-
-    console.log(`✉️ Sipariş alındı e-postası başarıyla gönderildi: ${order.customerEmail}`);
   } catch (error) {
-    console.error('❌ E-posta gönderim hatası:', error);
+    console.error('❌ Sipariş alındı e-postası gönderme hatası:', error);
   }
 }
 
 async function sendOrderShippedEmail(order) {
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || process.env.SMTP_USER.includes('your-email')) {
-    console.warn('⚠️ SMTP ayarları yapılandırılmadığı için kargo e-postası gönderilemedi.');
-    return;
-  }
-
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT) || 465,
-      secure: parseInt(process.env.SMTP_PORT) === 465,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      },
-      tls: {
-        rejectUnauthorized: false
-      }
-    });
-
     const itemsHtml = order.items.map(item => `
       <tr>
         <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.name} (${item.size})</td>
@@ -301,39 +285,18 @@ async function sendOrderShippedEmail(order) {
       </div>
     `;
 
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || `"Öz Spor & Outdoor" <${process.env.SMTP_USER}>`,
+    await sendResendEmail({
       to: order.customerEmail,
       subject: `Siparişiniz Kargoya Verildi! #${order._id.toString().slice(-8).toUpperCase()}`,
       html: emailHtml
     });
-
-    console.log(`✉️ Kargo e-postası başarıyla gönderildi: ${order.customerEmail}`);
   } catch (error) {
-    console.error('❌ E-posta gönderim hatası:', error);
+    console.error('❌ Kargo e-postası gönderme hatası:', error);
   }
 }
 
 async function sendOrderDeliveredEmail(order) {
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || process.env.SMTP_USER.includes('your-email')) {
-    console.warn('⚠️ SMTP ayarları yapılandırılmadığı için teslimat e-postası gönderilemedi.');
-    return;
-  }
-
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT) || 465,
-      secure: parseInt(process.env.SMTP_PORT) === 465,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      },
-      tls: {
-        rejectUnauthorized: false
-      }
-    });
-
     const googleReviewUrl = `https://www.google.com/search?sca_esv=f07c4d704701945c&sxsrf=APpeQnup0GXkgcqM7p6U1AICtIItDQvv4g:1784142524276&q=oz+spor+outdoor&si=APenkKm7iecQ4G6P-TsbSMFKIQtv3EFIqRAFw-i8uEbk55Z-_8rKBzcRoq2KiAuPOPKhjnQ6K-x6jpaAwwqz9wh-gKZJvnRYKRQaihRGKzmSwYm1YME3qjs%3D&uds=AJ5uw195I-HiO8RgG3HHbr6KY2_8aNr2LBRztYQJt3Uye1cVeSun0hpuRRx5TjZ2lNnSo8tRHHcpliyMGbtm0wNE_oCpv5fHgXbYcT4_ROl6Yr3CcLV_Z9M&sa=X&ved=2ahUKEwi00IzrsNWVAxU9g_0HHQEjEbQQ3PALegQILxAF&biw=1470&bih=770&dpr=2`;
 
     const emailHtml = `
@@ -359,16 +322,13 @@ async function sendOrderDeliveredEmail(order) {
       </div>
     `;
 
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || `"Öz Spor & Outdoor" <${process.env.SMTP_USER}>`,
+    await sendResendEmail({
       to: order.customerEmail,
       subject: `Siparişiniz Teslim Edildi! #${order._id.toString().slice(-8).toUpperCase()}`,
       html: emailHtml
     });
-
-    console.log(`✉️ Teslimat e-postası başarıyla gönderildi: ${order.customerEmail}`);
   } catch (error) {
-    console.error('❌ E-posta gönderim hatası:', error);
+    console.error('❌ Teslimat e-postası gönderme hatası:', error);
   }
 }
 
@@ -377,5 +337,6 @@ module.exports = {
   sendOrderFailureEmail,
   sendOrderShippedEmail,
   sendOrderDeliveredEmail,
-  sendOrderPendingEmail
+  sendOrderPendingEmail,
+  sendResendEmail
 };
