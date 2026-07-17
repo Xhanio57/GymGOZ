@@ -65,11 +65,44 @@ router.get('/checkout/retry/:id', async (req, res) => {
     const paytrConfig = getPaytrConfig();
     const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
 
-    const basketData = order.items.map(item => [
-      item.name + ' (' + item.size + ')',
-      item.price.toFixed(2),
-      item.quantity
-    ]);
+    // Map database order items to PayTR basket format, adjusting for coupon discount if any
+    let basketData = [];
+    const baseTotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const discountAmount = order.discountAmount || 0;
+    
+    if (discountAmount > 0 && baseTotal > 0) {
+      let sumCalculated = 0;
+      const factor = order.totalAmount / baseTotal;
+      
+      order.items.forEach((item, index) => {
+        const adjustedUnitPrice = Math.round((item.price * factor) * 100) / 100;
+        let lineTotal = adjustedUnitPrice * item.quantity;
+        
+        // If it's the last item, adjust for any rounding difference
+        if (index === order.items.length - 1) {
+          const expectedTotal = order.totalAmount - sumCalculated;
+          const correctedUnitPrice = Math.round((expectedTotal / item.quantity) * 100) / 100;
+          basketData.push([
+            item.name + ' (' + item.size + ') [İndirimli]',
+            correctedUnitPrice.toFixed(2),
+            item.quantity
+          ]);
+        } else {
+          sumCalculated += lineTotal;
+          basketData.push([
+            item.name + ' (' + item.size + ') [İndirimli]',
+            adjustedUnitPrice.toFixed(2),
+            item.quantity
+          ]);
+        }
+      });
+    } else {
+      basketData = order.items.map(item => [
+        item.name + ' (' + item.size + ')',
+        item.price.toFixed(2),
+        item.quantity
+      ]);
+    }
     const user_basket = Buffer.from(JSON.stringify(basketData)).toString('base64');
 
     const merchant_oid = order._id.toString();
@@ -80,8 +113,8 @@ router.get('/checkout/retry/:id', async (req, res) => {
 
     const email = order.customerEmail;
     const user_name = order.customerName;
-    const user_address = order.shippingAddress;
-    const user_phone = order.customerPhone;
+    const user_address = (order.shippingAddress || '').trim() || 'Adres detayları';
+    const user_phone = (order.customerPhone || '').replace(/\D/g, '') || '05000000000';
 
     const no_installment = 0;
     const max_installment = 0;
@@ -286,12 +319,41 @@ router.post('/api/checkout/initiate', async (req, res) => {
     const paytrConfig = getPaytrConfig();
     const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
 
-    // Map database order items to PayTR basket format
-    const basketData = dbItems.map(item => [
-      item.name + ' (' + item.size + ')',
-      item.price.toFixed(2),
-      item.quantity
-    ]);
+    // Map database order items to PayTR basket format, adjusting for coupon discount if any
+    let basketData = [];
+    if (discountAmount > 0 && baseTotal > 0) {
+      let sumCalculated = 0;
+      const factor = totalAmount / baseTotal;
+      
+      dbItems.forEach((item, index) => {
+        const adjustedUnitPrice = Math.round((item.price * factor) * 100) / 100;
+        let lineTotal = adjustedUnitPrice * item.quantity;
+        
+        // If it's the last item, adjust for any rounding difference
+        if (index === dbItems.length - 1) {
+          const expectedTotal = totalAmount - sumCalculated;
+          const correctedUnitPrice = Math.round((expectedTotal / item.quantity) * 100) / 100;
+          basketData.push([
+            item.name + ' (' + item.size + ') [İndirimli]',
+            correctedUnitPrice.toFixed(2),
+            item.quantity
+          ]);
+        } else {
+          sumCalculated += lineTotal;
+          basketData.push([
+            item.name + ' (' + item.size + ') [İndirimli]',
+            adjustedUnitPrice.toFixed(2),
+            item.quantity
+          ]);
+        }
+      });
+    } else {
+      basketData = dbItems.map(item => [
+        item.name + ' (' + item.size + ')',
+        item.price.toFixed(2),
+        item.quantity
+      ]);
+    }
     const user_basket = Buffer.from(JSON.stringify(basketData)).toString('base64');
 
     const merchant_oid = order._id.toString();
@@ -302,8 +364,8 @@ router.post('/api/checkout/initiate', async (req, res) => {
 
     const email = customerEmail;
     const user_name = customerName;
-    const user_address = `${shippingAddress} ${shippingDistrict}/${shippingCity}`;
-    const user_phone = customerPhone;
+    const user_address = (`${shippingAddress} ${shippingDistrict}/${shippingCity}`).trim() || 'Adres detayları';
+    const user_phone = customerPhone.replace(/\D/g, '') || '05000000000';
 
     const no_installment = 0; // Allow installments
     const max_installment = 0; // Allow all installments
@@ -540,6 +602,7 @@ router.post('/api/admin/orders/:id/shipping', async (req, res) => {
     }
 
     const oldStatus = order.shippingStatus;
+    const oldTracking = order.cargoTrackingNo;
 
     if (shippingStatus) order.shippingStatus = shippingStatus;
     if (cargoProvider !== undefined) order.cargoProvider = cargoProvider;
@@ -547,8 +610,11 @@ router.post('/api/admin/orders/:id/shipping', async (req, res) => {
 
     await order.save();
 
-    // Trigger emails on status changes
-    if (shippingStatus === 'shipped' && oldStatus !== 'shipped') {
+    // Trigger emails on status changes or tracking number updates
+    const isNowShipped = (shippingStatus === 'shipped' && oldStatus !== 'shipped');
+    const isTrackingAdded = (order.shippingStatus === 'shipped' && cargoTrackingNo && oldTracking !== cargoTrackingNo);
+
+    if (isNowShipped || isTrackingAdded) {
       const { sendOrderShippedEmail } = require('../utils/email');
       sendOrderShippedEmail(order).catch(err => console.error('Kargo e-postası gönderim hatası:', err));
     } else if (shippingStatus === 'delivered' && oldStatus !== 'delivered') {
