@@ -614,6 +614,26 @@ router.post('/api/admin/orders/:id/shipping', async (req, res) => {
     if (cargoProvider !== undefined) order.cargoProvider = cargoProvider;
     if (cargoTrackingNo !== undefined) order.cargoTrackingNo = cargoTrackingNo;
 
+    // If marked as delivered, ensure e-invoice PDF is generated
+    if (order.shippingStatus === 'delivered' && !order.invoicePdfUrl) {
+      const fs = require('fs');
+      const path = require('path');
+      const { generateInvoicePDF } = require('../utils/invoice');
+      
+      const invoicesDir = path.join(__dirname, '../public/invoices');
+      if (!fs.existsSync(invoicesDir)) {
+        fs.mkdirSync(invoicesDir, { recursive: true });
+      }
+      
+      const pdfPath = path.join(invoicesDir, `fatura_${order._id}.pdf`);
+      try {
+        await generateInvoicePDF(order, pdfPath);
+        order.invoicePdfUrl = `/invoices/fatura_${order._id}.pdf`;
+      } catch (pdfErr) {
+        console.error('Kargo teslimatında fatura PDF üretimi sırasında hata oluştu:', pdfErr);
+      }
+    }
+
     await order.save();
 
     // Trigger emails on status changes or tracking number updates

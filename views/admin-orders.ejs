@@ -227,7 +227,7 @@
             '<td>' + returnHtml + '</td>' +
             '<td>' +
               '<button class="save-btn" onclick="saveCargoDetails(\\\'' + order._id + '\\\')">Kaydet</button>' +
-              (order.paymentStatus === 'paid' ? 
+              (order.paymentStatus === 'paid' || order.shippingStatus === 'delivered' || order.invoicePdfUrl ? 
                 '<a href="/admin/orders/' + order._id + '/invoice" target="_blank" class="save-btn" style="background:#4b5563; margin-top:6px; display:block; text-align:center; text-decoration:none;">📄 Fatura</a>' +
                 '<a href="/admin/orders/' + order._id + '/shipping-label" target="_blank" class="save-btn" style="background:#8b5cf6; margin-top:6px; display:block; text-align:center; text-decoration:none;">🏷️ Kargo</a>'
                 : ''
