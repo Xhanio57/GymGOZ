@@ -8,7 +8,16 @@ async function sendResendEmail({ to, subject, html, attachments }) {
   }
 
   // Fallback to onboarding@resend.dev if custom domain is not verified
-  const from = process.env.RESEND_FROM || process.env.SMTP_FROM || 'onboarding@resend.dev';
+  let from = process.env.RESEND_FROM || process.env.SMTP_FROM || 'onboarding@resend.dev';
+
+  // Format the sender display name nicely if only a raw email is provided
+  if (from && !from.includes('<')) {
+    if (from.toLowerCase().trim() === 'info@ozsporoutdoor.com') {
+      from = '"Öz Spor & Outdoor" <info@ozsporoutdoor.com>';
+    } else {
+      from = `"Öz Spor & Outdoor" <${from.trim()}>`;
+    }
+  }
 
   const payload = {
     from,
