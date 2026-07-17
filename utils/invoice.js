@@ -151,6 +151,7 @@ function generateInvoicePDF(order, outputPath) {
 
     // --- Summary calculations ---
     const discount = order.discountAmount || 0;
+    const shipping = order.shippingAmount || 0;
     const finalTotal = order.totalAmount;
     const subtotal = finalTotal / 1.2;
     const vat = finalTotal - subtotal;
@@ -167,6 +168,10 @@ function generateInvoicePDF(order, outputPath) {
       doc.text('-' + discount.toFixed(2) + ' ₺', 480, y, { width: 70, align: 'right' });
       y += 15;
     }
+
+    doc.text('Kargo Ücreti:', summaryX, y, { width: 120, align: 'right' });
+    doc.text((shipping > 0 ? shipping.toFixed(2) : '0.00') + ' ₺', 480, y, { width: 70, align: 'right' });
+    y += 15;
 
     doc.text('KDV Tutarı (%20):', summaryX, y, { width: 120, align: 'right' });
     doc.text(vat.toFixed(2) + ' ₺', 480, y, { width: 70, align: 'right' });

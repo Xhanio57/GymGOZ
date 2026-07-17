@@ -328,6 +328,12 @@
     <div>
       <div class="checkout-box">
         <h2 class="checkout-title">Sipariş Özeti</h2>
+        
+        <!-- Free Shipping Warning -->
+        <div id="freeShippingWarning" style="margin-bottom: 20px; padding: 12px; background: rgba(245, 158, 11, 0.08); border-left: 4px solid #f59e0b; border-radius: 4px; font-size: 13px; color: #b45309; display: none; line-height: 1.5;">
+          Siparişinizin ücretsiz kargo ile teslim edilmesini istiyorsanız <strong id="warningDiffAmount">0.00</strong> ₺ daha ekleme yapmanız gerekmektedir.
+        </div>
+
         <div class="summary-items" id="summaryItemsContainer">
           <!-- Populated dynamically from localStorage -->
         </div>
@@ -346,7 +352,7 @@
         </div>
         <div class="price-row">
           <span>Kargo</span>
-          <span style="color: #2d8c40; font-weight: 700;">ÜCRETSİZ</span>
+          <span id="summaryShipping" style="color: #2d8c40; font-weight: 700;">ÜCRETSİZ</span>
         </div>
         <div class="price-row total">
           <span>Genel Toplam</span>
@@ -400,8 +406,30 @@
 
     function updatePrices() {
       const baseTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-      const finalTotal = baseTotal - discountAmount;
+      const finalProductTotal = baseTotal - discountAmount;
       
+      let shippingFee = 0;
+      const warningBox = document.getElementById('freeShippingWarning');
+      const warningDiff = document.getElementById('warningDiffAmount');
+      const shippingLabel = document.getElementById('summaryShipping');
+
+      if (finalProductTotal < 3000) {
+        shippingFee = 89.99;
+        const diff = 3000 - finalProductTotal;
+        warningDiff.textContent = diff.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        warningBox.style.display = 'block';
+        shippingLabel.textContent = '89,99 ₺';
+        shippingLabel.style.color = 'var(--black)';
+        shippingLabel.style.fontWeight = '600';
+      } else {
+        shippingFee = 0;
+        warningBox.style.display = 'none';
+        shippingLabel.textContent = 'ÜCRETSİZ';
+        shippingLabel.style.color = '#2d8c40';
+        shippingLabel.style.fontWeight = '700';
+      }
+
+      const finalTotal = finalProductTotal + shippingFee;
       const subtotal = finalTotal / 1.2;
       const vat = finalTotal - subtotal;
 

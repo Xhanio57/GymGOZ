@@ -65,12 +65,11 @@ router.get('/checkout/retry/:id', async (req, res) => {
     const paytrConfig = getPaytrConfig();
     const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
 
-    // Map database order items to PayTR basket format, adjusting for coupon discount if any
+    // Map database order items to PayTR basket format, adjusting for coupon discount/shipping if any
     let basketData = [];
     const baseTotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const discountAmount = order.discountAmount || 0;
     
-    if (discountAmount > 0 && baseTotal > 0) {
+    if (order.totalAmount !== baseTotal && baseTotal > 0) {
       let sumCalculated = 0;
       const factor = order.totalAmount / baseTotal;
       
@@ -83,14 +82,14 @@ router.get('/checkout/retry/:id', async (req, res) => {
           const expectedTotal = order.totalAmount - sumCalculated;
           const correctedUnitPrice = Math.round((expectedTotal / item.quantity) * 100) / 100;
           basketData.push([
-            item.name + ' (' + item.size + ') [İndirimli]',
+            item.name + ' (' + item.size + ') [Güncellendi]',
             correctedUnitPrice.toFixed(2),
             item.quantity
           ]);
         } else {
           sumCalculated += lineTotal;
           basketData.push([
-            item.name + ' (' + item.size + ') [İndirimli]',
+            item.name + ' (' + item.size + ') [Güncellendi]',
             adjustedUnitPrice.toFixed(2),
             item.quantity
           ]);
@@ -287,7 +286,13 @@ router.post('/api/checkout/initiate', async (req, res) => {
       }
     }
 
-    const totalAmount = baseTotal - discountAmount;
+    const finalProductAmount = baseTotal - discountAmount;
+    let shippingAmount = 0;
+    if (finalProductAmount < 3000) {
+      shippingAmount = 89.99;
+    }
+
+    const totalAmount = finalProductAmount + shippingAmount;
     const subtotalAmount = totalAmount / 1.2; // 20% VAT
     const vatAmount = totalAmount - subtotalAmount;
 
@@ -305,6 +310,7 @@ router.post('/api/checkout/initiate', async (req, res) => {
       subtotalAmount,
       discountAmount,
       vatAmount,
+      shippingAmount,
       couponCode: verifiedCouponCode,
       paymentStatus: 'pending'
     });
@@ -319,9 +325,9 @@ router.post('/api/checkout/initiate', async (req, res) => {
     const paytrConfig = getPaytrConfig();
     const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
 
-    // Map database order items to PayTR basket format, adjusting for coupon discount if any
+    // Map database order items to PayTR basket format, adjusting for coupon discount/shipping if any
     let basketData = [];
-    if (discountAmount > 0 && baseTotal > 0) {
+    if (totalAmount !== baseTotal && baseTotal > 0) {
       let sumCalculated = 0;
       const factor = totalAmount / baseTotal;
       
@@ -334,14 +340,14 @@ router.post('/api/checkout/initiate', async (req, res) => {
           const expectedTotal = totalAmount - sumCalculated;
           const correctedUnitPrice = Math.round((expectedTotal / item.quantity) * 100) / 100;
           basketData.push([
-            item.name + ' (' + item.size + ') [İndirimli]',
+            item.name + ' (' + item.size + ') [Güncellendi]',
             correctedUnitPrice.toFixed(2),
             item.quantity
           ]);
         } else {
           sumCalculated += lineTotal;
           basketData.push([
-            item.name + ' (' + item.size + ') [İndirimli]',
+            item.name + ' (' + item.size + ') [Güncellendi]',
             adjustedUnitPrice.toFixed(2),
             item.quantity
           ]);
