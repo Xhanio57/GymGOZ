@@ -16,7 +16,7 @@ function getPaytrConfig() {
 // GET route to render checkout page
 router.get('/checkout', async (req, res) => {
   if (!req.session || !req.session.customerId) {
-    return res.redirect('/account/login?redirect=checkout');
+    return res.redirect('/account/login?redirect=/checkout');
   }
 
   try {
@@ -25,7 +25,7 @@ router.get('/checkout', async (req, res) => {
     if (!customer) {
       req.session.customerId = null;
       req.session.customerName = null;
-      return res.redirect('/account/login?redirect=checkout');
+      return res.redirect('/account/login?redirect=/checkout');
     }
     
     res.render('checkout', { 
@@ -180,8 +180,8 @@ router.get('/checkout/error', async (req, res) => {
   });
 });
 
-// POST route to initiate PayTR payment
 router.post('/api/checkout/initiate', async (req, res) => {
+  let order = null;
   try {
     const {
       customerName,
@@ -259,7 +259,7 @@ router.post('/api/checkout/initiate', async (req, res) => {
     const vatAmount = totalAmount - subtotalAmount;
 
     // Create the Order record in database (pending state)
-    const order = new Order({
+    order = new Order({
       customerName,
       customerEmail,
       customerPhone,

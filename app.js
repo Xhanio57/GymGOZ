@@ -97,7 +97,7 @@ app.use((req, res, next) => {
 
 // Global Admin & Mutation API Firewall
 app.use((req, res, next) => {
-  const isApiMutation = req.path.startsWith('/api/') && req.method !== 'GET' && !req.path.startsWith('/api/checkout/');
+  const isApiMutation = req.path.startsWith('/api/') && req.method !== 'GET' && !req.path.startsWith('/api/checkout/') && req.path !== '/api/coupons/apply';
   const isAdminPath = req.path.startsWith('/admin') || req.path.startsWith('/pos');
   const isAdminApi = req.path.startsWith('/api/admin/');
 
