@@ -1,0 +1,411 @@
+<%- include('layout', { 
+  title: 'Müşteri Yönetimi',
+  body: `
+    <style>
+      .cust-container { padding: 8px 0; }
+      .cust-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+      }
+      .cust-header h2 {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 32px;
+        letter-spacing: 2px;
+        color: #f0f0ec;
+      }
+      .cust-search-bar {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 20px;
+        align-items: center;
+      }
+      .search-input {
+        flex: 1;
+        padding: 10px 16px;
+        background: #141418;
+        border: 1px solid #2a2a32;
+        border-radius: 8px;
+        color: #f0f0ec;
+        font-size: 14px;
+      }
+      .search-input:focus {
+        outline: none;
+        border-color: #d4ff00;
+      }
+      .cust-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        background: #141418;
+        border: 1px solid #2a2a32;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .cust-table th {
+        background: #1c1c22;
+        color: #888884;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 14px 16px;
+        text-align: left;
+        border-bottom: 1px solid #2a2a32;
+      }
+      .cust-table td {
+        padding: 14px 16px;
+        border-bottom: 1px solid #2a2a32;
+        font-size: 14px;
+        color: #f0f0ec;
+      }
+      .cust-table tr:last-child td {
+        border-bottom: none;
+      }
+      .cust-table tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .btn {
+        padding: 8px 14px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .btn-primary {
+        background: #d4ff00;
+        color: #0d0d0f;
+      }
+      .btn-primary:hover {
+        background: #c5eb00;
+      }
+      .btn-danger {
+        background: #ff4d4d;
+        color: #fff;
+      }
+      .btn-danger:hover {
+        background: #e60000;
+      }
+      .btn-secondary {
+        background: #1c1c22;
+        color: #888884;
+        border: 1px solid #2a2a32;
+      }
+      .btn-secondary:hover {
+        background: #2a2a32;
+        color: #f0f0ec;
+      }
+      .badge-loyalty {
+        background: rgba(212, 255, 0, 0.12);
+        color: #d4ff00;
+        padding: 4px 8px;
+        border-radius: 100px;
+        font-size: 11px;
+        font-weight: 700;
+      }
+      /* Modal Styles */
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        backdrop-filter: blur(8px);
+      }
+      .modal.active {
+        display: flex;
+      }
+      .modal-card {
+        background: #141418;
+        border: 1px solid #2a2a32;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 680px;
+        max-height: 90vh;
+        overflow-y: auto;
+        padding: 28px;
+        position: relative;
+      }
+      .modal-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: none;
+        border: none;
+        color: #888884;
+        font-size: 20px;
+        cursor: pointer;
+      }
+      .modal-close:hover {
+        color: #f0f0ec;
+      }
+      .modal-title {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 28px;
+        letter-spacing: 1.5px;
+        color: #f0f0ec;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #2a2a32;
+        padding-bottom: 10px;
+      }
+      .modal-section {
+        margin-bottom: 24px;
+      }
+      .modal-section h4 {
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #d4ff00;
+        letter-spacing: 1px;
+        margin-bottom: 12px;
+      }
+      .address-item {
+        background: #1c1c22;
+        border: 1px solid #2a2a32;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 10px;
+      }
+      .order-item-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #2a2a32;
+        font-size: 13px;
+      }
+      .order-item-row:last-child {
+        border-bottom: none;
+      }
+      .badge-status {
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .badge-status.paid { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+      .badge-status.pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+      .badge-status.failed { background: rgba(239, 68, 68, 0.15); color: #ff4d4d; }
+    </style>
+
+    <div class="cust-container">
+      <div class="cust-header">
+        <h2>👥 Müşteri & Sadakat Yönetimi</h2>
+        <button onclick="loadCustomers()" class="btn btn-secondary">🔄 Yenile</button>
+      </div>
+
+      <div class="cust-search-bar">
+        <input type="text" id="searchBox" class="search-input" placeholder="İsim, e-posta veya telefon ile ara..." oninput="filterCustomers()">
+      </div>
+
+      <table class="cust-table">
+        <thead>
+          <tr>
+            <th>Müşteri Adı</th>
+            <th>E-Posta</th>
+            <th>Telefon</th>
+            <th>Sipariş Adedi</th>
+            <th>Toplam Harcama</th>
+            <th>Kayıt Tarihi</th>
+            <th style="text-align: right;">İşlemler</th>
+          </tr>
+        </thead>
+        <tbody id="customers-list">
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 40px; color: #888;">Yükleniyor...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Modal Box -->
+    <div class="modal" id="customerModal">
+      <div class="modal-card">
+        <button class="modal-close" onclick="closeModal()">✕</button>
+        <div class="modal-title" id="modalCustName">Müşteri Detayları</div>
+        
+        <div class="modal-section">
+          <h4>İletişim Bilgileri</h4>
+          <p id="modalCustContact" style="font-size:14px; color:#ccc; line-height:1.6;"></p>
+        </div>
+
+        <div class="modal-section">
+          <h4>Kayıtlı Adresler</h4>
+          <div id="modalCustAddresses"></div>
+        </div>
+
+        <div class="modal-section">
+          <h4>Sipariş Geçmişi</h4>
+          <div id="modalCustOrders" style="background:#1c1c22; border:1px solid #2a2a32; border-radius:8px; padding:8px 16px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let allCustomers = [];
+
+      async function loadCustomers() {
+        try {
+          const res = await fetch('/api/admin/customers');
+          const data = await res.json();
+          allCustomers = data;
+          renderCustomers(allCustomers);
+        } catch (err) {
+          console.error(err);
+          document.getElementById('customers-list').innerHTML = 
+            '<tr><td colspan="7" style="text-align: center; color: #ff4d4d; padding: 20px;">Müşteriler yüklenemedi.</td></tr>';
+        }
+      }
+
+      function renderCustomers(list) {
+        const tbody = document.getElementById('customers-list');
+        if (!list || list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #888;">Müşteri bulunamadı.</td></tr>';
+          return;
+        }
+
+        let html = '';
+        list.forEach(c => {
+          const formattedDate = new Date(c.createdAt).toLocaleDateString('tr-TR');
+          const phone = c.phone || '-';
+          
+          let rankBadge = '';
+          if (c.orderCount >= 10) {
+            rankBadge = ' <span class="badge-loyalty">⚡ VİP Müşteri</span>';
+          } else if (c.orderCount >= 3) {
+            rankBadge = ' <span class="badge-loyalty" style="background:rgba(59,130,246,0.12); color:#3b82f6;">⭐ Sadık Müşteri</span>';
+          }
+
+          html += '<tr>' +
+            '<td><strong>' + c.firstName + ' ' + c.lastName + '</strong>' + rankBadge + '</td>' +
+            '<td>' + c.email + '</td>' +
+            '<td>' + phone + '</td>' +
+            '<td>' + c.orderCount + ' Sipariş</td>' +
+            '<td><strong>' + c.totalSpent.toLocaleString("tr-TR") + ' ₺</strong></td>' +
+            '<td>' + formattedDate + '</td>' +
+            '<td style="text-align: right;">' +
+              '<button class="btn btn-secondary" onclick="showDetails(\\'' + c._id + '\\\')" style="margin-right: 8px;">🔍 Detay</button>' +
+              '<button class="btn btn-danger" onclick="deleteCustomer(\\'' + c._id + '\\\')">🗑️ Sil</button>' +
+            '</td>' +
+            '</tr>';
+        });
+        tbody.innerHTML = html;
+      }
+
+      function filterCustomers() {
+        const query = document.getElementById('searchBox').value.toLowerCase().trim();
+        if (!query) {
+          renderCustomers(allCustomers);
+          return;
+        }
+
+        const filtered = allCustomers.filter(c => {
+          const fullName = (c.firstName + ' ' + c.lastName).toLowerCase();
+          const email = c.email.toLowerCase();
+          const phone = (c.phone || '').toLowerCase();
+          return fullName.includes(query) || email.includes(query) || phone.includes(query);
+        });
+
+        renderCustomers(filtered);
+      }
+
+      async function showDetails(id) {
+        try {
+          const res = await fetch('/api/admin/customers/' + id);
+          const data = await res.json();
+          const c = data.customer;
+          const orders = data.orders;
+
+          document.getElementById('modalCustName').textContent = '👤 ' + c.firstName + ' ' + c.lastName;
+          
+          // Contact Details
+          document.getElementById('modalCustContact').innerHTML = 
+            '<strong>E-posta:</strong> ' + c.email + '<br>' +
+            '<strong>Telefon:</strong> ' + (c.phone || '-') + '<br>' +
+            '<strong>Kayıt Tarihi:</strong> ' + new Date(c.createdAt).toLocaleString('tr-TR');
+
+          // Addresses
+          const addrDiv = document.getElementById('modalCustAddresses');
+          if (!c.addresses || c.addresses.length === 0) {
+            addrDiv.innerHTML = '<p style="font-size:13px; color:#888;">Kayıtlı adres bulunamadı.</p>';
+          } else {
+            let addrHtml = '';
+            c.addresses.forEach(a => {
+              addrHtml += '<div class="address-item">' +
+                '<strong style="text-transform: uppercase; font-size:12px; color:#d4ff00; display:block; margin-bottom:4px;">' + a.title + '</strong>' +
+                '<span style="font-size:13px; color:#ccc; display:block;">' + a.fullAddress + '</span>' +
+                '<span style="font-size:12px; color:#888; display:block; margin-top:2px;">' + a.district + ' / ' + a.city + '</span>' +
+                '</div>';
+            });
+            addrDiv.innerHTML = addrHtml;
+          }
+
+          // Orders
+          const ordDiv = document.getElementById('modalCustOrders');
+          if (!orders || orders.length === 0) {
+            ordDiv.innerHTML = '<p style="font-size:13px; color:#888; text-align:center; padding:10px 0;">Sipariş geçmişi bulunamadı.</p>';
+          } else {
+            let ordHtml = '';
+            orders.forEach(o => {
+              const statusClass = o.paymentStatus === 'paid' ? 'paid' : (o.paymentStatus === 'pending' ? 'pending' : 'failed');
+              const statusText = o.paymentStatus === 'paid' ? 'Ödendi' : (o.paymentStatus === 'pending' ? 'Bekliyor' : 'Başarısız/İptal');
+              
+              ordHtml += '<div class="order-item-row">' +
+                '<div>' +
+                  '<strong style="color:#f0f0ec;">#' + o._id.toString().slice(-8).toUpperCase() + '</strong>' +
+                  '<span style="color:#666; font-size:11px; margin-left:10px;">' + new Date(o.createdAt).toLocaleDateString('tr-TR') + '</span>' +
+                '</div>' +
+                '<div style="display:flex; align-items:center; gap:12px;">' +
+                  '<strong style="color:#d4ff00;">' + o.totalAmount.toLocaleString('tr-TR') + ' ₺</strong>' +
+                  '<span class="badge-status ' + statusClass + '">' + statusText + '</span>' +
+                '</div>' +
+                '</div>';
+            });
+            ordDiv.innerHTML = ordHtml;
+          }
+
+          document.getElementById('customerModal').classList.add('active');
+        } catch (err) {
+          alert('Detaylar yüklenirken hata oluştu: ' + err.message);
+        }
+      }
+
+      function closeModal() {
+        document.getElementById('customerModal').classList.remove('active');
+      }
+
+      async function deleteCustomer(id) {
+        if (!confirm('⚠️ Bu müşteriyi kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
+          return;
+        }
+
+        try {
+          const res = await fetch('/api/admin/customers/' + id, {
+            method: 'DELETE'
+          });
+          const result = await res.json();
+          if (result.success) {
+            alert('✅ Müşteri başarıyla silindi.');
+            loadCustomers();
+          } else {
+            alert('Hata: ' + result.message);
+          }
+        } catch (err) {
+          alert('Bağlantı hatası: ' + err.message);
+        }
+      }
+
+      // Initial load
+      loadCustomers();
+    </script>
+  `
+}) %>

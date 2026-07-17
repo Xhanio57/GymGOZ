@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Customer = require('../models/Customer');
+const Order = require('../models/Order');
 
 // Middleware: müşteri oturumu kontrolü
 function isCustomerAuth(req, res, next) {
@@ -22,7 +23,7 @@ router.get('/account/register', (req, res) => {
   res.render('customer-login', { title: 'Üye Ol', error: null, success: null, tab: 'register', redirect });
 });
 
-// POST — Kayıt işlemi
+// POST — Kayıt işlemi (Doğrulama kodu gönderme adımı)
 router.post('/account/register', async (req, res) => {
   const redirect = req.body.redirect || '';
   try {
@@ -43,25 +44,186 @@ router.post('/account/register', async (req, res) => {
       return res.render('customer-login', { title: 'Üye Ol', error: 'Bu e-posta adresi zaten kayıtlı.', success: null, tab: 'register', redirect });
     }
 
-    const customer = new Customer({
+    // Generate a 6-digit random code
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Store in session temporarily
+    req.session.tempCustomer = {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       email: email.toLowerCase().trim(),
       phone: phone ? phone.trim() : '',
       password
-    });
-    await customer.save();
+    };
+    req.session.verificationCode = verificationCode;
 
-    return res.render('customer-login', {
-      title: 'Giriş Yap',
+    // Send verification email using Resend API
+    const { sendResendEmail } = require('../utils/email');
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">
+        <div style="background-color: #0a0a0a; color: #fff; padding: 20px; text-align: center;">
+          <h1 style="margin: 0; font-family: 'Bebas Neue', Arial, sans-serif; letter-spacing: 2px;">ÖZ SPOR <span style="color: #d4ff00;">&</span> OUTDOOR</h1>
+        </div>
+        <div style="padding: 20px; border: 1px solid #eee; border-top: none;">
+          <h2 style="color: #d4ff00; margin-top: 0;">Üyelik Doğrulama Kodu 🔐</h2>
+          <p>Merhaba,</p>
+          <p>Öz Spor & Outdoor mağazasına üye olmak üzere talepte bulundunuz. Üyelik işleminizi tamamlamak için aşağıdaki 6 haneli doğrulama kodunu kayıt sayfasındaki alana girmeniz gerekmektedir:</p>
+          
+          <div style="background-color: #f9f9f9; border: 1px solid #ddd; padding: 20px; border-radius: 8px; text-align: center; margin: 25px 0;">
+            <span style="font-family: monospace; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #0a0a0a;">${verificationCode}</span>
+          </div>
+
+          <p style="font-size: 13px; color: #666;">Eğer bu talebi siz gerçekleştirmediyseniz, lütfen bu e-postayı dikkate almayınız.</p>
+          <p style="font-size: 12px; color: #888; margin-top: 40px; border-top: 1px solid #eee; padding-top: 15px;">
+            Bu e-posta otomatik olarak gönderilmiştir. Sorularınız için bizimle iletişime geçebilirsiniz.
+          </p>
+        </div>
+      </div>
+    `;
+
+    await sendResendEmail({
+      to: email.toLowerCase().trim(),
+      subject: 'Öz Spor & Outdoor Üyelik Doğrulama Kodu 🔐',
+      html: emailHtml
+    });
+
+    return res.render('customer-verify', {
+      title: 'E-Posta Doğrulama',
+      email: email.toLowerCase().trim(),
       error: null,
-      success: 'Hesabınız oluşturuldu! Şimdi giriş yapabilirsiniz.',
-      tab: 'login',
+      success: 'Doğrulama kodu e-posta adresinize gönderildi. Lütfen gelen kutunuzu (ve gereksiz/spam klasörünü) kontrol edin.',
       redirect
     });
   } catch (err) {
     console.error('Register error:', err);
     return res.render('customer-login', { title: 'Üye Ol', error: 'Kayıt sırasında bir hata oluştu.', success: null, tab: 'register', redirect });
+  }
+});
+
+// GET — Doğrulama sayfası
+router.get('/account/verify', (req, res) => {
+  const redirect = req.query.redirect || '';
+  const temp = req.session.tempCustomer;
+  if (!temp || !req.session.verificationCode) {
+    return res.redirect('/account/register');
+  }
+  res.render('customer-verify', {
+    title: 'E-Posta Doğrulama',
+    email: temp.email,
+    error: null,
+    success: null,
+    redirect
+  });
+});
+
+// POST — Doğrulama kodu kontrolü
+router.post('/account/verify', async (req, res) => {
+  const redirect = req.body.redirect || '';
+  const { code } = req.body;
+  const temp = req.session.tempCustomer;
+
+  if (!temp || !req.session.verificationCode) {
+    return res.redirect('/account/register');
+  }
+
+  if (!code || code.trim() !== req.session.verificationCode) {
+    return res.render('customer-verify', {
+      title: 'E-Posta Doğrulama',
+      email: temp.email,
+      error: 'Girdiğiniz doğrulama kodu geçersiz veya hatalı.',
+      success: null,
+      redirect
+    });
+  }
+
+  try {
+    const customer = new Customer({
+      firstName: temp.firstName,
+      lastName: temp.lastName,
+      email: temp.email,
+      phone: temp.phone,
+      password: temp.password
+    });
+    await customer.save();
+
+    // Clear session values
+    req.session.tempCustomer = null;
+    req.session.verificationCode = null;
+
+    return res.render('customer-login', {
+      title: 'Giriş Yap',
+      error: null,
+      success: 'E-posta doğrulamanız başarılı! Hesabınız oluşturuldu. Giriş yapabilirsiniz.',
+      tab: 'login',
+      redirect
+    });
+  } catch (err) {
+    console.error('Verify save error:', err);
+    return res.render('customer-verify', {
+      title: 'E-Posta Doğrulama',
+      email: temp.email,
+      error: 'Hesap oluşturulurken bir hata meydana geldi: ' + err.message,
+      success: null,
+      redirect
+    });
+  }
+});
+
+// POST — Kodu yeniden gönder
+router.post('/account/resend-code', async (req, res) => {
+  const redirect = req.body.redirect || '';
+  const temp = req.session.tempCustomer;
+
+  if (!temp || !req.session.verificationCode) {
+    return res.redirect('/account/register');
+  }
+
+  // Regenerate code
+  const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+  req.session.verificationCode = verificationCode;
+
+  try {
+    const { sendResendEmail } = require('../utils/email');
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">
+        <div style="background-color: #0a0a0a; color: #fff; padding: 20px; text-align: center;">
+          <h1 style="margin: 0; font-family: 'Bebas Neue', Arial, sans-serif; letter-spacing: 2px;">ÖZ SPOR <span style="color: #d4ff00;">&</span> OUTDOOR</h1>
+        </div>
+        <div style="padding: 20px; border: 1px solid #eee; border-top: none;">
+          <h2 style="color: #d4ff00; margin-top: 0;">Yeni Üyelik Doğrulama Kodu 🔐</h2>
+          <p>Merhaba,</p>
+          <p>Talep ettiğiniz yeni 6 haneli doğrulama kodu aşağıdadır:</p>
+          
+          <div style="background-color: #f9f9f9; border: 1px solid #ddd; padding: 20px; border-radius: 8px; text-align: center; margin: 25px 0;">
+            <span style="font-family: monospace; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #0a0a0a;">${verificationCode}</span>
+          </div>
+
+          <p style="font-size: 13px; color: #666;">Eğer bu talebi siz gerçekleştirmediyseniz, lütfen bu e-postayı dikkate almayınız.</p>
+        </div>
+      </div>
+    `;
+
+    await sendResendEmail({
+      to: temp.email,
+      subject: 'Yeni Üyelik Doğrulama Kodu 🔐',
+      html: emailHtml
+    });
+
+    return res.render('customer-verify', {
+      title: 'E-Posta Doğrulama',
+      email: temp.email,
+      error: null,
+      success: 'Yeni doğrulama kodu e-posta adresinize gönderildi.',
+      redirect
+    });
+  } catch (err) {
+    return res.render('customer-verify', {
+      title: 'E-Posta Doğrulama',
+      email: temp.email,
+      error: 'Kod yeniden gönderilirken hata oluştu.',
+      success: null,
+      redirect
+    });
   }
 });
 
@@ -150,7 +312,6 @@ router.get('/account', isCustomerAuth, async (req, res) => {
       return res.redirect('/account/login');
     }
 
-    const Order = require('../models/Order');
     const orders = await Order.find({ customerEmail: customer.email, paymentStatus: { $ne: 'cancelled' } }).sort({ createdAt: -1 });
 
     res.render('customer-account', { title: 'Hesabım', customer, orders });
@@ -164,7 +325,6 @@ router.get('/account', isCustomerAuth, async (req, res) => {
 router.post('/account/orders/:id/cancel', isCustomerAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const Order = require('../models/Order');
     const order = await Order.findById(id);
     if (!order) {
       return res.status(404).send('Sipariş bulunamadı.');
@@ -199,7 +359,6 @@ router.get('/account/orders/:id/return', isCustomerAuth, async (req, res) => {
     const customer = await Customer.findById(req.session.customerId);
     if (!customer) return res.redirect('/account/login');
 
-    const Order = require('../models/Order');
     const order = await Order.findById(req.params.id);
     
     if (!order || order.customerEmail !== customer.email || order.paymentStatus !== 'paid' || order.returnStatus !== 'none') {
@@ -219,7 +378,6 @@ router.post('/account/orders/:id/return', isCustomerAuth, async (req, res) => {
     const customer = await Customer.findById(req.session.customerId);
     if (!customer) return res.redirect('/account/login');
 
-    const Order = require('../models/Order');
     const order = await Order.findById(req.params.id);
 
     if (!order || order.customerEmail !== customer.email || order.paymentStatus !== 'paid' || order.returnStatus !== 'none') {
@@ -253,6 +411,69 @@ router.get('/account/logout', (req, res) => {
   req.session.customerId = null;
   req.session.customerName = null;
   res.redirect('/');
+});
+
+/* =========================================
+   ADMIN CUSTOMER & LOYALTY MANAGEMENT
+   ========================================= */
+
+// GET — Admin customer management dashboard view
+router.get('/admin/customers', async (req, res) => {
+  res.render('admin-customers', { title: 'Müşteriler' });
+});
+
+// GET — API route returning all customers with loyalty stats
+router.get('/api/admin/customers', async (req, res) => {
+  try {
+    const customers = await Customer.find({ isActive: true }).sort({ createdAt: -1 }).lean();
+    
+    const customersWithStats = await Promise.all(customers.map(async (c) => {
+      const orders = await Order.find({ customerEmail: c.email });
+      const paidOrders = orders.filter(o => o.paymentStatus === 'paid');
+      const totalSpent = paidOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+      return {
+        _id: c._id,
+        firstName: c.firstName,
+        lastName: c.lastName,
+        email: c.email,
+        phone: c.phone,
+        createdAt: c.createdAt,
+        orderCount: paidOrders.length,
+        totalSpent: Math.round(totalSpent * 100) / 100
+      };
+    }));
+
+    res.json(customersWithStats);
+  } catch (err) {
+    console.error('Fetch admin customers error:', err);
+    res.status(500).json({ success: false, message: 'Müşteri istatistikleri yüklenemedi.' });
+  }
+});
+
+// GET — API route returning details of a single customer
+router.get('/api/admin/customers/:id', async (req, res) => {
+  try {
+    const customer = await Customer.findById(req.params.id).lean();
+    if (!customer) return res.status(404).json({ success: false, message: 'Müşteri bulunamadı.' });
+
+    const orders = await Order.find({ customerEmail: customer.email }).sort({ createdAt: -1 });
+    res.json({ customer, orders });
+  } catch (err) {
+    console.error('Fetch customer details error:', err);
+    res.status(500).json({ success: false, message: 'Müşteri detayları yüklenemedi.' });
+  }
+});
+
+// DELETE — API route to delete a customer
+router.delete('/api/admin/customers/:id', async (req, res) => {
+  try {
+    const customer = await Customer.findByIdAndDelete(req.params.id);
+    if (!customer) return res.status(404).json({ success: false, message: 'Müşteri bulunamadı.' });
+    res.json({ success: true, message: 'Müşteri başarıyla silindi.' });
+  } catch (err) {
+    console.error('Delete customer error:', err);
+    res.status(500).json({ success: false, message: 'Müşteri silinemedi.' });
+  }
 });
 
 module.exports = router;
