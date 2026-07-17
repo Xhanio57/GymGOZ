@@ -256,6 +256,155 @@ router.post('/account/login', async (req, res) => {
   }
 });
 
+// GET — Şifremi Unuttum sayfası
+router.get('/account/forgot-password', (req, res) => {
+  const redirect = req.query.redirect || '';
+  if (req.session && req.session.customerId) return res.redirect(redirect || '/account');
+  res.render('customer-login', { title: 'Şifremi Unuttum', error: null, success: null, tab: 'forgot', redirect });
+});
+
+// POST — Şifre sıfırlama talebi
+router.post('/account/forgot-password', async (req, res) => {
+  const redirect = req.body.redirect || '';
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.render('customer-login', { title: 'Şifremi Unuttum', error: 'Lütfen e-posta adresinizi girin.', success: null, tab: 'forgot', redirect });
+    }
+
+    const customer = await Customer.findOne({ email: email.toLowerCase().trim(), isActive: true });
+    if (!customer) {
+      return res.render('customer-login', { title: 'Şifremi Unuttum', error: 'Bu e-posta adresi ile kayıtlı aktif bir kullanıcı bulunamadı.', success: null, tab: 'forgot', redirect });
+    }
+
+    // Generate random crypto token
+    const crypto = require('crypto');
+    const token = crypto.randomBytes(20).toString('hex');
+
+    // Save token and expiry (1 hour)
+    customer.resetPasswordToken = token;
+    customer.resetPasswordExpires = Date.now() + 3600000;
+    await customer.save();
+
+    // Send email using Resend
+    const { sendResendEmail } = require('../utils/email');
+    const resetUrl = `${req.protocol}://${req.get('host')}/account/reset-password?token=${token}`;
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">
+        <div style="background-color: #0a0a0a; color: #fff; padding: 20px; text-align: center;">
+          <h1 style="margin: 0; font-family: 'Bebas Neue', Arial, sans-serif; letter-spacing: 2px;">ÖZ SPOR <span style="color: #d4ff00;">&</span> OUTDOOR</h1>
+        </div>
+        <div style="padding: 20px; border: 1px solid #eee; border-top: none;">
+          <h2 style="color: #d4ff00; margin-top: 0;">Şifre Sıfırlama Talebi 🔑</h2>
+          <p>Merhaba <strong>${customer.firstName}</strong>,</p>
+          <p>Hesabınız için şifre sıfırlama talebinde bulundunuz. Şifrenizi yenilemek için lütfen aşağıdaki butona tıklayın:</p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetUrl}" style="background-color: #0a0a0a; color: #d4ff00; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; text-transform: uppercase; font-size: 13px; border: 1px solid #222;">Şifremi Sıfırla</a>
+          </div>
+
+          <p style="font-size: 12px; color: #666; word-break: break-all;">
+            Eğer buton çalışmıyorsa aşağıdaki bağlantıyı tarayıcınıza kopyalayabilirsiniz:<br>
+            <a href="${resetUrl}" style="color: #3b82f6;">${resetUrl}</a>
+          </p>
+          <p style="font-size: 11px; color: #888; margin-top: 20px;">* Bu bağlantı 1 saat boyunca geçerlidir. Talebi siz yapmadıysanız lütfen bu maili dikkate almayınız.</p>
+        </div>
+      </div>
+    `;
+
+    await sendResendEmail({
+      to: customer.email,
+      subject: 'Öz Spor & Outdoor Şifre Sıfırlama Talebi 🔑',
+      html: emailHtml
+    });
+
+    return res.render('customer-login', {
+      title: 'Şifremi Unuttum',
+      error: null,
+      success: 'Şifre sıfırlama bağlantısı e-posta adresinize gönderildi (Lütfen spam klasörünü de kontrol edin).',
+      tab: 'forgot',
+      redirect
+    });
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    return res.render('customer-login', { title: 'Şifremi Unuttum', error: 'Bir hata oluştu. Lütfen tekrar deneyin.', success: null, tab: 'forgot', redirect });
+  }
+});
+
+// GET — Şifre yenileme sayfası
+router.get('/account/reset-password', async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) {
+      return res.render('customer-login', { title: 'Giriş Yap', error: 'Şifre sıfırlama bağlantısı geçersiz.', success: null, tab: 'login', redirect: '' });
+    }
+
+    const customer = await Customer.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+      isActive: true
+    });
+
+    if (!customer) {
+      return res.render('customer-login', { title: 'Giriş Yap', error: 'Şifre sıfırlama bağlantısı geçersiz veya süresi dolmuş.', success: null, tab: 'login', redirect: '' });
+    }
+
+    res.render('customer-reset-password', {
+      title: 'Şifre Yenileme',
+      email: customer.email,
+      token,
+      error: null
+    });
+  } catch (err) {
+    console.error('Reset password get error:', err);
+    res.redirect('/account/login');
+  }
+});
+
+// POST — Şifre yenileme işlemi
+router.post('/account/reset-password', async (req, res) => {
+  try {
+    const { token, password, passwordConfirm } = req.body;
+    if (!token || !password || !passwordConfirm) {
+      return res.redirect('/account/login');
+    }
+
+    const customer = await Customer.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+      isActive: true
+    });
+
+    if (!customer) {
+      return res.render('customer-login', { title: 'Giriş Yap', error: 'Şifre sıfırlama işlemi başarısız. Süresi dolmuş olabilir.', success: null, tab: 'login', redirect: '' });
+    }
+
+    if (password.length < 6) {
+      return res.render('customer-reset-password', { title: 'Şifre Yenileme', email: customer.email, token, error: 'Şifre en az 6 karakter olmalıdır.' });
+    }
+
+    if (password !== passwordConfirm) {
+      return res.render('customer-reset-password', { title: 'Şifre Yenileme', email: customer.email, token, error: 'Şifreler eşleşmiyor.' });
+    }
+
+    customer.password = password;
+    customer.resetPasswordToken = '';
+    customer.resetPasswordExpires = undefined;
+    await customer.save();
+
+    return res.render('customer-login', {
+      title: 'Giriş Yap',
+      error: null,
+      success: 'Şifreniz başarıyla güncellendi! Yeni şifrenizle giriş yapabilirsiniz.',
+      tab: 'login',
+      redirect: ''
+    });
+  } catch (err) {
+    console.error('Reset password post error:', err);
+    res.redirect('/account/login');
+  }
+});
+
 // POST — Adres Ekleme
 router.post('/account/address', isCustomerAuth, async (req, res) => {
   try {
