@@ -600,7 +600,7 @@ router.get('/api/admin/orders', async (req, res) => {
 router.post('/api/admin/orders/:id/shipping', async (req, res) => {
   try {
     const { id } = req.params;
-    const { shippingStatus, cargoProvider, cargoTrackingNo } = req.body;
+    const { shippingStatus, cargoProvider, cargoTrackingNo, sendInvoiceEmail } = req.body;
 
     const order = await Order.findById(id);
     if (!order) {
@@ -614,8 +614,8 @@ router.post('/api/admin/orders/:id/shipping', async (req, res) => {
     if (cargoProvider !== undefined) order.cargoProvider = cargoProvider;
     if (cargoTrackingNo !== undefined) order.cargoTrackingNo = cargoTrackingNo;
 
-    // If marked as delivered, ensure e-invoice PDF is generated
-    if (order.shippingStatus === 'delivered' && !order.invoicePdfUrl) {
+    // If marked as delivered or explicitly requested to send invoice email, ensure e-invoice PDF is generated
+    if ((order.shippingStatus === 'delivered' || sendInvoiceEmail) && !order.invoicePdfUrl) {
       const fs = require('fs');
       const path = require('path');
       const { generateInvoicePDF } = require('../utils/invoice');
@@ -646,6 +646,12 @@ router.post('/api/admin/orders/:id/shipping', async (req, res) => {
     } else if (shippingStatus === 'delivered' && oldStatus !== 'delivered') {
       const { sendOrderDeliveredEmail } = require('../utils/email');
       sendOrderDeliveredEmail(order).catch(err => console.error('Teslimat e-postası gönderim hatası:', err));
+    }
+
+    // Send invoice email if checked
+    if (sendInvoiceEmail) {
+      const { sendInvoiceEmail: mailInvoice } = require('../utils/email');
+      mailInvoice(order).catch(err => console.error('Fatura e-postası gönderim hatası:', err));
     }
 
     res.json({ success: true, order });

@@ -223,6 +223,7 @@
             '<td>' +
               '<input type="text" class="cargo-inp" id="provider-' + order._id + '" placeholder="Kargo Firması" value="' + cargoProvider + '"><br>' +
               '<input type="text" class="cargo-inp" id="tracking-' + order._id + '" style="margin-top:4px;" placeholder="Takip No" value="' + cargoTrackingNo + '">' +
+              '<label style="display:block; font-size:10px; margin-top:6px; color:#aaa; cursor:pointer;"><input type="checkbox" id="send-invoice-' + order._id + '" style="vertical-align:middle; margin-right:4px;"> Faturayı Mail At</label>' +
             '</td>' +
             '<td>' + returnHtml + '</td>' +
             '<td>' +
@@ -262,6 +263,7 @@
         const status = document.getElementById('ship-' + id).value;
         const provider = document.getElementById('provider-' + id).value;
         const tracking = document.getElementById('tracking-' + id).value;
+        const sendInvoice = document.getElementById('send-invoice-' + id).checked;
 
         try {
           const res = await fetch('/api/admin/orders/' + id + '/shipping', {
@@ -270,7 +272,8 @@
             body: JSON.stringify({
               shippingStatus: status,
               cargoProvider: provider,
-              cargoTrackingNo: tracking
+              cargoTrackingNo: tracking,
+              sendInvoiceEmail: sendInvoice
             })
           });
 

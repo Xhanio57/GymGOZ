@@ -341,11 +341,54 @@ async function sendOrderDeliveredEmail(order) {
   }
 }
 
+async function sendInvoiceEmail(order) {
+  try {
+    if (!order.invoicePdfUrl) {
+      console.warn('⚠️ Fatura PDF adresi bulunamadığı için fatura maili gönderilemedi.');
+      return;
+    }
+
+    const path = require('path');
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">
+        <div style="background-color: #0a0a0a; color: #fff; padding: 20px; text-align: center;">
+          <h1 style="margin: 0; font-family: 'Bebas Neue', Arial, sans-serif; letter-spacing: 2px;">ÖZ SPOR <span style="color: #d4ff00;">&</span> OUTDOOR</h1>
+        </div>
+        <div style="padding: 20px; border: 1px solid #eee; border-top: none;">
+          <h2 style="color: #0a0a0a; margin-top: 0;">E-Arşiv Faturanız Hazır 📄</h2>
+          <p>Merhaba <strong>${order.customerName}</strong>,</p>
+          <p>#${order._id.toString().slice(-8).toUpperCase()} numaralı siparişinize ait e-Arşiv faturanız düzenlenmiştir. Faturanız bu e-postanın ekinde PDF formatında yer almaktadır.</p>
+          <p>Bizi tercih ettiğiniz için teşekkür eder, spor dolu günler dileriz!</p>
+          <p style="font-size: 12px; color: #888; margin-top: 40px; border-top: 1px solid #eee; padding-top: 15px;">
+            Bu e-posta otomatik olarak gönderilmiştir. Sorularınız için bizimle iletişime geçebilirsiniz.
+          </p>
+        </div>
+      </div>
+    `;
+
+    const attachments = [{
+      filename: `E-Arsiv_Fatura_${order._id}.pdf`,
+      path: path.join(__dirname, '../public', order.invoicePdfUrl)
+    }];
+
+    await sendResendEmail({
+      to: order.customerEmail,
+      subject: `Öz Spor & Outdoor E-Arşiv Faturanız #${order._id.toString().slice(-8).toUpperCase()}`,
+      html: emailHtml,
+      attachments
+    });
+    console.log(`✉️ Fatura e-postası başarıyla gönderildi: ${order.customerEmail}`);
+  } catch (error) {
+    console.error('❌ Fatura e-postası gönderme hatası:', error);
+  }
+}
+
 module.exports = {
   sendOrderConfirmationEmail,
   sendOrderFailureEmail,
   sendOrderShippedEmail,
   sendOrderDeliveredEmail,
   sendOrderPendingEmail,
-  sendResendEmail
+  sendResendEmail,
+  sendInvoiceEmail
 };
