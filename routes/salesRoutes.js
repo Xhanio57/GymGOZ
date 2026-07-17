@@ -5,7 +5,7 @@ const SalesHistory = require('../models/SalesHistory');
 
 router.post('/api/sales', async (req, res) => {
   try {
-    const { productId, size, quantity, paymentMethod, cashier } = req.body;
+    const { productId, size, quantity, paymentMethod, cashier, price } = req.body;
 
     if (!productId || !size || !quantity) {
       return res.status(400).json({
@@ -42,13 +42,15 @@ router.post('/api/sales', async (req, res) => {
     sizeItem.stock -= parseInt(quantity);
     await product.save();
 
+    const salePrice = price !== undefined ? parseFloat(price) : product.finalPrice;
+
     const sale = new SalesHistory({
       productId: productId,
       productName: product.name,
       size: size,
       quantity: parseInt(quantity),
-      price: product.finalPrice,
-      totalPrice: product.finalPrice * quantity,
+      price: salePrice,
+      totalPrice: salePrice * quantity,
       paymentMethod: paymentMethod || 'Nakit',
       cashier: cashier || 'Sistem'
     });
@@ -59,7 +61,7 @@ router.post('/api/sales', async (req, res) => {
       success: true,
       message: `Satış başarılı. ${product.name} (${size}) x${quantity}`,
       product,
-      totalPrice: product.finalPrice * quantity
+      totalPrice: salePrice * quantity
     });
   } catch (error) {
     res.status(500).json({

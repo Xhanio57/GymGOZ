@@ -298,6 +298,9 @@
       const discountType = document.getElementById('discountType').value;
       const discountValue = parseFloat(document.getElementById('discountValue').value) || 0;
 
+      // Distribute cart-wide discount proportionally to items
+      const discountFactor = totals.subtotal > 0 ? (totals.total / totals.subtotal) : 1;
+
       for (const c of cart) {
         const p = prods.find(function(x) { return x._id === c.id; });
         if (!p) {
@@ -316,6 +319,9 @@
           return;
         }
 
+        // Calculate discounted item price
+        const finalItemPrice = Math.round((c.price * discountFactor) * 100) / 100;
+
         try {
           const res = await fetch('/api/sales', {
             method: 'POST',
@@ -325,6 +331,7 @@
               size: c.size,
               quantity: c.qty,
               paymentMethod: document.getElementById('pay').value,
+              price: finalItemPrice,
               cartDiscountType: discountType,
               cartDiscountValue: discountValue,
               cartSubtotal: totals.subtotal,
