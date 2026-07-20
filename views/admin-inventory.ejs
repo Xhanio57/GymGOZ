@@ -277,6 +277,11 @@
       }
     }
 
+    function handleImgError(img) {
+      img.onerror = null;
+      img.src = '/images/default-product.png';
+    }
+
     async function load() {
       try {
         await loadCategories();
@@ -316,7 +321,7 @@
 
         return '<tr>' +
           '<td><input type="checkbox" data-id="' + p._id + '" onchange="toggleSelect(this)" ' + isChecked + '></td>' +
-          '<td><img src="' + (p.image || '/images/default-product.png') + '" onerror="this.onerror=null;this.src=\'/images/default-product.png\'"></td>' +
+          '<td><img src="' + (p.image || '/images/default-product.png') + '" onerror="handleImgError(this)"></td>' +
           '<td>' + (p.name || '') + '</td>' +
           '<td>' + (p.category || '') + '</td>' +
           '<td><code style="font-size:11px">' + (p.barcode || '') + '</code></td>' +
