@@ -316,7 +316,7 @@
 
         return '<tr>' +
           '<td><input type="checkbox" data-id="' + p._id + '" onchange="toggleSelect(this)" ' + isChecked + '></td>' +
-          '<td><img src="' + (p.image || '') + '" onerror="this.src=\\'/images/default-product.svg\\'"></td>' +
+          '<td><img src="' + (p.image || '/images/default-product.png') + '" onerror="this.onerror=null;this.src=\'/images/default-product.png\'"></td>' +
           '<td>' + (p.name || '') + '</td>' +
           '<td>' + (p.category || '') + '</td>' +
           '<td><code style="font-size:11px">' + (p.barcode || '') + '</code></td>' +

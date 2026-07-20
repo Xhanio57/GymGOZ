@@ -314,7 +314,7 @@
   <% activeProducts.forEach((product, pi) => { %>
   <div class="sc-card" id="card-<%= product._id %>" data-name="<%= product.name.toLowerCase() %>" data-cat="<%= product.category %>" data-index="<%= pi %>">
     <div class="sc-card-header">
-      <img class="sc-card-img" src="<%= product.image %>" alt="<%= product.name %>" onerror="this.src='/images/default-product.png'">
+      <img class="sc-card-img" src="<%= product.image || '/images/default-product.png' %>" alt="<%= product.name %>" onerror="this.onerror=null;this.src='/images/default-product.png'">
       <div class="sc-card-info">
         <div class="sc-card-name"><%= product.name %></div>
         <div class="sc-card-cat"><%= product.category %></div>

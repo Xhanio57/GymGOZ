@@ -150,7 +150,7 @@
       list.innerHTML = f.map(function(p) {
         const tot = (p.sizeStock || []).reduce(function(a, b) { return a + b.stock; }, 0);
         return '<div class="item" onclick="openSizeModal(event)">' +
-          '<img src="' + (p.image || '') + '" onerror="this.src=\\'/images/default-product.svg\\'">' +
+          '<img src="' + (p.image || '/images/default-product.png') + '" onerror="this.onerror=null;this.src=\'/images/default-product.png\'">' +
           '<h4>' + p.name + '</h4>' +
           '<p>' + p.category + '</p>' +
           '<p class="price">' + Number(p.price).toFixed(2) + ' ₺</p>' +

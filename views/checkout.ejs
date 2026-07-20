@@ -392,7 +392,7 @@
       const container = document.getElementById('summaryItemsContainer');
       container.innerHTML = cart.map(item => `
         <div class="summary-item">
-          <img src="${item.image}" onerror="this.src='/images/default-product.png'">
+          <img src="${item.image || '/images/default-product.png'}" onerror="this.onerror=null;this.src='/images/default-product.png'">
           <div class="summary-item-details">
             <div class="summary-item-name">${item.name}</div>
             <div class="summary-item-meta">Beden: ${item.size} | Adet: ${item.quantity}</div>

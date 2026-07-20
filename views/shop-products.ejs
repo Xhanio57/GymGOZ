@@ -901,7 +901,7 @@
     <!-- Left: Gallery -->
     <div class="popup-gallery">
       <div class="popup-badge" id="popup-badge" style="display:none"></div>
-      <img id="popup-img" src="" alt="">
+      <img id="popup-img" src="" alt="" onerror="this.onerror=null;this.src='/images/default-product.png'">
     </div>
 
     <!-- Right: Info -->
@@ -1102,7 +1102,7 @@ function renderProducts(items) {
     <div class="product-card" onclick="openPopup('${p.id}')">
       ${p.badge ? `<div class="badge ${p.badge === 'YENİ' ? 'yeni' : ''}">${p.badge}</div>` : ''}
       <div class="product-img-wrap">
-        <img src="${p.img}" alt="${p.name}" loading="lazy" onerror="this.src='/images/default-product.png'">
+        <img src="${p.img || '/images/default-product.png'}" alt="${p.name}" loading="lazy" onerror="this.onerror=null;this.src='/images/default-product.png'">
       </div>
       <div class="product-info">
         <div class="product-cat">${catLabel(p.cat)}</div>
@@ -1624,7 +1624,7 @@ function updateCartUI() {
     cartItemsContainer.innerHTML = cart.map(item => {
       return `
         <div class="cart-item">
-          <img src="${item.image}" onerror="this.src='/images/default-product.png'">
+          <img src="${item.image || '/images/default-product.png'}" onerror="this.onerror=null;this.src='/images/default-product.png'">
           <div class="cart-item-details">
             <div class="cart-item-name">${item.name}</div>
             <div class="cart-item-size">Beden: ${item.size}</div>
