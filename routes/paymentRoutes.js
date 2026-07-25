@@ -432,7 +432,7 @@ router.post('/api/checkout/initiate', async (req, res) => {
     } else {
       console.error('PayTR Token Request Failed:', result);
 
-      const reason = result.err_msg || 'Ödeme arayüzü başlatılamadı. Sistem yöneticisi sizinle en kısa sürede iletişime geçecektir.';
+      const reason = result.reason || result.err_msg || 'Ödeme arayüzü başlatılamadı. Sistem yöneticisi sizinle en kısa sürede iletişime geçecektir.';
       
       order.paymentStatus = 'failed';
       order.failedReason = reason;
@@ -811,6 +811,11 @@ router.get('/account/orders/:id/invoice', async (req, res) => {
     // Security check: order belongs to this customer
     if (order.customerEmail.toLowerCase() !== customer.email.toLowerCase()) {
       return res.status(403).send('Bu işlem için yetkiniz yok.');
+    }
+
+    // Only allow invoice download when order is delivered
+    if (order.shippingStatus !== 'delivered') {
+      return res.status(403).send('Fatura yalnızca sipariş teslim edildikten sonra indirilebilir.');
     }
 
     const { generateInvoicePDF } = require('../utils/invoice');

@@ -149,7 +149,7 @@
 
           <div class="order-total">Toplam: <%= order.totalAmount.toFixed(2) %> ₺</div>
 
-          <% if (order.paymentStatus === 'paid' || order.shippingStatus === 'delivered' || order.invoicePdfUrl) { %>
+          <% if (order.shippingStatus === 'delivered') { %>
             <div style="text-align: right; display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;">
               <a href="/account/orders/<%= order._id %>/invoice" class="btn-return" style="background: rgba(212,255,0,0.1); color: var(--accent); border-color: rgba(212,255,0,0.2);">📄 E-Fatura İndir</a>
               <% if (order.paymentStatus === 'paid' && (!order.returnStatus || order.returnStatus === 'none')) { %>
