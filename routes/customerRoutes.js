@@ -572,6 +572,29 @@ router.post('/account/change-password', isCustomerAuth, async (req, res) => {
   }
 });
 
+// POST — Öz Spor Club Üyeliği Katıl / İptal Et
+router.post('/account/club/toggle', isCustomerAuth, async (req, res) => {
+  try {
+    const customer = await Customer.findById(req.session.customerId);
+    if (!customer) return res.redirect('/account/login');
+
+    customer.isClubMember = !customer.isClubMember;
+    if (customer.isClubMember) {
+      customer.clubJoinedAt = new Date();
+    }
+    await customer.save();
+
+    const msg = customer.isClubMember
+      ? '🎉 Tebrikler! Öz Spor VIP Club üyeliğiniz aktifleştirildi. Tüm siparişlerinizde ücretsiz kargo ve öncelikli kargolama ayrıcalığından yararlanabilirsiniz!'
+      : 'Öz Spor Club üyeliğiniz sonlandırıldı.';
+
+    res.redirect('/account?success=' + encodeURIComponent(msg));
+  } catch (err) {
+    console.error('Club toggle error:', err);
+    res.redirect('/account?error=' + encodeURIComponent('Kulüp üyeliği güncellenirken hata oluştu.'));
+  }
+});
+
 // POST — Siparişi iptal et (Sadece ödenmemiş siparişler için)
 router.post('/account/orders/:id/cancel', isCustomerAuth, async (req, res) => {
   try {

@@ -51,6 +51,13 @@ const customerSchema = new mongoose.Schema({
   },
   resetPasswordExpires: {
     type: Date
+  },
+  isClubMember: {
+    type: Boolean,
+    default: false
+  },
+  clubJoinedAt: {
+    type: Date
   }
 }, {
   timestamps: true

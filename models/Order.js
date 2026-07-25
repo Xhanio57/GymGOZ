@@ -136,6 +136,10 @@ const orderSchema = new mongoose.Schema({
   returnNote: {
     type: String,
     default: ''
+  },
+  isClubOrder: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

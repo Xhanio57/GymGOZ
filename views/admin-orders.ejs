@@ -220,6 +220,7 @@
             '<td>' + dt + '</td>' +
             '<td style="font-family: monospace; font-size: 11px;">' + order._id + '</td>' +
             '<td>' +
+              (order.isClubOrder ? '<span class="badge" style="background:#d4ff00; color:#0a0a0a; font-weight:800; margin-bottom:4px; display:inline-block; font-size:10px;">⭐ VIP CLUB</span><br>' : '') +
               '<strong>' + order.customerName + '</strong><br>' +
               '<span style="font-size:11px; color:#555;">📞 ' + order.customerPhone + '</span><br>' +
               '<span style="font-size:11px; color:#555;">✉️ ' + order.customerEmail + '</span><br>' +

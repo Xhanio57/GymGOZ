@@ -294,9 +294,19 @@ router.post('/api/checkout/initiate', async (req, res) => {
       }
     }
 
+    // Check if customer is an Öz Spor Club member for free shipping & VIP order flag
+    let isClubMember = false;
+    if (req.session && req.session.customerId) {
+      const Customer = require('../models/Customer');
+      const customer = await Customer.findById(req.session.customerId);
+      if (customer && customer.isClubMember) {
+        isClubMember = true;
+      }
+    }
+
     const finalProductAmount = baseTotal - discountAmount;
     let shippingAmount = 0;
-    if (finalProductAmount < 3000) {
+    if (finalProductAmount < 3000 && !isClubMember) {
       shippingAmount = 89.99;
     }
 
@@ -320,6 +330,7 @@ router.post('/api/checkout/initiate', async (req, res) => {
       vatAmount,
       shippingAmount,
       couponCode: verifiedCouponCode,
+      isClubOrder: isClubMember,
       paymentStatus: 'pending'
     });
 

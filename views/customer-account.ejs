@@ -96,6 +96,50 @@
     <p><%= customer.email %></p>
   </div>
 
+  <!-- ÖZ SPOR CLUB VIP KARTI -->
+  <div style="background: linear-gradient(135deg, rgba(212,255,0,0.08) 0%, rgba(20,20,24,0.95) 100%); border: 1px solid rgba(212,255,0,0.3); border-radius: 16px; padding: 24px 28px; margin-bottom: 28px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.4); position: relative; overflow: hidden;">
+    <div style="position: absolute; right: -20px; top: -20px; width: 120px; height: 120px; background: rgba(212,255,0,0.04); border-radius: 50%; pointer-events: none;"></div>
+    
+    <div>
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+        <span style="font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 2px; color: #fff;">ÖZ SPOR <span style="color: var(--accent);">CLUB</span></span>
+        <% if (customer.isClubMember) { %>
+          <span style="background: var(--accent); color: #0a0a0a; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 100px; text-transform: uppercase; letter-spacing: 1px;">🥇 VIP ÜYE</span>
+        <% } else { %>
+          <span style="background: rgba(255,255,255,0.1); color: #aaa; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 100px; text-transform: uppercase; letter-spacing: 1px;">STANDART ÜYE</span>
+        <% } %>
+      </div>
+
+      <% if (customer.isClubMember) { %>
+        <p style="font-size: 13.5px; color: #ccc; margin-bottom: 12px; line-height: 1.5;">
+          Öz Spor VIP Club ayrıcalıklarınız aktif! Tüm siparişlerinizde <strong>limitsiz ücretsiz kargo</strong> ve <strong>öncelikli sipariş kargolama</strong> tanımlanmıştır.
+        </p>
+        <div style="display: flex; gap: 16px; font-size: 12px; color: var(--accent); flex-wrap: wrap;">
+          <span>✔ Koşulsuz Ücretsiz Kargo</span>
+          <span>✔ VIP Öncelikli Kargo</span>
+          <span>✔ Özel Üye İndirimleri</span>
+        </div>
+      <% } else { %>
+        <p style="font-size: 13.5px; color: #aaa; margin-bottom: 12px; line-height: 1.5;">
+          Öz Spor Club'a ücretsiz katılarak sipariş tutarı sınırı olmaksızın <strong>her zaman ÜCRETSİZ KARGO</strong> ve <strong>VIP kargo önceliği</strong> kazanın!
+        </p>
+        <div style="display: flex; gap: 16px; font-size: 12px; color: #888; flex-wrap: wrap;">
+          <span>• 3000 TL Kargo Sınırı Kalkar</span>
+          <span>• Öncelikli Paket Hazırlama</span>
+          <span>• Ücretsiz Katılım</span>
+        </div>
+      <% } %>
+    </div>
+
+    <form action="/account/club/toggle" method="POST" style="margin: 0;">
+      <% if (customer.isClubMember) { %>
+        <button type="submit" style="background: rgba(255,255,255,0.06); color: #aaa; border: 1px solid rgba(255,255,255,0.15); padding: 12px 24px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s;">Üyelikten Çık</button>
+      <% } else { %>
+        <button type="submit" style="background: var(--accent); color: #0a0a0a; border: none; padding: 12px 28px; border-radius: 8px; font-size: 13px; font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(212,255,0,0.3); transition: all 0.2s;">🚀 Club'a Ücretsiz Katıl</button>
+      <% } %>
+    </form>
+  </div>
+
   <% if (typeof success !== 'undefined' && success) { %>
     <div style="background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.3); color: #4ade80; padding: 12px 18px; border-radius: 8px; font-size: 13px; margin-bottom: 24px;">
       ✅ <%= success %>

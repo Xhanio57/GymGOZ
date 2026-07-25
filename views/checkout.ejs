@@ -413,7 +413,15 @@
       const warningDiff = document.getElementById('warningDiffAmount');
       const shippingLabel = document.getElementById('summaryShipping');
 
-      if (finalProductTotal < 3000) {
+      const isClubMember = <%= (typeof customer !== 'undefined' && customer && customer.isClubMember) ? 'true' : 'false' %>;
+
+      if (isClubMember) {
+        shippingFee = 0;
+        warningBox.style.display = 'none';
+        shippingLabel.textContent = 'ÜCRETSİZ (Öz Spor Club VIP 🥇)';
+        shippingLabel.style.color = '#10b981';
+        shippingLabel.style.fontWeight = '700';
+      } else if (finalProductTotal < 3000) {
         shippingFee = 89.99;
         const diff = 3000 - finalProductTotal;
         warningDiff.textContent = diff.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
