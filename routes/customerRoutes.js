@@ -249,6 +249,8 @@ router.post('/account/login', async (req, res) => {
 
     req.session.customerId = customer._id;
     req.session.customerName = customer.firstName + ' ' + customer.lastName;
+    // Customer session expires after 3 hours
+    req.session.cookie.maxAge = 1000 * 60 * 60 * 3;
     return res.redirect(redirect || '/account');
   } catch (err) {
     console.error('Login error:', err);

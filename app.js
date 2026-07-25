@@ -79,8 +79,10 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'GymGOZ_Fallback_Secret',
   resave: false,
   saveUninitialized: false,
+  rolling: false,
   cookie: {
-    maxAge: 1000 * 60 * 60 * 24, // 24 Hours
+    // No maxAge = session cookie (persists until browser closes / explicit logout)
+    // Admin sessions use this default; customer login overrides to 3h below
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production'
@@ -129,6 +131,8 @@ app.post('/login', loginLimiter, (req, res) => {
 
   if (username === expectedUser && password === expectedPass) {
     req.session.isAdmin = true;
+    // Admin: no cookie maxAge → session cookie (expires on browser close or explicit logout)
+    // Do not set req.session.cookie.maxAge here so it stays as a session cookie
     return res.redirect('/admin');
   }
 
