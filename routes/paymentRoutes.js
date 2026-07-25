@@ -118,7 +118,7 @@ router.get('/checkout/retry/:id', async (req, res) => {
     const no_installment = 0;
     const max_installment = 0;
     const currency = 'TL';
-    const test_mode = process.env.NODE_ENV === 'production' ? '0' : '1';
+    const test_mode = process.env.PAYTR_TEST_MODE || (process.env.NODE_ENV === 'production' ? '0' : '1');
     const timeout_limit = '30';
     const debug_on = '1';
 
@@ -376,7 +376,7 @@ router.post('/api/checkout/initiate', async (req, res) => {
     const no_installment = 0; // Allow installments
     const max_installment = 0; // Allow all installments
     const currency = 'TL';
-    const test_mode = process.env.NODE_ENV === 'production' ? '0' : '1';
+    const test_mode = process.env.PAYTR_TEST_MODE || (process.env.NODE_ENV === 'production' ? '0' : '1');
     const timeout_limit = '30';
     const debug_on = '1';
 
