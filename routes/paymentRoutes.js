@@ -317,9 +317,8 @@ router.post('/api/checkout/initiate', async (req, res) => {
 
     await order.save();
 
-    // Send order received (pending payment) email
-    const { sendOrderPendingEmail } = require('../utils/email');
-    sendOrderPendingEmail(order).catch(err => console.error('E-posta gönderimi başarısız:', err));
+    // NOTE: No email sent here – confirmation email is sent by the PayTR callback
+    // once payment is successfully verified (status: success).
 
     // Prepare PayTR token request
     const paytrConfig = getPaytrConfig();
@@ -644,14 +643,9 @@ router.post('/api/admin/orders/:id/shipping', async (req, res) => {
       const { sendOrderShippedEmail } = require('../utils/email');
       sendOrderShippedEmail(order).catch(err => console.error('Kargo e-postası gönderim hatası:', err));
     } else if (shippingStatus === 'delivered' && oldStatus !== 'delivered') {
+      // Delivery email automatically includes invoice PDF attachment
       const { sendOrderDeliveredEmail } = require('../utils/email');
       sendOrderDeliveredEmail(order).catch(err => console.error('Teslimat e-postası gönderim hatası:', err));
-    }
-
-    // Send invoice email if checked
-    if (sendInvoiceEmail) {
-      const { sendInvoiceEmail: mailInvoice } = require('../utils/email');
-      mailInvoice(order).catch(err => console.error('Fatura e-postası gönderim hatası:', err));
     }
 
     res.json({ success: true, order });

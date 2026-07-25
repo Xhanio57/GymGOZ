@@ -306,6 +306,8 @@ async function sendOrderShippedEmail(order) {
 
 async function sendOrderDeliveredEmail(order) {
   try {
+    const path = require('path');
+    const fsSync = require('fs');
     const googleReviewUrl = `https://www.google.com/search?sca_esv=f07c4d704701945c&sxsrf=APpeQnup0GXkgcqM7p6U1AICtIItDQvv4g:1784142524276&q=oz+spor+outdoor&si=APenkKm7iecQ4G6P-TsbSMFKIQtv3EFIqRAFw-i8uEbk55Z-_8rKBzcRoq2KiAuPOPKhjnQ6K-x6jpaAwwqz9wh-gKZJvnRYKRQaihRGKzmSwYm1YME3qjs%3D&uds=AJ5uw195I-HiO8RgG3HHbr6KY2_8aNr2LBRztYQJt3Uye1cVeSun0hpuRRx5TjZ2lNnSo8tRHHcpliyMGbtm0wNE_oCpv5fHgXbYcT4_ROl6Yr3CcLV_Z9M&sa=X&ved=2ahUKEwi00IzrsNWVAxU9g_0HHQEjEbQQ3PALegQILxAF&biw=1470&bih=770&dpr=2`;
 
     const emailHtml = `
@@ -317,6 +319,7 @@ async function sendOrderDeliveredEmail(order) {
           <h2 style="color: #10b981; margin-top: 0;">Siparişiniz Teslim Edildi! 🎉</h2>
           <p>Merhaba <strong>${order.customerName}</strong>,</p>
           <p>#${order._id.toString().slice(-8).toUpperCase()} numaralı siparişiniz başarıyla teslim edilmiştir. Ürünlerinizi güzel ve sağlıklı günlerde kullanmanızı dileriz.</p>
+          <p>E-Arşiv faturanız bu e-postanın ekinde PDF formatında yer almaktadır.</p>
           
           <div style="background-color: #fcfdf5; border: 1px dashed #d4ff00; padding: 20px; border-radius: 8px; text-align: center; margin: 25px 0;">
             <h3 style="margin-top: 0; color: #0a0a0a; font-size: 16px;">Deneyiminizi Paylaşın 💬</h3>
@@ -331,15 +334,34 @@ async function sendOrderDeliveredEmail(order) {
       </div>
     `;
 
+    // Generate invoice PDF if not already exists
+    let attachments = [];
+    try {
+      const { generateInvoicePDF } = require('./invoice');
+      const invoicesDir = path.join(__dirname, '../public/invoices');
+      if (!fsSync.existsSync(invoicesDir)) {
+        fsSync.mkdirSync(invoicesDir, { recursive: true });
+      }
+      const pdfPath = path.join(invoicesDir, `fatura_${order._id}.pdf`);
+      if (!fsSync.existsSync(pdfPath)) {
+        await generateInvoicePDF(order, pdfPath);
+      }
+      attachments = [{ filename: `E-Arsiv_Fatura_${order._id}.pdf`, path: pdfPath }];
+    } catch (invoiceErr) {
+      console.error('⚠️ Teslimat maili için fatura oluşturulamadı, ek olmadan gönderiliyor:', invoiceErr.message);
+    }
+
     await sendResendEmail({
       to: order.customerEmail,
       subject: `Siparişiniz Teslim Edildi! #${order._id.toString().slice(-8).toUpperCase()}`,
-      html: emailHtml
+      html: emailHtml,
+      attachments
     });
   } catch (error) {
     console.error('❌ Teslimat e-postası gönderme hatası:', error);
   }
 }
+
 
 async function sendInvoiceEmail(order) {
   try {
