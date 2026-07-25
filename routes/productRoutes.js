@@ -203,7 +203,23 @@ function generateLabelHtml(label, idx) {
 
 router.get('/api/products', async (req, res) => {
   try {
-    const products = await Product.find().sort({ createdAt: -1 });
+    let isVipOrAdmin = false;
+    if (req.session && req.session.isAdmin) {
+      isVipOrAdmin = true;
+    } else if (req.session && req.session.customerId) {
+      const Customer = require('../models/Customer');
+      const customer = await Customer.findById(req.session.customerId);
+      if (customer && customer.isClubMember) {
+        isVipOrAdmin = true;
+      }
+    }
+
+    let filter = {};
+    if (!isVipOrAdmin) {
+      filter.vipVisible = { $ne: false };
+    }
+
+    const products = await Product.find(filter).sort({ createdAt: -1 });
     res.json(products);
   } catch (error) {
     res.status(500).json({ success: false, message: 'Ürünler yüklenemedi: ' + error.message });
@@ -258,6 +274,8 @@ router.post('/api/products', upload.single('imageFile'), async (req, res) => {
       });
     }
 
+    const vipVisible = req.body.vipVisible !== 'false' && req.body.vipVisible !== false;
+
     const newProduct = new Product({
       name,
       price: parseFloat(price),
@@ -270,6 +288,7 @@ router.post('/api/products', upload.single('imageFile'), async (req, res) => {
       features: Array.isArray(features) ? features : (features ? features.split(',').map(f => f.trim()) : []),
       subcat: subcat || '',
       badge: badge || '',
+      vipVisible,
       sizeStock: sizeStock.length > 0 ? sizeStock : undefined
     });
 
@@ -297,7 +316,7 @@ router.post('/api/products', upload.single('imageFile'), async (req, res) => {
 router.put('/api/products/:id', upload.single('imageFile'), async (req, res) => {
   try {
     await convertHeicToJpeg(req.file);
-    const { name, price, costPrice, category, image, description, discountType, discountValue, discountLabel, labelText, brand, shopierLink, features, subcat, badge } = req.body;
+    const { name, price, costPrice, category, image, description, discountType, discountValue, discountLabel, labelText, brand, shopierLink, features, subcat, badge, vipVisible } = req.body;
     
     const updateData = {
       name,
@@ -313,7 +332,8 @@ router.put('/api/products/:id', upload.single('imageFile'), async (req, res) => 
       shopierLink: shopierLink || '',
       features: Array.isArray(features) ? features : (features ? features.split(',').map(f => f.trim()) : []),
       subcat: subcat || '',
-      badge: badge || ''
+      badge: badge || '',
+      vipVisible: vipVisible !== undefined ? (vipVisible !== 'false' && vipVisible !== false) : true
     };
     // Remove undefined costPrice to avoid overwriting with undefined
     if (updateData.costPrice === undefined) delete updateData.costPrice;

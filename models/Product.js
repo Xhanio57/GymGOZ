@@ -42,10 +42,9 @@ const productSchema = new mongoose.Schema(
       default: 0,
       min: [0, 'Alış fiyatı negatif olamaz']
     },
-    costPrice: {
-      type: Number,
-      default: 0,
-      min: [0, 'Alış fiyatı negatif olamaz']
+    vipVisible: {
+      type: Boolean,
+      default: true
     },
     discountType: {
       type: String,
