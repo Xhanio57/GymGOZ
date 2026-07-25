@@ -279,11 +279,17 @@
           const phone = c.phone || '-';
           
           let rankBadge = '';
-          if (c.orderCount >= 10) {
+          if (c.isClubMember) {
+            rankBadge = ' <span class="badge-loyalty" style="background:rgba(212,255,0,0.15); color:#d4ff00; border:1px solid rgba(212,255,0,0.3);">🥇 VIP CLUB</span>';
+          } else if (c.orderCount >= 10) {
             rankBadge = ' <span class="badge-loyalty">⚡ VİP Müşteri</span>';
           } else if (c.orderCount >= 3) {
             rankBadge = ' <span class="badge-loyalty" style="background:rgba(59,130,246,0.12); color:#3b82f6;">⭐ Sadık Müşteri</span>';
           }
+
+          const vipBtnHtml = c.isClubMember
+            ? '<button class="btn btn-primary" onclick="toggleClub(\\\'' + c._id + '\\\')" style="margin-right: 8px; background:#d4ff00; color:#0d0d0f;">🥇 VIP Üye</button>'
+            : '<button class="btn btn-secondary" onclick="toggleClub(\\\'' + c._id + '\\\')" style="margin-right: 8px; background:rgba(212,255,0,0.1); color:#d4ff00; border-color:rgba(212,255,0,0.2);">➕ VIP Yap</button>';
 
           html += '<tr>' +
             '<td><strong>' + c.firstName + ' ' + c.lastName + '</strong>' + rankBadge + '</td>' +
@@ -293,12 +299,28 @@
             '<td><strong>' + c.totalSpent.toLocaleString("tr-TR") + ' ₺</strong></td>' +
             '<td>' + formattedDate + '</td>' +
             '<td style="text-align: right;">' +
+              vipBtnHtml +
               '<button class="btn btn-secondary" onclick="showDetails(\\'' + c._id + '\\\')" style="margin-right: 8px;">🔍 Detay</button>' +
               '<button class="btn btn-danger" onclick="deleteCustomer(\\'' + c._id + '\\\')">🗑️ Sil</button>' +
             '</td>' +
             '</tr>';
         });
         tbody.innerHTML = html;
+      }
+
+      async function toggleClub(id) {
+        try {
+          const res = await fetch('/api/admin/customers/' + id + '/toggle-club', { method: 'POST' });
+          const data = await res.json();
+          if (data.success) {
+            alert(data.message);
+            loadCustomers();
+          } else {
+            alert('Hata: ' + data.message);
+          }
+        } catch (err) {
+          alert('VIP durumu güncellenirken hata oluştu: ' + err.message);
+        }
       }
 
       function filterCustomers() {

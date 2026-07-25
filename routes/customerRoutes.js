@@ -715,6 +715,7 @@ router.get('/api/admin/customers', async (req, res) => {
         lastName: c.lastName,
         email: c.email,
         phone: c.phone,
+        isClubMember: !!c.isClubMember,
         createdAt: c.createdAt,
         orderCount: paidOrders.length,
         totalSpent: Math.round(totalSpent * 100) / 100
@@ -725,6 +726,30 @@ router.get('/api/admin/customers', async (req, res) => {
   } catch (err) {
     console.error('Fetch admin customers error:', err);
     res.status(500).json({ success: false, message: 'Müşteri istatistikleri yüklenemedi.' });
+  }
+});
+
+// POST — API route for Admin to toggle customer VIP Club status
+router.post('/api/admin/customers/:id/toggle-club', async (req, res) => {
+  if (!req.session || !req.session.isAdmin) return res.status(401).json({ success: false, message: 'Yetkisiz erişim.' });
+  try {
+    const customer = await Customer.findById(req.params.id);
+    if (!customer) return res.status(404).json({ success: false, message: 'Müşteri bulunamadı.' });
+
+    customer.isClubMember = !customer.isClubMember;
+    if (customer.isClubMember) {
+      customer.clubJoinedAt = new Date();
+    }
+    await customer.save();
+
+    res.json({
+      success: true,
+      isClubMember: customer.isClubMember,
+      message: customer.isClubMember ? 'Müşteri Öz Spor VIP Club üyesi yapıldı.' : 'Müşterinin VIP Club üyeliği kaldırıldı.'
+    });
+  } catch (err) {
+    console.error('Toggle club error:', err);
+    res.status(500).json({ success: false, message: 'Kulüp durumu güncellenemedi.' });
   }
 });
 
