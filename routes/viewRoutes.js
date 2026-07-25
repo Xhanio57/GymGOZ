@@ -28,15 +28,47 @@ router.get('/pos', (req, res) => {
   });
 });
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
+  let isVipUser = false;
+  try {
+    if (req.session && req.session.isAdmin) {
+      isVipUser = true;
+    } else if (req.session && req.session.customerId) {
+      const Customer = require('../models/Customer');
+      const customer = await Customer.findById(req.session.customerId);
+      if (customer && customer.isClubMember) {
+        isVipUser = true;
+      }
+    }
+  } catch (e) {
+    console.error('Check VIP user error:', e);
+  }
+
   res.render('shop-index', {
-    title: 'Ana Sayfa'
+    title: 'Ana Sayfa',
+    isVipUser
   });
 });
 
-router.get('/products', (req, res) => {
+router.get('/products', async (req, res) => {
+  let isVipUser = false;
+  try {
+    if (req.session && req.session.isAdmin) {
+      isVipUser = true;
+    } else if (req.session && req.session.customerId) {
+      const Customer = require('../models/Customer');
+      const customer = await Customer.findById(req.session.customerId);
+      if (customer && customer.isClubMember) {
+        isVipUser = true;
+      }
+    }
+  } catch (e) {
+    console.error('Check VIP user error:', e);
+  }
+
   res.render('shop-products', {
-    title: 'Tüm Ürünler'
+    title: 'Tüm Ürünler',
+    isVipUser
   });
 });
 

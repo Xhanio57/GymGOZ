@@ -296,6 +296,8 @@
     window.location.href = '/products';
   }
 
+  var isVipUser = <%= (typeof isVipUser !== 'undefined' && isVipUser) ? 'true' : 'false' %>;
+
   async function loadDropdownCategories() {
     try {
       var res = await fetch('/api/categories');
@@ -304,7 +306,7 @@
       if (dropdown && categories.length > 0) {
         var html = '';
         categories.forEach(function(cat) {
-          if (cat.name.toLowerCase() !== 'müşteri göremez') {
+          if (isVipUser || cat.name.toLowerCase() !== 'müşteri göremez') {
             html += '<a onclick="filterFromNav(\'' + cat.name + '\')"><span class="dot"></span>' + cat.name + '</a>';
           }
         });
