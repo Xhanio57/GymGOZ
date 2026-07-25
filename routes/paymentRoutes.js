@@ -120,7 +120,7 @@ router.get('/checkout/retry/:id', async (req, res) => {
     const currency = 'TL';
     const test_mode = process.env.PAYTR_TEST_MODE || (process.env.NODE_ENV === 'production' ? '0' : '1');
     const timeout_limit = '30';
-    const debug_on = '1';
+    const debug_on = process.env.NODE_ENV === 'production' ? '0' : '1';
 
     const hashStr = paytrConfig.merchantId + clientIp + merchant_oid + email + payment_amount + user_basket + no_installment + max_installment + currency + test_mode;
     const paytr_token = crypto
@@ -191,6 +191,14 @@ router.get('/checkout/success', async (req, res) => {
     const order = await Order.findById(orderId);
     if (!order) {
       return res.redirect('/');
+    }
+    // Verification: if logged in customer, verify ownership
+    if (req.session && req.session.customerId) {
+      const Customer = require('../models/Customer');
+      const customer = await Customer.findById(req.session.customerId);
+      if (customer && order.customerEmail.toLowerCase() !== customer.email.toLowerCase()) {
+        return res.redirect('/');
+      }
     }
     res.render('checkout-status', {
       title: 'Siparişiniz Alındı',
@@ -377,7 +385,7 @@ router.post('/api/checkout/initiate', async (req, res) => {
     const currency = 'TL';
     const test_mode = process.env.PAYTR_TEST_MODE || (process.env.NODE_ENV === 'production' ? '0' : '1');
     const timeout_limit = '30';
-    const debug_on = '1';
+    const debug_on = process.env.NODE_ENV === 'production' ? '0' : '1';
 
     // Token calculation sequence:
     // merchant_id + user_ip + merchant_oid + email + payment_amount + user_basket + no_installment + max_installment + currency + test_mode + merchant_salt
@@ -694,8 +702,11 @@ router.delete('/api/admin/orders/:id', async (req, res) => {
   }
 });
 
-// Diagnostic route to test Resend API email settings
+// Diagnostic route to test Resend API email settings (Admin only)
 router.get('/api/test-email', async (req, res) => {
+  if (!req.session || !req.session.isAdmin) {
+    return res.status(401).json({ success: false, message: 'Yetkisiz erişim.' });
+  }
   const { sendResendEmail } = require('../utils/email');
   try {
     const toEmail = req.query.to || process.env.SMTP_USER || 'baranakpinar57@gmail.com';

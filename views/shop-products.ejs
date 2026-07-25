@@ -1653,8 +1653,29 @@ function addToCartClick() {
   closePopupDirect();
 }
 
-window.addEventListener('load', loadProducts);
+window.addEventListener('load', function() {
+  loadProducts();
+  if (localStorage.getItem('gymgoz_cookies_accepted') === 'true') {
+    var cb = document.getElementById('cookieBanner');
+    if (cb) cb.style.display = 'none';
+  }
+});
+
+function acceptCookies() {
+  localStorage.setItem('gymgoz_cookies_accepted', 'true');
+  var cb = document.getElementById('cookieBanner');
+  if (cb) cb.style.display = 'none';
+}
 </script>
+
+<!-- COOKIE BANNER -->
+<div id="cookieBanner" style="position: fixed; bottom: 20px; left: 20px; right: 20px; max-width: 500px; margin: 0 auto; background: #141418; border: 1px solid #2a2a32; padding: 16px 20px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 9999;">
+  <p style="font-size: 13px; color: #ccc; margin: 0; line-height: 1.5;">
+    Bu site çerezleri kullanarak deneyiminizi iyileştirir. 
+    <a href="/privacy" style="color: #d4ff00; text-decoration: underline;">Gizlilik politikası</a>.
+  </p>
+  <button onclick="acceptCookies()" style="background: #d4ff00; color: #0a0a0a; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; text-transform: uppercase; white-space: nowrap;">Kabul Et</button>
+</div>
 
 </body>
 </html>

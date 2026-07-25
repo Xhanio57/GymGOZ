@@ -96,6 +96,17 @@
     <p><%= customer.email %></p>
   </div>
 
+  <% if (typeof success !== 'undefined' && success) { %>
+    <div style="background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.3); color: #4ade80; padding: 12px 18px; border-radius: 8px; font-size: 13px; margin-bottom: 24px;">
+      ✅ <%= success %>
+    </div>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div style="background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; padding: 12px 18px; border-radius: 8px; font-size: 13px; margin-bottom: 24px;">
+      ⚠️ <%= error %>
+    </div>
+  <% } %>
+
   <div class="acc-section">
     <div class="acc-section-title">📦 Siparişlerim</div>
 
@@ -175,6 +186,12 @@
                 <a href="/checkout/retry/<%= order._id %>" class="btn-return" style="margin-top: 0; background: var(--accent); color: var(--black); border-color: var(--accent); display: inline-block; font-weight: 700;">Ödeme Yap</a>
               </div>
             </div>
+          <% } else if (order.paymentStatus === 'paid' && order.shippingStatus === 'preparing') { %>
+            <div style="margin-top: 14px; text-align: right;">
+              <form action="/account/orders/<%= order._id %>/cancel" method="POST" style="display: inline;" onsubmit="return confirm('Siparişinizi iptal etmek istediğinizden emin misiniz? Bu işlem geri alınamaz.');">
+                <button type="submit" class="btn-return" style="margin-top: 0; background: rgba(239,68,68,0.1); color: #fca5a5; border-color: rgba(239,68,68,0.25); cursor: pointer;">🚫 Siparişi İptal Et</button>
+              </form>
+            </div>
           <% } %>
 
           <% if (order.cargoProvider || order.cargoTrackingNo) { %>
@@ -245,6 +262,51 @@
         </div>
 
         <button type="submit" style="padding: 10px 24px; background: var(--accent); color: var(--black); border: none; border-radius: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; cursor: pointer;">Kaydet</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Profil & Şifre Güncelleme -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-top: 36px;">
+    <!-- Profil Bilgileri -->
+    <div class="acc-section" style="margin-top: 0;">
+      <div class="acc-section-title">👤 Profil Bilgilerim</div>
+      <form action="/account/profile" method="POST" style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 24px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+          <div>
+            <label style="display: block; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--gray-400); margin-bottom: 6px;">Ad</label>
+            <input type="text" name="firstName" value="<%= customer.firstName %>" required style="width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: white; font-family: inherit; font-size: 13px;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--gray-400); margin-bottom: 6px;">Soyad</label>
+            <input type="text" name="lastName" value="<%= customer.lastName %>" required style="width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: white; font-family: inherit; font-size: 13px;">
+          </div>
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--gray-400); margin-bottom: 6px;">Telefon</label>
+          <input type="text" name="phone" value="<%= customer.phone || '' %>" placeholder="05XX XXX XX XX" style="width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: white; font-family: inherit; font-size: 13px;">
+        </div>
+        <button type="submit" style="padding: 10px 24px; background: var(--accent); color: var(--black); border: none; border-radius: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; cursor: pointer;">Profili Güncelle</button>
+      </form>
+    </div>
+
+    <!-- Şifre Değiştirme -->
+    <div class="acc-section" style="margin-top: 0;">
+      <div class="acc-section-title">🔒 Şifre Değiştir</div>
+      <form action="/account/change-password" method="POST" style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 24px;">
+        <div style="margin-bottom: 12px;">
+          <label style="display: block; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--gray-400); margin-bottom: 6px;">Mevcut Şifre</label>
+          <input type="password" name="currentPassword" required style="width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: white; font-family: inherit; font-size: 13px;">
+        </div>
+        <div style="margin-bottom: 12px;">
+          <label style="display: block; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--gray-400); margin-bottom: 6px;">Yeni Şifre</label>
+          <input type="password" name="newPassword" required minlength="6" style="width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: white; font-family: inherit; font-size: 13px;">
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--gray-400); margin-bottom: 6px;">Yeni Şifre (Tekrar)</label>
+          <input type="password" name="newPasswordConfirm" required minlength="6" style="width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: white; font-family: inherit; font-size: 13px;">
+        </div>
+        <button type="submit" style="padding: 10px 24px; background: var(--accent); color: var(--black); border: none; border-radius: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; cursor: pointer;">Şifreyi Değiştir</button>
       </form>
     </div>
   </div>

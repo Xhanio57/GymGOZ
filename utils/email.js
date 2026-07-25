@@ -129,20 +129,10 @@ async function sendOrderConfirmationEmail(order) {
       </div>
     `;
 
-    const attachments = [];
-    if (order.invoicePdfUrl) {
-      const path = require('path');
-      attachments.push({
-        filename: `E-Arsiv_Fatura_${order._id}.pdf`,
-        path: path.join(__dirname, '../public', order.invoicePdfUrl)
-      });
-    }
-
     await sendResendEmail({
       to: order.customerEmail,
       subject: `Siparişiniz Onaylandı! #${order._id.toString().slice(-8).toUpperCase()}`,
-      html: emailHtml,
-      attachments
+      html: emailHtml
     });
   } catch (error) {
     console.error('❌ Sipariş onay e-postası gönderme hatası:', error);

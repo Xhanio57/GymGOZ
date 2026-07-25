@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>500 - Sunucu Hatası | Öz Spor & Outdoor</title>
+  <link rel="icon" type="image/png" href="/images/default-product.png">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Barlow', sans-serif; background: #0a0a0a; color: #f5f5f0; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; }
+    h1 { font-family: 'Bebas Neue', sans-serif; font-size: 96px; color: #ef4444; letter-spacing: 4px; line-height: 1; margin-bottom: 10px; }
+    h2 { font-size: 24px; font-weight: 700; margin-bottom: 12px; color: #f5f5f0; }
+    p { color: #888; max-width: 480px; font-size: 15px; line-height: 1.6; margin-bottom: 24px; }
+    a { display: inline-block; background: #d4ff00; color: #0a0a0a; padding: 12px 28px; border-radius: 6px; font-weight: 700; text-decoration: none; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; transition: opacity 0.2s; }
+    a:hover { opacity: 0.9; }
+  </style>
+</head>
+<body>
+  <h1>500</h1>
+  <h2>Sunucu Hatası</h2>
+  <p><%= typeof message !== 'undefined' ? message : 'Bir sunucu hatası oluştu. Lütfen daha sonra tekrar deneyin.' %></p>
+  <a href="/">← Ana Sayfaya Dön</a>
+</body>
+</html>

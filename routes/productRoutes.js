@@ -447,6 +447,7 @@ router.delete('/api/products/:id', async (req, res) => {
 
 // PDF İndir - Tüm Ürünleri (pdfkit ile Türkçe Desteği ve Render Uyumlu)
 router.get('/api/products/export/pdf/:includeStock', async (req, res) => {
+  if (!req.session || !req.session.isAdmin) return res.status(401).json({ success: false, message: 'Yetkisiz erişim.' });
   try {
     const products = await Product.find().sort({ name: 1 });
     const includeStock = req.params.includeStock === 'true';
@@ -632,6 +633,7 @@ router.get('/api/products/export/pdf/:includeStock', async (req, res) => {
 
 // TOPLU ETİKET PDF
 router.get('/api/products/bulk-labels-pdf', async (req, res) => {
+  if (!req.session || !req.session.isAdmin) return res.status(401).json({ success: false, message: 'Yetkisiz erişim.' });
   try {
     const { products: productsStr, oldPrice, labelNote, useStockQty } = req.query;
 
@@ -974,6 +976,7 @@ router.get('/api/products/bulk-labels-pdf', async (req, res) => {
 
 // Tek etiket PDF
 router.get('/api/products/:id/label-pdf', async (req, res) => {
+  if (!req.session || !req.session.isAdmin) return res.status(401).json({ success: false, message: 'Yetkisiz erişim.' });
   try {
     const product = await Product.findById(req.params.id);
     const oldPrice = req.query.oldPrice ? parseFloat(req.query.oldPrice) : null;
@@ -993,7 +996,7 @@ router.get('/api/products/:id/label-pdf', async (req, res) => {
       discountInfo = `${product.price.toFixed(2)} TL → ${finalPrice.toFixed(2)} TL (-%${product.discountValue})`;
     } else if (product.discountType === 'fixed' && product.discountValue > 0) {
       finalPrice = Math.max(0, product.price - product.discountValue);
-      discountInfo = `${product.price.toFixed(2)} TL → ${finalPrice.toFixed(2)} TL (-&{product.discountValue.toFixed(2)} TL)`;
+      discountInfo = `${product.price.toFixed(2)} TL → ${finalPrice.toFixed(2)} TL (-${product.discountValue.toFixed(2)} TL)`;
     }
 
     const sizeStockList = Array.isArray(product.sizeStock) ? product.sizeStock : [];

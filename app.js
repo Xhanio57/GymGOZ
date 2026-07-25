@@ -50,9 +50,25 @@ app.use(express.static('public'));
 
 // Rate limiters
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 dakika
-  max: 10, // Pencere başına 10 deneme
+  windowMs: 15 * 60 * 1000,
+  max: 10,
   message: { success: false, message: 'Çok fazla giriş denemesi. 15 dakika sonra tekrar deneyin.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+const customerLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Çok fazla giriş denemesi. 15 dakika sonra tekrar deneyin.',
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 saat
+  max: 5,
+  message: 'Çok fazla şifre sıfırlama denemesi. 1 saat sonra tekrar deneyin.',
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -66,13 +82,17 @@ const paymentLimiter = rateLimit({
 });
 
 const generalApiLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 dakika
+  windowMs: 1 * 60 * 1000,
   max: 100,
   standardHeaders: true,
   legacyHeaders: false
 });
 
 app.use('/api/', generalApiLimiter);
+
+// Export limiters so routes can use them
+app.locals.customerLoginLimiter = customerLoginLimiter;
+app.locals.forgotPasswordLimiter = forgotPasswordLimiter;
 
 // Session Setup — güvenli ayarlar
 app.use(session({
@@ -130,10 +150,13 @@ app.post('/login', loginLimiter, (req, res) => {
   const expectedPass = process.env.ADMIN_PASSWORD || 'admin123';
 
   if (username === expectedUser && password === expectedPass) {
-    req.session.isAdmin = true;
-    // Admin: no cookie maxAge → session cookie (expires on browser close or explicit logout)
-    // Do not set req.session.cookie.maxAge here so it stays as a session cookie
-    return res.redirect('/admin');
+    // Regenerate session to prevent session fixation
+    req.session.regenerate((err) => {
+      if (err) return res.redirect('/login');
+      req.session.isAdmin = true;
+      return res.redirect('/admin');
+    });
+    return;
   }
 
   res.render('login', {
@@ -196,10 +219,11 @@ app.use((err, req, res, next) => {
   const message = process.env.NODE_ENV === 'production'
     ? 'Bir sunucu hatası oluştu.'
     : 'Sunucu hatası: ' + err.message;
-  res.status(500).json({
-    success: false,
-    message
-  });
+  // Return HTML page for browser requests, JSON for API requests
+  if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json')) || req.path.startsWith('/api/')) {
+    return res.status(500).json({ success: false, message });
+  }
+  res.status(500).render('500', { title: 'Sunucu Hatası', message });
 });
 
 // Sunucuyu başlat

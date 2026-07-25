@@ -1,7 +1,33 @@
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 const Customer = require('../models/Customer');
 const Order = require('../models/Order');
+
+// Rate limiters for customer-facing auth endpoints
+const customerLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Çok fazla giriş denemesi. Lütfen 15 dakika sonra tekrar deneyin.',
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: 'Çok fazla şifre sıfırlama denemesi. 1 saat sonra tekrar deneyin.',
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+const resendCodeLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: 'Çok fazla kod gönderme denemesi. 1 saat sonra tekrar deneyin.',
+  standardHeaders: true,
+  legacyHeaders: false
+});
 
 // Middleware: müşteri oturumu kontrolü
 function isCustomerAuth(req, res, next) {
@@ -56,6 +82,7 @@ router.post('/account/register', async (req, res) => {
       password
     };
     req.session.verificationCode = verificationCode;
+    req.session.verificationCodeExpires = Date.now() + 10 * 60 * 1000; // 10 dakika
 
     // Send verification email using Resend API
     const { sendResendEmail } = require('../utils/email');
@@ -126,6 +153,19 @@ router.post('/account/verify', async (req, res) => {
     return res.redirect('/account/register');
   }
 
+  // Check code expiry
+  if (Date.now() > (req.session.verificationCodeExpires || 0)) {
+    req.session.verificationCode = null;
+    req.session.verificationCodeExpires = null;
+    return res.render('customer-verify', {
+      title: 'E-Posta Doğrulama',
+      email: temp.email,
+      error: 'Doğrulama kodunuzun süresi dolmuştur. Lütfen yeni kod isteyin.',
+      success: null,
+      redirect
+    });
+  }
+
   if (!code || code.trim() !== req.session.verificationCode) {
     return res.render('customer-verify', {
       title: 'E-Posta Doğrulama',
@@ -170,7 +210,7 @@ router.post('/account/verify', async (req, res) => {
 });
 
 // POST — Kodu yeniden gönder
-router.post('/account/resend-code', async (req, res) => {
+router.post('/account/resend-code', resendCodeLimiter, async (req, res) => {
   const redirect = req.body.redirect || '';
   const temp = req.session.tempCustomer;
 
@@ -178,9 +218,9 @@ router.post('/account/resend-code', async (req, res) => {
     return res.redirect('/account/register');
   }
 
-  // Regenerate code
   const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
   req.session.verificationCode = verificationCode;
+  req.session.verificationCodeExpires = Date.now() + 10 * 60 * 1000;
 
   try {
     const { sendResendEmail } = require('../utils/email');
@@ -227,8 +267,8 @@ router.post('/account/resend-code', async (req, res) => {
   }
 });
 
-// POST — Giriş işlemi
-router.post('/account/login', async (req, res) => {
+// POST — Giriş işlemi (rate limited)
+router.post('/account/login', customerLoginLimiter, async (req, res) => {
   const redirect = req.body.redirect || '';
   try {
     const { email, password } = req.body;
@@ -247,11 +287,16 @@ router.post('/account/login', async (req, res) => {
       return res.render('customer-login', { title: 'Giriş Yap', error: 'E-posta veya şifre hatalı.', success: null, tab: 'login', redirect });
     }
 
-    req.session.customerId = customer._id;
-    req.session.customerName = customer.firstName + ' ' + customer.lastName;
-    // Customer session expires after 3 hours
-    req.session.cookie.maxAge = 1000 * 60 * 60 * 3;
-    return res.redirect(redirect || '/account');
+    const customerId = customer._id;
+    const customerName = customer.firstName + ' ' + customer.lastName;
+    // Regenerate session to prevent session fixation
+    req.session.regenerate((err) => {
+      if (err) return res.redirect('/account/login');
+      req.session.customerId = customerId;
+      req.session.customerName = customerName;
+      req.session.cookie.maxAge = 1000 * 60 * 60 * 3; // 3 saat
+      res.redirect(redirect || '/account');
+    });
   } catch (err) {
     console.error('Login error:', err);
     return res.render('customer-login', { title: 'Giriş Yap', error: 'Giriş sırasında bir hata oluştu.', success: null, tab: 'login', redirect });
@@ -265,8 +310,8 @@ router.get('/account/forgot-password', (req, res) => {
   res.render('customer-login', { title: 'Şifremi Unuttum', error: null, success: null, tab: 'forgot', redirect });
 });
 
-// POST — Şifre sıfırlama talebi
-router.post('/account/forgot-password', async (req, res) => {
+// POST — Şifre sıfırlama talebi (rate limited)
+router.post('/account/forgot-password', forgotPasswordLimiter, async (req, res) => {
   const redirect = req.body.redirect || '';
   try {
     const { email } = req.body;
@@ -465,10 +510,65 @@ router.get('/account', isCustomerAuth, async (req, res) => {
 
     const orders = await Order.find({ customerEmail: customer.email, paymentStatus: { $ne: 'cancelled' } }).sort({ createdAt: -1 });
 
-    res.render('customer-account', { title: 'Hesabım', customer, orders });
+    res.render('customer-account', { title: 'Hesabım', customer, orders, success: req.query.success || null, error: req.query.error || null });
   } catch (err) {
     console.error('Account error:', err);
     res.redirect('/account/login');
+  }
+});
+
+// POST — Profil Bilgilerini Güncelle
+router.post('/account/profile', isCustomerAuth, async (req, res) => {
+  try {
+    const { firstName, lastName, phone } = req.body;
+    const customer = await Customer.findById(req.session.customerId);
+    if (!customer) return res.redirect('/account/login');
+
+    if (firstName && firstName.trim()) customer.firstName = firstName.trim();
+    if (lastName && lastName.trim()) customer.lastName = lastName.trim();
+    if (phone !== undefined) customer.phone = phone.trim();
+
+    await customer.save();
+    req.session.customerName = customer.firstName + ' ' + customer.lastName;
+
+    res.redirect('/account?success=' + encodeURIComponent('Profil bilgileriniz güncellendi.'));
+  } catch (err) {
+    console.error('Profile update error:', err);
+    res.redirect('/account?error=' + encodeURIComponent('Profil güncellenirken hata oluştu.'));
+  }
+});
+
+// POST — Şifre Değiştirme
+router.post('/account/change-password', isCustomerAuth, async (req, res) => {
+  try {
+    const { currentPassword, newPassword, newPasswordConfirm } = req.body;
+    const customer = await Customer.findById(req.session.customerId);
+    if (!customer) return res.redirect('/account/login');
+
+    if (!currentPassword || !newPassword || !newPasswordConfirm) {
+      return res.redirect('/account?error=' + encodeURIComponent('Lütfen tüm şifre alanlarını doldurun.'));
+    }
+
+    const isMatch = await customer.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.redirect('/account?error=' + encodeURIComponent('Mevcut şifreniz hatalı.'));
+    }
+
+    if (newPassword.length < 6) {
+      return res.redirect('/account?error=' + encodeURIComponent('Yeni şifre en az 6 karakter olmalıdır.'));
+    }
+
+    if (newPassword !== newPasswordConfirm) {
+      return res.redirect('/account?error=' + encodeURIComponent('Yeni şifreler eşleşmiyor.'));
+    }
+
+    customer.password = newPassword;
+    await customer.save();
+
+    res.redirect('/account?success=' + encodeURIComponent('Şifreniz başarıyla değiştirildi.'));
+  } catch (err) {
+    console.error('Change password error:', err);
+    res.redirect('/account?error=' + encodeURIComponent('Şifre değiştirilirken hata oluştu.'));
   }
 });
 
@@ -487,9 +587,12 @@ router.post('/account/orders/:id/cancel', isCustomerAuth, async (req, res) => {
       return res.status(403).send('Bu işlem için yetkiniz yok.');
     }
 
-    // Only allowed if NOT paid
-    if (order.paymentStatus === 'paid') {
-      return res.status(400).send('Ödenmiş siparişler iptal edilemez.');
+    // Can cancel if: not paid, OR paid but still in 'preparing' status (not yet shipped)
+    const canCancel = order.paymentStatus !== 'paid' ||
+      (order.paymentStatus === 'paid' && order.shippingStatus === 'preparing');
+
+    if (!canCancel) {
+      return res.status(400).send('Kargoya verilmiş veya teslim edilmiş siparişler iptal edilemez.');
     }
 
     // Set status to cancelled and save the order (do not delete so admin can see it)
@@ -559,9 +662,10 @@ router.post('/account/orders/:id/return', isCustomerAuth, async (req, res) => {
 
 // GET — Çıkış
 router.get('/account/logout', (req, res) => {
-  req.session.customerId = null;
-  req.session.customerName = null;
-  res.redirect('/');
+  req.session.destroy(err => {
+    if (err) console.error('Oturum kapatma hatası:', err);
+    res.redirect('/');
+  });
 });
 
 /* =========================================
