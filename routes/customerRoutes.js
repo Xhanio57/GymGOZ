@@ -618,10 +618,34 @@ router.post('/account/orders/:id/cancel', isCustomerAuth, async (req, res) => {
       return res.status(400).send('Kargoya verilmiş veya teslim edilmiş siparişler iptal edilemez.');
     }
 
+    const wasPaid = order.paymentStatus === 'paid';
+
     // Set status to cancelled and save the order (do not delete so admin can see it)
     order.paymentStatus = 'cancelled';
     order.failedReason = 'Müşteri tarafından iptal edildi.';
     await order.save();
+
+    // Restock products to inventory if order was paid
+    if (wasPaid && Array.isArray(order.items)) {
+      const Product = require('../models/Product');
+      for (const item of order.items) {
+        if (item.productId) {
+          try {
+            const product = await Product.findById(item.productId);
+            if (product && Array.isArray(product.sizeStock)) {
+              const sizeObj = product.sizeStock.find(s => s.size === item.size);
+              if (sizeObj) {
+                sizeObj.stock += item.quantity;
+                await product.save();
+                console.log(`📦 İptal edilen sipariş stoğa eklendi: ${product.name} (${item.size}) +${item.quantity}`);
+              }
+            }
+          } catch (stockErr) {
+            console.error('İptal stok güncelleme hatası:', stockErr);
+          }
+        }
+      }
+    }
 
     res.redirect('/account');
   } catch (err) {

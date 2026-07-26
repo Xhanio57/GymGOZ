@@ -689,8 +689,72 @@ router.post('/api/admin/orders/:id/return', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Sipariş bulunamadı.' });
     }
 
+    // Prevents double processing if already approved
+    const isFirstApproval = returnStatus === 'approved' && order.returnStatus !== 'approved';
+
     order.returnStatus = returnStatus;
     await order.save();
+
+    const { sendOrderReturnApprovedEmail, sendOrderReturnRejectedEmail } = require('../utils/email');
+
+    if (returnStatus === 'approved') {
+      // 1. Restock returned items to inventory
+      if (isFirstApproval && Array.isArray(order.items)) {
+        for (const item of order.items) {
+          if (item.productId) {
+            try {
+              const product = await Product.findById(item.productId);
+              if (product && Array.isArray(product.sizeStock)) {
+                const sizeObj = product.sizeStock.find(s => s.size === item.size);
+                if (sizeObj) {
+                  sizeObj.stock += item.quantity;
+                  await product.save();
+                  console.log(`📦 İade stoğa eklendi: ${product.name} (${item.size}) +${item.quantity}`);
+                }
+              }
+            } catch (stockErr) {
+              console.error('İade stok güncelleme hatası:', stockErr);
+            }
+          }
+        }
+      }
+
+      // 2. PayTR Direct Refund API Call (Automatic Card Refund)
+      const paytrConfig = getPaytrConfig();
+      if (paytrConfig.merchantId && paytrConfig.merchantId !== '123456' && order.paymentId) {
+        try {
+          const returnAmount = order.totalAmount.toFixed(2);
+          const merchantOid = order._id.toString();
+          const hashStr = paytrConfig.merchantId + merchantOid + returnAmount + paytrConfig.merchantSalt;
+          const paytrToken = crypto
+            .createHmac('sha256', paytrConfig.merchantKey)
+            .update(hashStr)
+            .digest('base64');
+
+          const params = new URLSearchParams();
+          params.append('merchant_id', paytrConfig.merchantId);
+          params.append('merchant_oid', merchantOid);
+          params.append('return_amount', returnAmount);
+          params.append('paytr_token', paytrToken);
+
+          const response = await fetch('https://www.paytr.com/api/refund', {
+            method: 'POST',
+            body: params
+          });
+          const paytrData = await response.json();
+          console.log('💳 PayTR İade Yanıtı:', paytrData);
+        } catch (paytrErr) {
+          console.error('💳 PayTR İade API Çağrı Hatası:', paytrErr);
+        }
+      }
+
+      // 3. Send approval email to customer
+      sendOrderReturnApprovedEmail(order).catch(console.error);
+    } else if (returnStatus === 'rejected') {
+      // Send rejection email to customer
+      sendOrderReturnRejectedEmail(order).catch(console.error);
+    }
+
     res.json({ success: true, order });
   } catch (err) {
     console.error('İade durumu güncellenirken hata:', err);

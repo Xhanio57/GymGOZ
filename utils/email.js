@@ -395,6 +395,85 @@ async function sendInvoiceEmail(order) {
   }
 }
 
+async function sendOrderReturnApprovedEmail(order) {
+  try {
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">
+        <div style="background-color: #0a0a0a; color: #fff; padding: 20px; text-align: center;">
+          <h1 style="margin: 0; font-family: 'Bebas Neue', Arial, sans-serif; letter-spacing: 2px;">ÖZ SPOR <span style="color: #d4ff00;">&</span> OUTDOOR</h1>
+        </div>
+        <div style="padding: 20px; border: 1px solid #eee; border-top: none;">
+          <h2 style="color: #10b981; margin-top: 0;">İade Talebiniz Onaylandı! ✅</h2>
+          <p>Merhaba <strong>${order.customerName}</strong>,</p>
+          <p>#${order._id.toString().slice(-8).toUpperCase()} numaralı siparişiniz için oluşturduğunuz iade talebi onaylanmıştır.</p>
+          
+          <div style="background-color: #f9f9f9; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #10b981;">
+            <p style="margin: 0 0 8px;"><strong>İade Tutarı:</strong> ${order.totalAmount.toFixed(2)} ₺</p>
+            <p style="margin: 0;"><strong>Ödeme İadesi:</strong> Ücret iadeniz ödeme yaptığınız karta/hesaba aktarılacaktır. Bankanıza bağlı olarak 2-5 iş günü içerisinde ekstrenizde görünecektir.</p>
+          </div>
+
+          <p style="font-size: 13px; color: #555;">
+            Anlaşmalı kargo firmamız ile ürünü <strong>Öz Spor & Outdoor - Gerze/Sinop</strong> adresimize ücretsiz iade kodu ile gönderebilirsiniz.
+          </p>
+
+          <p style="font-size: 12px; color: #888; margin-top: 40px; border-top: 1px solid #eee; padding-top: 15px;">
+            Bu e-posta otomatik olarak gönderilmiştir. Sorularınız için bizimle iletişime geçebilirsiniz.
+          </p>
+        </div>
+      </div>
+    `;
+
+    await sendResendEmail({
+      to: order.customerEmail,
+      subject: `İade Talebiniz Onaylandı! #${order._id.toString().slice(-8).toUpperCase()}`,
+      html: emailHtml
+    });
+    console.log(`✉️ İade onay e-postası gönderildi: ${order.customerEmail}`);
+  } catch (error) {
+    console.error('❌ İade onay e-postası gönderme hatası:', error);
+  }
+}
+
+async function sendOrderReturnRejectedEmail(order) {
+  try {
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">
+        <div style="background-color: #0a0a0a; color: #fff; padding: 20px; text-align: center;">
+          <h1 style="margin: 0; font-family: 'Bebas Neue', Arial, sans-serif; letter-spacing: 2px;">ÖZ SPOR <span style="color: #d4ff00;">&</span> OUTDOOR</h1>
+        </div>
+        <div style="padding: 20px; border: 1px solid #eee; border-top: none;">
+          <h2 style="color: #ef4444; margin-top: 0;">İade Talebiniz Hakkında ℹ️</h2>
+          <p>Merhaba <strong>${order.customerName}</strong>,</p>
+          <p>#${order._id.toString().slice(-8).toUpperCase()} numaralı siparişiniz için oluşturduğunuz iade talebi incelenmiş olup ne yazık ki onaylanamamıştır.</p>
+          
+          ${order.returnNote ? `
+          <div style="background-color: #fff5f5; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #ef4444;">
+            <p style="margin: 0;"><strong>Açıklama:</strong> ${order.returnNote}</p>
+          </div>
+          ` : ''}
+
+          <p style="font-size: 13px; color: #555;">
+            Konuyla ilgili detaylı bilgi almak veya destek talep etmek için müşteri hizmetlerimizle iletişime geçebilirsiniz.
+          </p>
+
+          <p style="font-size: 12px; color: #888; margin-top: 40px; border-top: 1px solid #eee; padding-top: 15px;">
+            Bu e-posta otomatik olarak gönderilmiştir. Sorularınız için bizimle iletişime geçebilirsiniz.
+          </p>
+        </div>
+      </div>
+    `;
+
+    await sendResendEmail({
+      to: order.customerEmail,
+      subject: `İade Talebiniz Hakkında #${order._id.toString().slice(-8).toUpperCase()}`,
+      html: emailHtml
+    });
+    console.log(`✉️ İade red e-postası gönderildi: ${order.customerEmail}`);
+  } catch (error) {
+    console.error('❌ İade red e-postası gönderme hatası:', error);
+  }
+}
+
 module.exports = {
   sendOrderConfirmationEmail,
   sendOrderFailureEmail,
@@ -402,5 +481,7 @@ module.exports = {
   sendOrderDeliveredEmail,
   sendOrderPendingEmail,
   sendResendEmail,
-  sendInvoiceEmail
+  sendInvoiceEmail,
+  sendOrderReturnApprovedEmail,
+  sendOrderReturnRejectedEmail
 };
