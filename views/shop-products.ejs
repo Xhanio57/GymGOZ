@@ -965,6 +965,7 @@ let currentCat = 'all';
 let activeProduct = null;
 let selectedSize = null;
 let cart = [];
+let maxCatalogPrice = 10000;
 let selectedFilters = {
   brands: [],
   sizes: [],
@@ -1164,7 +1165,7 @@ function getFilteredSortedProducts() {
   selectedFilters.brands = Array.from(document.querySelectorAll('#brand-filters input:checked')).map(el => el.value);
   selectedFilters.sizes = Array.from(document.querySelectorAll('#size-filters input:checked')).map(el => el.value);
   selectedFilters.priceMin = parseInt(document.getElementById('priceMin').value) || 0;
-  selectedFilters.priceMax = parseInt(document.getElementById('priceMax').value) || 10000;
+  selectedFilters.priceMax = parseInt(document.getElementById('priceMax').value) || maxCatalogPrice;
 
   const searchTerm = document.getElementById('searchInput').value.toLowerCase();
 
@@ -1498,6 +1499,22 @@ async function loadProducts() {
         link: p.shopierLink || 'https://www.shopier.com/oz_spor_outdoor'
       };
     });
+
+    if (products.length > 0) {
+      const maxP = Math.max(...products.map(p => p.price || 0));
+      if (maxP && !isNaN(maxP) && maxP > 0) {
+        maxCatalogPrice = Math.ceil(maxP);
+      }
+    }
+    selectedFilters.priceMax = maxCatalogPrice;
+
+    const priceMaxInp = document.getElementById('priceMax');
+    const priceSliderInp = document.getElementById('priceSlider');
+    if (priceMaxInp) priceMaxInp.value = maxCatalogPrice;
+    if (priceSliderInp) {
+      priceSliderInp.max = maxCatalogPrice;
+      priceSliderInp.value = maxCatalogPrice;
+    }
     
     renderSidebarCategories();
     initializeFilters();
