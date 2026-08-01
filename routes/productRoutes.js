@@ -306,10 +306,10 @@ router.post('/api/products', upload.any(), async (req, res) => {
       }
     }
 
-    let imagePath = '/images/default-product.png';
+    let imagePath = '';
     if (uploadedUrls.length > 0) {
       imagePath = uploadedUrls[0];
-    } else if (image && image.trim()) {
+    } else if (image && image.trim() && image.trim() !== '/images/default-product.png') {
       imagePath = image.trim();
     }
 
@@ -335,13 +335,28 @@ router.post('/api/products', upload.any(), async (req, res) => {
           const uploadedImgs = varUploadedMap[v._fileKey] || [];
           return { name: v.name, images: uploadedImgs, sizeStock: v.sizeStock || [] };
         });
-        // If variations exist, use first variation's first image as main product image
-        if (parsedVariations.length > 0 && parsedVariations[0].images.length > 0 && imagePath === '/images/default-product.png') {
-          imagePath = parsedVariations[0].images[0];
-        }
       } catch (e) {
         parsedVariations = [];
       }
+    }
+
+    const allUploadedImages = [...uploadedUrls];
+    parsedVariations.forEach(v => {
+      if (Array.isArray(v.images)) {
+        v.images.forEach(img => {
+          if (img && img.trim() && !allUploadedImages.includes(img.trim())) {
+            allUploadedImages.push(img.trim());
+          }
+        });
+      }
+    });
+
+    if (!imagePath && allUploadedImages.length > 0) {
+      imagePath = allUploadedImages[0];
+    }
+
+    if (!imagePath) {
+      imagePath = '/images/default-product.png';
     }
 
     const newProduct = new Product({
@@ -351,7 +366,7 @@ router.post('/api/products', upload.any(), async (req, res) => {
       category,
       barcode: barcode && barcode.trim() ? barcode.trim() : undefined,
       image: imagePath,
-      images: uploadedUrls,
+      images: allUploadedImages.length > 0 ? allUploadedImages : [imagePath],
       description: description || '',
       brand: brand || 'Öz Spor',
       shopierLink: shopierLink || '',
@@ -414,27 +429,21 @@ router.put('/api/products/:id', upload.any(), async (req, res) => {
     };
     if (updateData.costPrice === undefined) delete updateData.costPrice;
 
-    // Handle new main image uploads
+    const oldProduct = await Product.findById(req.params.id);
+    if (!oldProduct) {
+      return res.status(404).json({ success: false, message: 'Ürün bulunamadı' });
+    }
+
+    // Handle existing images & new main image uploads
+    const existingImages = req.body.existingImages !== undefined
+      ? (Array.isArray(req.body.existingImages) ? req.body.existingImages : (req.body.existingImages ? [req.body.existingImages] : []))
+      : [];
+
+    const uploadedUrls = [];
     if (mainImageFiles.length > 0) {
-      const uploadedUrls = [];
       for (const file of mainImageFiles) {
         const url = await uploadToCloudinaryAndCleanup(file);
         if (url) uploadedUrls.push(url);
-      }
-      const existingImages = req.body.existingImages
-        ? (Array.isArray(req.body.existingImages) ? req.body.existingImages : [req.body.existingImages])
-        : [];
-      const allImages = [...existingImages, ...uploadedUrls];
-      updateData.image = allImages[0] || '/images/default-product.png';
-      updateData.images = allImages;
-    } else if (image !== undefined) {
-      updateData.image = image || '/images/default-product.png';
-      if (req.body.existingImages !== undefined) {
-        const existingImages = Array.isArray(req.body.existingImages) ? req.body.existingImages : (req.body.existingImages ? [req.body.existingImages] : []);
-        updateData.images = existingImages;
-        if (!updateData.image && existingImages.length > 0) {
-          updateData.image = existingImages[0];
-        }
       }
     }
 
@@ -448,11 +457,6 @@ router.put('/api/products/:id', upload.any(), async (req, res) => {
       }
     }
 
-    const oldProduct = await Product.findById(req.params.id);
-    if (!oldProduct) {
-      return res.status(404).json({ success: false, message: 'Ürün bulunamadı' });
-    }
-
     // Parse and update variations
     if (req.body.variations !== undefined) {
       try {
@@ -460,7 +464,7 @@ router.put('/api/products/:id', upload.any(), async (req, res) => {
         if (Array.isArray(parsedVariations)) {
           parsedVariations = parsedVariations.map(v => {
             const uploadedImgs = varUploadedMap[v._fileKey] || [];
-            const existingImgs = Array.isArray(v.images) ? v.images : [];
+            const existingImgs = Array.isArray(v.images) ? v.images.filter(img => img && img.trim() && img !== '/images/default-product.png') : [];
             const allImgs = [...existingImgs, ...uploadedImgs];
             return {
               name: v.name,
@@ -473,6 +477,35 @@ router.put('/api/products/:id', upload.any(), async (req, res) => {
       } catch (e) {
         console.error('Varyasyon listesi ayrıştırılamadı:', e);
       }
+    }
+
+    // Collect all valid images from main uploads, existing list, and variations
+    const validMainImages = [...existingImages.filter(img => img && img !== '/images/default-product.png'), ...uploadedUrls];
+
+    if (Array.isArray(updateData.variations)) {
+      updateData.variations.forEach(v => {
+        if (Array.isArray(v.images)) {
+          v.images.forEach(img => {
+            if (img && img !== '/images/default-product.png' && !validMainImages.includes(img)) {
+              validMainImages.push(img);
+            }
+          });
+        }
+      });
+    }
+
+    if (validMainImages.length > 0) {
+      updateData.image = validMainImages[0];
+      updateData.images = validMainImages;
+    } else if (image && image.trim() && image !== '/images/default-product.png') {
+      updateData.image = image.trim();
+      updateData.images = [image.trim()];
+    } else if (oldProduct.image && oldProduct.image !== '/images/default-product.png') {
+      updateData.image = oldProduct.image;
+      updateData.images = oldProduct.images && oldProduct.images.length > 0 ? oldProduct.images : [oldProduct.image];
+    } else {
+      updateData.image = '/images/default-product.png';
+      updateData.images = [];
     }
 
     if (!updateData.variations || updateData.variations.length === 0) {

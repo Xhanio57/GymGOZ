@@ -575,6 +575,13 @@
         formData.append('features', (document.getElementById('features') || {value:''}).value);
         formData.append('vipVisible', document.getElementById('vipVisible').checked ? 'true' : 'false');
 
+        const mainFileInput = document.getElementById('imageFiles');
+        if (mainFileInput && mainFileInput.files && mainFileInput.files.length > 0) {
+          for (let i = 0; i < mainFileInput.files.length; i++) {
+            formData.append('imageFiles', mainFileInput.files[i]);
+          }
+        }
+
         if (useVars) {
           const variationsList = await collectVariations(formData);
           if (variationsList.length === 0) {
@@ -590,13 +597,6 @@
             const stockVal = document.getElementById('stock_' + size).value || '0';
             formData.append('stock_' + size, stockVal);
           });
-
-          const fileInput = document.getElementById('imageFiles');
-          if (fileInput.files.length > 0) {
-            for (let i = 0; i < fileInput.files.length; i++) {
-              formData.append('imageFiles', fileInput.files[i]);
-            }
-          }
         }
 
         const response = await fetch('/api/products', {
