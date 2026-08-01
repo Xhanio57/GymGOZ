@@ -228,23 +228,91 @@
         } else {
           wrapper.style.display = 'none';
           classicImg.style.display = 'block';
-          // Restore size wrapper if category selected
           const cat = document.getElementById('category').value;
           if (cat) renderSizes(cat);
         }
       });
+
+      // Clear any browser-cached ghost variations on fresh page load
+      resetAllFormState();
     });
 
     let variationCount = 0;
-    // variationFiles[varId] = FileList
-    const variationFiles = {};
+
+    function resetAllFormState() {
+      const form = document.getElementById('productForm');
+      if (form) form.reset();
+
+      const varList = document.getElementById('variationsList');
+      if (varList) varList.innerHTML = '';
+
+      const varWrapper = document.getElementById('variationsWrapper');
+      if (varWrapper) varWrapper.style.display = 'none';
+
+      const useVars = document.getElementById('useVariations');
+      if (useVars) useVars.checked = false;
+
+      const classicImg = document.getElementById('classicImageSection');
+      if (classicImg) classicImg.style.display = 'block';
+
+      const imgPrev = document.getElementById('imagePreview');
+      if (imgPrev) imgPrev.innerHTML = '';
+
+      const sizeContainer = document.getElementById('sizeContainer');
+      if (sizeContainer) sizeContainer.innerHTML = '';
+
+      const sizeWrapper = document.getElementById('sizeWrapper');
+      if (sizeWrapper) sizeWrapper.style.display = 'none';
+
+      variationCount = 0;
+    }
+
+    function getActiveSizes() {
+      const category = document.getElementById('category').value;
+      const subcatSlug = document.getElementById('subcat') ? document.getElementById('subcat').value : '';
+      const cat = categoriesList.find(c => c.name === category);
+
+      let sizes = ['Tek Boyut'];
+      if (cat) {
+        sizes = (cat.sizes && cat.sizes.length > 0) ? cat.sizes : ['Tek Boyut'];
+        if (subcatSlug && cat.subcategories) {
+          const sub = cat.subcategories.find(s => s.slug === subcatSlug);
+          if (sub && sub.sizes && sub.sizes.length > 0) {
+            sizes = sub.sizes;
+          }
+        }
+      }
+      return sizes;
+    }
+
+    function updateAllVariationSizes() {
+      const sizes = getActiveSizes();
+      const cards = document.querySelectorAll('.var-card');
+      cards.forEach(card => {
+        const grid = card.querySelector('.var-size-grid');
+        if (!grid) return;
+
+        const currentStocks = {};
+        grid.querySelectorAll('.var-size-item').forEach(item => {
+          const lbl = item.querySelector('label');
+          const inp = item.querySelector('input');
+          if (lbl && inp) currentStocks[lbl.textContent.trim()] = inp.value;
+        });
+
+        grid.innerHTML = sizes.map(size => {
+          const savedVal = currentStocks[size] !== undefined ? currentStocks[size] : '0';
+          return '<div class="var-size-item">' +
+            '<label>' + size + '</label>' +
+            '<input type="number" placeholder="Stok" value="' + savedVal + '" min="0">' +
+          '</div>';
+        }).join('');
+      });
+    }
 
     function addVariation() {
       variationCount++;
       const id = variationCount;
-      const category = document.getElementById('category').value;
-      const cat = categoriesList.find(c => c.name === category);
-      const sizes = (cat && cat.sizes && cat.sizes.length > 0) ? cat.sizes : ['Tek Boyut'];
+      const sizes = getActiveSizes();
 
       const card = document.createElement('div');
       card.className = 'var-card';
@@ -258,7 +326,7 @@
       }).join('');
 
       card.innerHTML = 
-        '<button type="button" class="var-remove-btn" onclick="removeVariation(' + id + ')">Kaldır</button>' +
+        '<button type="button" class="var-remove-btn" onclick="removeVariation(this)">Kaldır</button>' +
         '<div class="var-card-title">🎨 Varyasyon ' + id + '</div>' +
         '<div style="margin-bottom:10px;">' +
           '<label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Varyasyon Adı (ör: Kırmızı, Mavi)</label>' +
@@ -278,7 +346,6 @@
 
       // File preview for this variation
       document.getElementById('varImages_' + id).addEventListener('change', function() {
-        variationFiles[id] = this.files;
         const preview = document.getElementById('varImgPreview_' + id);
         preview.innerHTML = '';
         Array.from(this.files).forEach(function(file) {
@@ -294,10 +361,14 @@
       });
     }
 
-    function removeVariation(id) {
-      const card = document.getElementById('varCard_' + id);
-      if (card) card.remove();
-      delete variationFiles[id];
+    function removeVariation(btn) {
+      if (typeof btn === 'number') {
+        const card = document.getElementById('varCard_' + btn);
+        if (card) card.remove();
+      } else if (btn && btn.closest) {
+        const card = btn.closest('.var-card');
+        if (card) card.remove();
+      }
     }
 
     async function collectVariations(formData) {
@@ -460,11 +531,13 @@
 
     document.getElementById('category').addEventListener('change', function() {
       renderSizes(this.value);
+      updateAllVariationSizes();
     });
 
     document.getElementById('subcat').addEventListener('change', function() {
       const category = document.getElementById('category').value;
       renderSizes(category, this.value);
+      updateAllVariationSizes();
     });
 
     document.getElementById('productForm').addEventListener('submit', async function(e) {
@@ -537,9 +610,7 @@
           messageDiv.className = 'success';
           messageDiv.textContent = '✅ ' + data.message;
           messageDiv.style.display = 'block';
-          form.reset();
-          document.getElementById('sizeContainer').innerHTML = '';
-          document.getElementById('sizeWrapper').style.display = 'none';
+          resetAllFormState();
 
           setTimeout(function() {
             messageDiv.style.display = 'none';
