@@ -258,7 +258,7 @@ router.post('/api/products', upload.array('imageFiles', 10), async (req, res) =>
     for (const file of files) {
       await convertHeicToJpeg(file);
     }
-    const { name, price, category, barcode, image, description, brand, shopierLink, features, subcat, badge } = req.body;
+    const { name, price, costPrice, category, barcode, image, description, brand, shopierLink, features, subcat, badge } = req.body;
 
     if (!name || !price || !category) {
       // Clean up uploaded files on validation error
@@ -304,6 +304,7 @@ router.post('/api/products', upload.array('imageFiles', 10), async (req, res) =>
     const newProduct = new Product({
       name,
       price: parseFloat(price),
+      costPrice: costPrice !== undefined && costPrice !== '' ? parseFloat(costPrice) : 0,
       category,
       barcode: barcode && barcode.trim() ? barcode.trim() : undefined,
       image: imagePath,

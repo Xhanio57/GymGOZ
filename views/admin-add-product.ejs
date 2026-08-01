@@ -5,8 +5,17 @@
 
     <form id="productForm">
       <input type="text" id="name" placeholder="Ürün Adı" required>
-      <input type="number" id="price" step="0.01" placeholder="Fiyat" required>
-
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:0;">
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:4px;">Satış Fiyatı (₺) *</label>
+          <input type="number" id="price" step="0.01" placeholder="0.00" required style="margin-bottom:0;">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;color:#059669;margin-bottom:4px;">Alış Fiyatı (₺)</label>
+          <input type="number" id="costPrice" step="0.01" placeholder="Maliyet" style="margin-bottom:0;border-color:#a7f3d0;">
+        </div>
+      </div>
+      <div style="height:15px;"></div>
       <select id="category" required>
         <option value="">Kategori Seç</option>
         <!-- Populated dynamically -->
@@ -314,6 +323,7 @@
         const formData = new FormData();
         formData.append('name', document.getElementById('name').value);
         formData.append('price', document.getElementById('price').value);
+        formData.append('costPrice', (document.getElementById('costPrice') || {value:''}).value);
         formData.append('category', category);
         formData.append('barcode', (document.getElementById('barcode') || {value:''}).value);
         formData.append('description', (document.getElementById('description') || {value:''}).value);
