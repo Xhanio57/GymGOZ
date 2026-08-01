@@ -88,8 +88,8 @@ async function uploadToCloudinaryAndCleanup(file) {
   if (!file) return null;
 
   if (!isCloudinaryConfigured) {
-    console.log('Cloudinary is not configured. Falling back to default product logo.');
-    return '/images/default-product.png';
+    console.log('Cloudinary is not configured.');
+    return null;
   }
 
   let attempts = 0;
@@ -124,7 +124,7 @@ async function uploadToCloudinaryAndCleanup(file) {
     await fs.unlink(file.path);
   } catch (_) {}
 
-  return '/images/default-product.png';
+  return null;
 }
 
 // Label rendering helper functions
@@ -462,10 +462,23 @@ router.put('/api/products/:id', upload.any(), async (req, res) => {
       try {
         let parsedVariations = JSON.parse(req.body.variations);
         if (Array.isArray(parsedVariations)) {
+          const oldVarMap = {};
+          if (oldProduct && Array.isArray(oldProduct.variations)) {
+            oldProduct.variations.forEach(ov => {
+              if (ov.name) oldVarMap[ov.name] = (ov.images || []).filter(img => img && img.trim() && img !== '/images/default-product.png');
+            });
+          }
+
           parsedVariations = parsedVariations.map(v => {
             const uploadedImgs = varUploadedMap[v._fileKey] || [];
-            const existingImgs = Array.isArray(v.images) ? v.images.filter(img => img && img.trim() && img !== '/images/default-product.png') : [];
-            const allImgs = [...existingImgs, ...uploadedImgs];
+            const clientImgs = Array.isArray(v.images) ? v.images.filter(img => img && img.trim() && img !== '/images/default-product.png') : [];
+            const oldImgs = oldVarMap[v.name] || [];
+
+            let allImgs = [...clientImgs, ...uploadedImgs];
+            if (allImgs.length === 0 && oldImgs.length > 0) {
+              allImgs = oldImgs;
+            }
+
             return {
               name: v.name,
               images: allImgs,
