@@ -615,6 +615,13 @@
       });
     }
 
+    function removeEditVarCard(btn) {
+      if (btn && btn.closest) {
+        const card = btn.closest('.edit-var-card');
+        if (card) card.remove();
+      }
+    }
+
     function addEditVariationCard(vData, categoryName) {
       const container = document.getElementById('editVariationsContainer');
       const name = vData ? vData.name : '';
@@ -642,13 +649,13 @@
       let existingImgHtml = '';
       images.forEach(function(imgUrl) {
         existingImgHtml += '<div style="position:relative;width:50px;height:50px;border-radius:4px;overflow:hidden;border:1px solid #ccc;" data-img-url="' + imgUrl + '">' +
-          '<img src="' + imgUrl + '" style="width:100%;height:100%;object-fit:contain;background:#fff;" onerror="this.src=\'/images/default-product.png\'">' +
+          '<img src="' + imgUrl + '" style="width:100%;height:100%;object-fit:contain;background:#fff;" onerror="handleImgError(this)">' +
           '<button type="button" onclick="this.parentElement.remove()" style="position:absolute;top:1px;right:1px;background:red;color:white;border:none;border-radius:2px;font-size:9px;cursor:pointer;padding:0 3px;">✕</button>' +
         '</div>';
       });
 
       card.innerHTML = 
-        '<button type="button" onclick="this.closest(\'.edit-var-card\').remove()" style="position:absolute;top:8px;right:8px;background:#fee2e2;color:#dc2626;border:none;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px;">Kaldır</button>' +
+        '<button type="button" onclick="removeEditVarCard(this)" style="position:absolute;top:8px;right:8px;background:#fee2e2;color:#dc2626;border:none;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px;">Kaldır</button>' +
         '<div style="font-size:12px;font-weight:700;color:#7c3aed;margin-bottom:6px;">🎨 Varyasyon</div>' +
         '<div style="margin-bottom:8px;">' +
           '<input type="text" class="edit-var-name-input" value="' + name + '" placeholder="Varyasyon Adı (ör: Turuncu)" style="width:100%;padding:6px;font-size:12px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box;">' +
