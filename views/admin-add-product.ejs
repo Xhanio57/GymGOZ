@@ -32,8 +32,9 @@
       </div>
 
       <div style="margin-bottom: 15px;">
-        <label style="display:block;font-weight:600;margin-bottom:8px;color:#374151;">Ürün Görseli</label>
-        <input type="file" id="imageFile" accept="image/*" style="padding: 8px 0; border: none; border-radius: 0; background: transparent; width: auto; margin-bottom: 0;">
+        <label style="display:block;font-weight:600;margin-bottom:8px;color:#374151;">Ürün Görselleri (Birden fazla seçebilirsiniz)</label>
+        <input type="file" id="imageFiles" accept="image/*" multiple style="padding: 8px 0; border: none; border-radius: 0; background: transparent; width: auto; margin-bottom: 8px;">
+        <div id="imagePreview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;"></div>
         <input type="hidden" id="image" value="">
       </div>
       <div style="margin-bottom: 15px; background: #f8fafc; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 6px; display: flex; align-items: center; gap: 10px;">
@@ -44,6 +45,8 @@
       </div>
 
       <button type="submit" class="btn btn-primary">Ürün Ekle</button>
+      <input type="hidden" id="barcode" value="">
+      <input type="hidden" id="description" value="">
     </form>
 
     <div id="message"></div>
@@ -132,6 +135,38 @@
   <script>
     let categoriesList = [];
     let brandsList = [];
+
+    // Image preview
+    document.addEventListener('DOMContentLoaded', function() {
+      const imgInput = document.getElementById('imageFiles');
+      if (imgInput) {
+        imgInput.addEventListener('change', function() {
+          const preview = document.getElementById('imagePreview');
+          preview.innerHTML = '';
+          Array.from(this.files).forEach(function(file, idx) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              const wrap = document.createElement('div');
+              wrap.style.cssText = 'position:relative;width:80px;height:80px;border-radius:6px;overflow:hidden;border:2px solid #dbeafe;flex-shrink:0;';
+              const img = document.createElement('img');
+              img.src = e.target.result;
+              img.style.cssText = 'width:100%;height:100%;object-fit:contain;background:#f8fafc;';
+              if (idx === 0) {
+                const badge = document.createElement('span');
+                badge.textContent = 'Ana';
+                badge.style.cssText = 'position:absolute;bottom:0;left:0;right:0;background:rgba(37,99,235,0.8);color:white;font-size:9px;text-align:center;padding:2px;';
+                wrap.appendChild(img);
+                wrap.appendChild(badge);
+              } else {
+                wrap.appendChild(img);
+              }
+              preview.appendChild(wrap);
+            };
+            reader.readAsDataURL(file);
+          });
+        });
+      }
+    });
 
     async function loadFormOptions() {
       try {
@@ -280,13 +315,13 @@
         formData.append('name', document.getElementById('name').value);
         formData.append('price', document.getElementById('price').value);
         formData.append('category', category);
-        formData.append('barcode', document.getElementById('barcode').value);
-        formData.append('description', document.getElementById('description').value);
-        formData.append('brand', document.getElementById('brand').value);
-        formData.append('subcat', document.getElementById('subcat').value);
-        formData.append('shopierLink', document.getElementById('shopierLink').value);
-        formData.append('badge', document.getElementById('badge').value);
-        formData.append('features', document.getElementById('features').value);
+        formData.append('barcode', (document.getElementById('barcode') || {value:''}).value);
+        formData.append('description', (document.getElementById('description') || {value:''}).value);
+        formData.append('brand', (document.getElementById('brand') || {value:''}).value);
+        formData.append('subcat', (document.getElementById('subcat') || {value:''}).value);
+        formData.append('shopierLink', (document.getElementById('shopierLink') || {value:''}).value);
+        formData.append('badge', (document.getElementById('badge') || {value:''}).value);
+        formData.append('features', (document.getElementById('features') || {value:''}).value);
         formData.append('vipVisible', document.getElementById('vipVisible').checked ? 'true' : 'false');
 
         selectedSizes.forEach(size => {
@@ -295,9 +330,11 @@
           formData.append('stock_' + size, stockVal);
         });
 
-        const fileInput = document.getElementById('imageFile');
+        const fileInput = document.getElementById('imageFiles');
         if (fileInput.files.length > 0) {
-          formData.append('imageFile', fileInput.files[0]);
+          for (let i = 0; i < fileInput.files.length; i++) {
+            formData.append('imageFiles', fileInput.files[i]);
+          }
         }
 
         const response = await fetch('/api/products', {

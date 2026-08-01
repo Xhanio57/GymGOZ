@@ -26,10 +26,17 @@ if (isCloudinaryConfigured) {
   });
 }
 
+// Ensure upload directory exists
+const fsSync = require('fs');
+const uploadDir = 'public/products/';
+if (!fsSync.existsSync(uploadDir)) {
+  fsSync.mkdirSync(uploadDir, { recursive: true });
+}
+
 // Configure Multer storage
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'public/products/');
+    cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
@@ -39,12 +46,12 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max per file
   fileFilter: function (req, file, cb) {
     const ext = path.extname(file.originalname).toLowerCase();
     const isHeic = ext === '.heic' || ext === '.heif';
     const filetypes = /jpeg|jpg|png|gif|webp|svg|heic|heif/;
-    const mimetype = filetypes.test(file.mimetype) || (isHeic && file.mimetype === 'application/octet-stream');
+    const mimetype = filetypes.test(file.mimetype) || (isHeic && file.mimetype === 'application/octet-stream') || file.mimetype === 'image/heic' || file.mimetype === 'image/heif';
     const extname = filetypes.test(ext);
     if (mimetype && extname) {
       return cb(null, true);
@@ -208,7 +215,7 @@ router.get('/api/products', async (req, res) => {
       isVipOrAdmin = true;
     } else if (req.session && req.session.customerId) {
       const Customer = require('../models/Customer');
-      const customer = await Customer.findById(req.session.customerId);
+      const customer = await Customer.findById(req.session.customerId).lean();
       if (customer && customer.isClubMember) {
         isVipOrAdmin = true;
       }
@@ -219,7 +226,10 @@ router.get('/api/products', async (req, res) => {
       filter.vipVisible = { $ne: false };
     }
 
-    const products = await Product.find(filter).sort({ createdAt: -1 });
+    const products = await Product.find(filter)
+      .select('name barcode price costPrice discountType discountValue discountLabel category sizeStock image images description brand shopierLink features subcat badge views vipVisible labelText createdAt')
+      .sort({ createdAt: -1 })
+      .lean();
     res.json(products);
   } catch (error) {
     res.status(500).json({ success: false, message: 'Ürünler yüklenemedi: ' + error.message });
@@ -242,21 +252,36 @@ router.post('/api/products/:id/view', async (req, res) => {
   }
 });
 
-router.post('/api/products', upload.single('imageFile'), async (req, res) => {
+router.post('/api/products', upload.array('imageFiles', 10), async (req, res) => {
   try {
-    await convertHeicToJpeg(req.file);
+    const files = req.files || [];
+    for (const file of files) {
+      await convertHeicToJpeg(file);
+    }
     const { name, price, category, barcode, image, description, brand, shopierLink, features, subcat, badge } = req.body;
 
     if (!name || !price || !category) {
+      // Clean up uploaded files on validation error
+      for (const file of files) {
+        try { await fs.unlink(file.path); } catch (_) {}
+      }
       return res.status(400).json({
         success: false,
         message: 'Ürün adı, fiyat ve kategori zorunludur'
       });
     }
 
+    // Upload all images
+    const uploadedUrls = [];
+    for (const file of files) {
+      const url = await uploadToCloudinaryAndCleanup(file);
+      if (url) uploadedUrls.push(url);
+    }
+
+    // Primary image: first uploaded, or existing URL, or default
     let imagePath = '/images/default-product.png';
-    if (req.file) {
-      imagePath = await uploadToCloudinaryAndCleanup(req.file);
+    if (uploadedUrls.length > 0) {
+      imagePath = uploadedUrls[0];
     } else if (image && image.trim()) {
       imagePath = image.trim();
     }
@@ -282,6 +307,7 @@ router.post('/api/products', upload.single('imageFile'), async (req, res) => {
       category,
       barcode: barcode && barcode.trim() ? barcode.trim() : undefined,
       image: imagePath,
+      images: uploadedUrls,
       description: description || '',
       brand: brand || 'Öz Spor',
       shopierLink: shopierLink || '',
@@ -313,9 +339,12 @@ router.post('/api/products', upload.single('imageFile'), async (req, res) => {
   }
 });
 
-router.put('/api/products/:id', upload.single('imageFile'), async (req, res) => {
+router.put('/api/products/:id', upload.array('imageFiles', 10), async (req, res) => {
   try {
-    await convertHeicToJpeg(req.file);
+    const files = req.files || [];
+    for (const file of files) {
+      await convertHeicToJpeg(file);
+    }
     const { name, price, costPrice, category, image, description, discountType, discountValue, discountLabel, labelText, brand, shopierLink, features, subcat, badge, vipVisible } = req.body;
     
     const updateData = {
@@ -335,13 +364,32 @@ router.put('/api/products/:id', upload.single('imageFile'), async (req, res) => 
       badge: badge || '',
       vipVisible: vipVisible !== undefined ? (vipVisible !== 'false' && vipVisible !== false) : true
     };
-    // Remove undefined costPrice to avoid overwriting with undefined
     if (updateData.costPrice === undefined) delete updateData.costPrice;
 
-    if (req.file) {
-      updateData.image = await uploadToCloudinaryAndCleanup(req.file);
+    // Handle new image uploads
+    if (files.length > 0) {
+      const uploadedUrls = [];
+      for (const file of files) {
+        const url = await uploadToCloudinaryAndCleanup(file);
+        if (url) uploadedUrls.push(url);
+      }
+      // Merge with existing images that are being kept (sent as existingImages[])
+      const existingImages = req.body.existingImages
+        ? (Array.isArray(req.body.existingImages) ? req.body.existingImages : [req.body.existingImages])
+        : [];
+      const allImages = [...existingImages, ...uploadedUrls];
+      updateData.image = allImages[0] || '/images/default-product.png';
+      updateData.images = allImages;
     } else if (image !== undefined) {
       updateData.image = image || '/images/default-product.png';
+      // Also handle existingImages to update images array
+      if (req.body.existingImages !== undefined) {
+        const existingImages = Array.isArray(req.body.existingImages) ? req.body.existingImages : (req.body.existingImages ? [req.body.existingImages] : []);
+        updateData.images = existingImages;
+        if (!updateData.image && existingImages.length > 0) {
+          updateData.image = existingImages[0];
+        }
+      }
     }
 
     const oldProduct = await Product.findById(req.params.id);
@@ -349,7 +397,6 @@ router.put('/api/products/:id', upload.single('imageFile'), async (req, res) => 
       return res.status(404).json({ success: false, message: 'Ürün bulunamadı' });
     }
 
-    // Kategori/alt kategori veya beden seçimleri değiştiyse beden listesini güncelle
     if (req.body.sizes) {
       try {
         const sizesArray = JSON.parse(req.body.sizes);

@@ -350,9 +350,33 @@
   .popup-gallery {
     position: relative; background: var(--gray-100);
     min-height: 420px; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .popup-gallery-main {
+    flex: 1; min-height: 340px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; background: var(--gray-100);
   }
   .popup-gallery img {
-    width: 100%; height: 100%; object-fit: cover;
+    width: 100%; height: 340px;
+    object-fit: contain;
+    display: block;
+    transition: opacity 0.25s ease;
+  }
+  .popup-thumbs {
+    display: flex; gap: 6px; padding: 8px 10px;
+    background: rgba(0,0,0,0.04);
+    overflow-x: auto; scrollbar-width: thin;
+  }
+  .popup-thumb {
+    width: 52px; height: 52px; flex-shrink: 0;
+    border: 2px solid transparent; border-radius: 4px;
+    cursor: pointer; overflow: hidden; background: white;
+    transition: border-color 0.15s;
+  }
+  .popup-thumb.active { border-color: var(--black); }
+  .popup-thumb img {
+    width: 100%; height: 100%; object-fit: contain;
     display: block;
   }
   .popup-badge {
@@ -901,7 +925,10 @@
     <!-- Left: Gallery -->
     <div class="popup-gallery">
       <div class="popup-badge" id="popup-badge" style="display:none"></div>
-      <img id="popup-img" src="" alt="" onerror="this.onerror=null;this.src='/images/default-product.png'">
+      <div class="popup-gallery-main">
+        <img id="popup-img" src="" alt="" onerror="this.onerror=null;this.src='/images/default-product.png'">
+      </div>
+      <div class="popup-thumbs" id="popup-thumbs" style="display:none"></div>
     </div>
 
     <!-- Right: Info -->
@@ -1371,6 +1398,31 @@ function openPopup(id) {
   document.getElementById('popup-desc-main').textContent = p.longDesc;
   document.getElementById('popup-price').textContent = p.price.toLocaleString('tr-TR') + ' TL';
 
+  // Multi-image carousel
+  const thumbsContainer = document.getElementById('popup-thumbs');
+  thumbsContainer.innerHTML = '';
+  const galleryImages = (p.images && p.images.length > 0) ? p.images : [p.img];
+  if (galleryImages.length > 1) {
+    thumbsContainer.style.display = 'flex';
+    galleryImages.forEach(function(imgUrl, idx) {
+      const thumb = document.createElement('div');
+      thumb.className = 'popup-thumb' + (idx === 0 ? ' active' : '');
+      const img = document.createElement('img');
+      img.src = imgUrl;
+      img.alt = '';
+      img.onerror = function() { this.src = '/images/default-product.png'; };
+      thumb.appendChild(img);
+      thumb.onclick = function() {
+        document.getElementById('popup-img').src = imgUrl;
+        document.querySelectorAll('.popup-thumb').forEach(t => t.classList.remove('active'));
+        thumb.classList.add('active');
+      };
+      thumbsContainer.appendChild(thumb);
+    });
+  } else {
+    thumbsContainer.style.display = 'none';
+  }
+
   const badgeEl = document.getElementById('popup-badge');
   if (p.badge) {
     badgeEl.textContent = p.badge;
@@ -1496,6 +1548,7 @@ async function loadProducts() {
         totalStock: totalStock,
         views: p.views || 0,
         img: p.image || '/images/default-product.png',
+        images: (p.images && p.images.length > 0) ? p.images : (p.image ? [p.image] : ['/images/default-product.png']),
         link: p.shopierLink || 'https://www.shopier.com/oz_spor_outdoor'
       };
     });
