@@ -88,27 +88,43 @@ async function uploadToCloudinaryAndCleanup(file) {
   if (!file) return null;
 
   if (!isCloudinaryConfigured) {
-    console.log('Cloudinary is not configured. Saving file locally.');
-    return '/products/' + file.filename;
+    console.log('Cloudinary is not configured. Falling back to default product logo.');
+    return '/images/default-product.png';
   }
 
-  try {
-    const result = await cloudinary.uploader.upload(file.path, {
-      folder: 'gymgoz_products'
-    });
-
-    // Clean up temporary local file
+  let attempts = 0;
+  while (attempts < 3) {
+    attempts++;
     try {
-      await fs.unlink(file.path);
-    } catch (unlinkErr) {
-      console.error('Local temp file cleanup error:', unlinkErr);
-    }
+      const result = await cloudinary.uploader.upload(file.path, {
+        folder: 'gymgoz_products',
+        resource_type: 'auto'
+      });
 
-    return result.secure_url;
-  } catch (err) {
-    console.error('Cloudinary upload failed, falling back to local file path:', err);
-    return '/products/' + file.filename;
+      // Clean up temporary local file
+      try {
+        await fs.unlink(file.path);
+      } catch (unlinkErr) {
+        console.error('Local temp file cleanup error:', unlinkErr);
+      }
+
+      if (result && result.secure_url) {
+        return result.secure_url;
+      }
+    } catch (err) {
+      console.error(`Cloudinary upload attempt ${attempts} failed:`, err.message);
+      if (attempts < 3) {
+        await new Promise(r => setTimeout(r, 1000));
+      }
+    }
   }
+
+  // Cleanup local temp file if Cloudinary failed after retries
+  try {
+    await fs.unlink(file.path);
+  } catch (_) {}
+
+  return '/images/default-product.png';
 }
 
 // Label rendering helper functions

@@ -48,6 +48,17 @@ app.use(bodyParser.json({ limit: '2mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '2mb' }));
 app.use(express.static('public'));
 
+// Static product image fallback handler (serves default-product.png if file missing in public/products/)
+const path = require('path');
+const fsSync = require('fs');
+app.get('/products/:filename', (req, res) => {
+  const filePath = path.join(__dirname, 'public', 'products', req.params.filename);
+  if (fsSync.existsSync(filePath)) {
+    return res.sendFile(filePath);
+  }
+  res.sendFile(path.join(__dirname, 'public', 'images', 'default-product.png'));
+});
+
 // Rate limiters
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
