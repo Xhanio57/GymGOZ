@@ -547,11 +547,7 @@
           img.src = url;
           img.style.cssText = 'width:100%;height:100%;object-fit:contain;background:#f9fafb;';
           img.onerror = function() {
-            // If image fails to load (broken 404), remove it from DOM and attribute
-            wrap.remove();
-            if (existingPrev.children.length === 0) {
-              existingPrev.innerHTML = '<span style="font-size:12px;color:var(--adm-muted, #888);font-style:italic;">Yüklenen görsel bulunamadı. Lütfen yeni görsel ekleyin.</span>';
-            }
+            handleImgError(this);
           };
           const delBtn = document.createElement('button');
           delBtn.textContent = '✕';
