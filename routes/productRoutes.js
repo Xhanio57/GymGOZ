@@ -87,28 +87,39 @@ async function convertHeicToJpeg(file) {
 async function uploadToCloudinaryAndCleanup(file) {
   if (!file) return null;
 
-  if (!isCloudinaryConfigured) {
-    console.log('Cloudinary is not configured.');
-    return null;
+  const localUrl = '/products/' + file.filename;
+
+  const isConfigured = !!(
+    process.env.CLOUDINARY_CLOUD_NAME &&
+    process.env.CLOUDINARY_API_KEY &&
+    process.env.CLOUDINARY_API_SECRET
+  );
+
+  if (!isConfigured) {
+    console.log('Cloudinary is not configured. Retaining local file path:', localUrl);
+    return localUrl;
   }
 
   let attempts = 0;
   while (attempts < 3) {
     attempts++;
     try {
+      cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET
+      });
+
       const result = await cloudinary.uploader.upload(file.path, {
         folder: 'gymgoz_products',
         resource_type: 'auto'
       });
 
-      // Clean up temporary local file
-      try {
-        await fs.unlink(file.path);
-      } catch (unlinkErr) {
-        console.error('Local temp file cleanup error:', unlinkErr);
-      }
-
       if (result && result.secure_url) {
+        // Clean up temporary local file since Cloudinary upload succeeded
+        try {
+          await fs.unlink(file.path);
+        } catch (_) {}
         return result.secure_url;
       }
     } catch (err) {
@@ -119,12 +130,9 @@ async function uploadToCloudinaryAndCleanup(file) {
     }
   }
 
-  // Cleanup local temp file if Cloudinary failed after retries
-  try {
-    await fs.unlink(file.path);
-  } catch (_) {}
-
-  return null;
+  // If Cloudinary fails after retries, keep local file on disk and return local path
+  console.log('Cloudinary upload failed after retries. Retaining local file path:', localUrl);
+  return localUrl;
 }
 
 // Label rendering helper functions
