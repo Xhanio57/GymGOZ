@@ -437,43 +437,6 @@ router.put('/api/products/:id', upload.any(), async (req, res) => {
       return res.status(404).json({ success: false, message: 'Ürün bulunamadı' });
     }
 
-    if (req.body.sizes) {
-      try {
-        const sizesArray = JSON.parse(req.body.sizes);
-        if (Array.isArray(sizesArray)) {
-          const currentSizeStockMap = {};
-          (oldProduct.sizeStock || []).forEach(s => {
-            currentSizeStockMap[s.size] = s.stock;
-          });
-
-          updateData.sizeStock = sizesArray.map(size => ({
-            size,
-            stock: currentSizeStockMap[size] !== undefined ? currentSizeStockMap[size] : 0
-          }));
-        }
-      } catch (e) {
-        console.error('Beden listesi ayrıştırılamadı:', e);
-      }
-    } else if (oldProduct.category !== category || oldProduct.subcat !== subcat) {
-      const Category = require('../models/Category');
-      const catDoc = await Category.findOne({ name: category });
-      let newSizes = ['Tek Boyut'];
-      if (catDoc) {
-        newSizes = catDoc.sizes || ['Tek Boyut'];
-        if (subcat && catDoc.subcategories) {
-          const sub = catDoc.subcategories.find(s => s.slug === subcat);
-          if (sub && sub.sizes && sub.sizes.length > 0) {
-            newSizes = sub.sizes;
-          }
-        }
-      }
-      
-      updateData.sizeStock = newSizes.map(size => ({
-        size,
-        stock: 0
-      }));
-    }
-
     // Parse and update variations
     if (req.body.variations !== undefined) {
       try {
@@ -493,6 +456,45 @@ router.put('/api/products/:id', upload.any(), async (req, res) => {
         }
       } catch (e) {
         console.error('Varyasyon listesi ayrıştırılamadı:', e);
+      }
+    }
+
+    if (!updateData.variations || updateData.variations.length === 0) {
+      if (req.body.sizes) {
+        try {
+          const sizesArray = JSON.parse(req.body.sizes);
+          if (Array.isArray(sizesArray)) {
+            const currentSizeStockMap = {};
+            (oldProduct.sizeStock || []).forEach(s => {
+              currentSizeStockMap[s.size] = s.stock;
+            });
+
+            updateData.sizeStock = sizesArray.map(size => ({
+              size,
+              stock: currentSizeStockMap[size] !== undefined ? currentSizeStockMap[size] : 0
+            }));
+          }
+        } catch (e) {
+          console.error('Beden listesi ayrıştırılamadı:', e);
+        }
+      } else if (oldProduct.category !== category || oldProduct.subcat !== subcat) {
+        const Category = require('../models/Category');
+        const catDoc = await Category.findOne({ name: category });
+        let newSizes = ['Tek Boyut'];
+        if (catDoc) {
+          newSizes = catDoc.sizes || ['Tek Boyut'];
+          if (subcat && catDoc.subcategories) {
+            const sub = catDoc.subcategories.find(s => s.slug === subcat);
+            if (sub && sub.sizes && sub.sizes.length > 0) {
+              newSizes = sub.sizes;
+            }
+          }
+        }
+        
+        updateData.sizeStock = newSizes.map(size => ({
+          size,
+          stock: 0
+        }));
       }
     }
 
@@ -518,7 +520,7 @@ router.put('/api/products/:id', upload.any(), async (req, res) => {
 
 router.patch('/api/products/:id/size-stock', async (req, res) => {
   try {
-    const { size, quantity } = req.body;
+    const { size, quantity, variationName } = req.body;
 
     if (!size || quantity === undefined) {
       return res.status(400).json({
@@ -531,6 +533,25 @@ router.patch('/api/products/:id/size-stock', async (req, res) => {
 
     if (!product) {
       return res.status(404).json({ success: false, message: 'Ürün bulunamadı' });
+    }
+
+    if (variationName && Array.isArray(product.variations)) {
+      const variation = product.variations.find(v => v.name === variationName);
+      if (variation) {
+        let sizeItem = variation.sizeStock.find(s => s.size === size);
+        if (!sizeItem) {
+          sizeItem = { size, stock: 0 };
+          variation.sizeStock.push(sizeItem);
+        }
+        sizeItem.stock += parseInt(quantity);
+        if (sizeItem.stock < 0) sizeItem.stock = 0;
+        await product.save();
+        return res.json({
+          success: true,
+          message: `${variation.name} (${size}) stoku güncellendi: ${sizeItem.stock}`,
+          product
+        });
+      }
     }
 
     const sizeItem = product.sizeStock.find(s => s.size === size);

@@ -84,6 +84,12 @@
         <div id="editSizeContainer" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(100px, 1fr)); gap:10px; max-height:150px; overflow-y:auto; padding:10px; border:1px solid var(--adm-border, #2a2a32); border-radius:6px; background:var(--adm-bg, rgba(0,0,0,0.2));"></div>
       </div>
 
+      <div id="editVariationsWrapper" style="margin-bottom:15px;display:none;text-align:left;">
+        <label style="display:block;font-weight:600;margin-bottom:8px;color:#7c3aed;">🎨 Ürün Varyasyonları (Renk/Desen/Model)</label>
+        <div id="editVariationsContainer" style="display:flex;flex-direction:column;gap:12px;"></div>
+        <button type="button" onclick="addEditVariationCard(null, document.getElementById('c').value)" style="margin-top:10px;background:#7c3aed;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">+ Yeni Varyasyon Ekle</button>
+      </div>
+
       <input type="text" id="shopierLink" placeholder="Shopier Satış Linki">
       <input type="text" id="badge" placeholder="Ürün Rozeti (Örn: YENİ)">
       <input type="text" id="features" placeholder="Özellikler (virgülle ayırın, Örn: Su geçirmez, Nefes alan)">
@@ -318,14 +324,27 @@
       });
 
       t.innerHTML = filtered.map(function(p) {
-        const sizeStock = Array.isArray(p.sizeStock) ? p.sizeStock : [];
-        const total = sizeStock.reduce(function(a, b) { return a + (b.stock || 0); }, 0);
+        let total = 0;
+        let sizeHtml = '';
 
-        const sizeHtml = sizeStock.map(function(sz) {
-          let cls = 'size-badge';
-          if (sz.stock === 0) cls += ' out';
-          return '<span class="' + cls + '">' + getSizeLabel(p, sz.size) + ': ' + sz.stock + '</span>';
-        }).join('');
+        if (Array.isArray(p.variations) && p.variations.length > 0) {
+          p.variations.forEach(function(v) {
+            const vStock = (v.sizeStock || []).reduce(function(a, b) { return a + (b.stock || 0); }, 0);
+            total += vStock;
+            const details = (v.sizeStock || []).map(s => s.size + ': ' + (s.stock || 0)).join(', ');
+            let cls = 'size-badge';
+            if (vStock === 0) cls += ' out';
+            sizeHtml += '<span class="' + cls + '" style="background:#f3e8ff;color:#6b21a8;border-color:#d8b4fe;">🎨 ' + v.name + ' (' + details + ')</span> ';
+          });
+        } else {
+          const sizeStock = Array.isArray(p.sizeStock) ? p.sizeStock : [];
+          total = sizeStock.reduce(function(a, b) { return a + (b.stock || 0); }, 0);
+          sizeHtml = sizeStock.map(function(sz) {
+            let cls = 'size-badge';
+            if (sz.stock === 0) cls += ' out';
+            return '<span class="' + cls + '">' + getSizeLabel(p, sz.size) + ': ' + sz.stock + '</span>';
+          }).join('');
+        }
 
         const isChecked = selectedIds[p._id] ? 'checked' : '';
 
@@ -417,13 +436,27 @@
       cp = prods.find(function(p) { return p._id === id; });
 
       const sb = document.getElementById('sizes');
-      sb.innerHTML = (cp.sizeStock || []).map(function(s) {
-        return '<div class="multi-stock-row">' +
-          '<div class="multi-stock-label">' + getSizeLabel(cp, s.size) + '</div>' +
-          '<div class="multi-stock-current">Mevcut stok: ' + s.stock + '</div>' +
-          '<input type="number" class="multi-stock-input" data-size="' + s.size + '" placeholder="Değişim miktarı (örn: 1 veya -1)">' +
-        '</div>';
-      }).join('');
+      if (Array.isArray(cp.variations) && cp.variations.length > 0) {
+        let html = '';
+        cp.variations.forEach(function(v) {
+          (v.sizeStock || []).forEach(function(s) {
+            html += '<div class="multi-stock-row">' +
+              '<div class="multi-stock-label">🎨 ' + v.name + ' - ' + getSizeLabel(cp, s.size) + '</div>' +
+              '<div class="multi-stock-current">Mevcut stok: ' + s.stock + '</div>' +
+              '<input type="number" class="multi-stock-input" data-var="' + v.name + '" data-size="' + s.size + '" placeholder="Değişim miktarı (örn: 1 veya -1)">' +
+            '</div>';
+          });
+        });
+        sb.innerHTML = html;
+      } else {
+        sb.innerHTML = (cp.sizeStock || []).map(function(s) {
+          return '<div class="multi-stock-row">' +
+            '<div class="multi-stock-label">' + getSizeLabel(cp, s.size) + '</div>' +
+            '<div class="multi-stock-current">Mevcut stok: ' + s.stock + '</div>' +
+            '<input type="number" class="multi-stock-input" data-size="' + s.size + '" placeholder="Değişim miktarı (örn: 1 veya -1)">' +
+          '</div>';
+        }).join('');
+      }
 
       document.getElementById('m1').classList.remove('hidden');
     }
@@ -432,6 +465,7 @@
       const inputs = Array.from(document.querySelectorAll('#sizes .multi-stock-input'));
       const updates = inputs.map(function(input) {
         return {
+          varName: input.getAttribute('data-var'),
           size: input.getAttribute('data-size'),
           quantity: parseInt(input.value, 10) || 0
         };
@@ -450,6 +484,7 @@
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+              variationName: update.varName || undefined,
               size: update.size,
               quantity: update.quantity
             })
@@ -557,10 +592,113 @@
         });
       });
 
-      // Populate sizes checkboxes
-      renderEditSizes(x.category, x.subcat, x.sizeStock);
+      // Populate sizes or variations
+      if (Array.isArray(x.variations) && x.variations.length > 0) {
+        document.getElementById('editSizeWrapper').style.display = 'none';
+        renderEditVariations(x.variations, x.category);
+      } else {
+        document.getElementById('editVariationsWrapper').style.display = 'none';
+        renderEditSizes(x.category, x.subcat, x.sizeStock);
+      }
 
       document.getElementById('m2').classList.remove('hidden');
+    }
+
+    function renderEditVariations(variations, categoryName) {
+      const wrapper = document.getElementById('editVariationsWrapper');
+      const container = document.getElementById('editVariationsContainer');
+      container.innerHTML = '';
+      wrapper.style.display = 'block';
+
+      (variations || []).forEach(function(v) {
+        addEditVariationCard(v, categoryName);
+      });
+    }
+
+    function addEditVariationCard(vData, categoryName) {
+      const container = document.getElementById('editVariationsContainer');
+      const name = vData ? vData.name : '';
+      const sizeStock = vData ? (vData.sizeStock || []) : [];
+      const images = vData ? (vData.images || []) : [];
+
+      const category = categoriesList.find(c => c.name === (categoryName || document.getElementById('c').value));
+      const sizes = (category && category.sizes && category.sizes.length > 0) ? category.sizes : ['Tek Boyut'];
+
+      const sizeStockMap = {};
+      sizeStock.forEach(s => sizeStockMap[s.size] = s.stock);
+
+      const card = document.createElement('div');
+      card.className = 'edit-var-card';
+      card.style.cssText = 'background:var(--adm-surface2, #1c1c22);border:1px solid #ddd6fe;border-radius:8px;padding:12px;position:relative;';
+
+      const sizeInputs = sizes.map(function(size) {
+        const stk = sizeStockMap[size] !== undefined ? sizeStockMap[size] : 0;
+        return '<div style="display:flex;flex-direction:column;gap:2px;border:1px solid var(--adm-border, #333);padding:4px 6px;border-radius:4px;background:rgba(0,0,0,0.1);">' +
+          '<label style="font-size:11px;font-weight:600;color:var(--adm-text,#eee);">' + size + '</label>' +
+          '<input type="number" class="edit-var-stock-input" data-size="' + size + '" value="' + stk + '" min="0" style="width:100%;padding:2px 4px;font-size:12px;box-sizing:border-box;">' +
+        '</div>';
+      }).join('');
+
+      let existingImgHtml = '';
+      images.forEach(function(imgUrl) {
+        existingImgHtml += '<div style="position:relative;width:50px;height:50px;border-radius:4px;overflow:hidden;border:1px solid #ccc;" data-img-url="' + imgUrl + '">' +
+          '<img src="' + imgUrl + '" style="width:100%;height:100%;object-fit:contain;background:#fff;" onerror="this.src=\'/images/default-product.png\'">' +
+          '<button type="button" onclick="this.parentElement.remove()" style="position:absolute;top:1px;right:1px;background:red;color:white;border:none;border-radius:2px;font-size:9px;cursor:pointer;padding:0 3px;">✕</button>' +
+        '</div>';
+      });
+
+      card.innerHTML = 
+        '<button type="button" onclick="this.closest(\'.edit-var-card\').remove()" style="position:absolute;top:8px;right:8px;background:#fee2e2;color:#dc2626;border:none;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px;">Kaldır</button>' +
+        '<div style="font-size:12px;font-weight:700;color:#7c3aed;margin-bottom:6px;">🎨 Varyasyon</div>' +
+        '<div style="margin-bottom:8px;">' +
+          '<input type="text" class="edit-var-name-input" value="' + name + '" placeholder="Varyasyon Adı (ör: Turuncu)" style="width:100%;padding:6px;font-size:12px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box;">' +
+        '</div>' +
+        '<div style="margin-bottom:8px;">' +
+          '<label style="font-size:11px;font-weight:600;display:block;margin-bottom:4px;color:var(--adm-text,#eee);">Görseller</label>' +
+          '<div class="edit-var-existing-imgs" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;">' + existingImgHtml + '</div>' +
+          '<input type="file" class="edit-var-file-input" accept="image/*" multiple style="font-size:11px;">' +
+        '</div>' +
+        '<div>' +
+          '<label style="font-size:11px;font-weight:600;display:block;margin-bottom:4px;color:var(--adm-text,#eee);">Beden Stoğu</label>' +
+          '<div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(75px,1fr));gap:6px;">' + sizeInputs + '</div>' +
+        '</div>';
+
+      container.appendChild(card);
+    }
+
+    function collectEditVariations(formData) {
+      const wrapper = document.getElementById('editVariationsWrapper');
+      if (!wrapper || wrapper.style.display === 'none') return null;
+
+      const cards = document.querySelectorAll('.edit-var-card');
+      const variations = [];
+
+      cards.forEach((card, idx) => {
+        const nameInput = card.querySelector('.edit-var-name-input');
+        const name = nameInput ? nameInput.value.trim() : '';
+        if (!name) return;
+
+        const existingImgs = Array.from(card.querySelectorAll('.edit-var-existing-imgs [data-img-url]')).map(el => el.getAttribute('data-img-url'));
+
+        const fileInput = card.querySelector('.edit-var-file-input');
+        const fileKey = 'varImages_' + (idx + 1);
+        if (fileInput && fileInput.files && fileInput.files.length > 0) {
+          for (let f = 0; f < fileInput.files.length; f++) {
+            formData.append(fileKey, fileInput.files[f]);
+          }
+        }
+
+        const sizeStock = [];
+        card.querySelectorAll('.edit-var-stock-input').forEach(inp => {
+          const size = inp.getAttribute('data-size');
+          const stock = parseInt(inp.value) || 0;
+          sizeStock.push({ size, stock });
+        });
+
+        variations.push({ name, images: existingImgs, sizeStock, _fileKey: fileKey });
+      });
+
+      return variations;
     }
 
     function renderEditSizes(categoryName, subcatSlug, currentSizeStock) {
@@ -647,8 +785,13 @@
         formData.append('image', document.getElementById('editImage').value);
         formData.append('vipVisible', document.getElementById('editVipVisible').checked ? 'true' : 'false');
 
-        const editSizes = Array.from(document.querySelectorAll('input[name="editSizes"]:checked')).map(el => el.value);
-        formData.append('sizes', JSON.stringify(editSizes));
+        const editedVariations = collectEditVariations(formData);
+        if (editedVariations !== null) {
+          formData.append('variations', JSON.stringify(editedVariations));
+        } else {
+          const editSizes = Array.from(document.querySelectorAll('input[name="editSizes"]:checked')).map(el => el.value);
+          formData.append('sizes', JSON.stringify(editSizes));
+        }
 
         // Send remaining existing images
         const existingPrev = document.getElementById('existingImagesPreview');
