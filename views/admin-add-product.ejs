@@ -265,7 +265,7 @@
           '<input type="text" id="varName_' + id + '" placeholder="Varyasyon adı" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box;margin:0;">' +
         '</div>' +
         '<div style="margin-bottom:8px;">' +
-          '<label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Bu Varyasyona Ait Görseller</label>' +
+          '<label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Bu Varyasyona Ait Görseller (Birden fazla seçebilirsiniz)</label>' +
           '<input type="file" id="varImages_' + id + '" accept="image/*" multiple style="font-size:12px;">' +
           '<div class="var-img-preview" id="varImgPreview_' + id + '"></div>' +
         '</div>' +
@@ -309,28 +309,32 @@
 
       for (let i = 0; i < cards.length; i++) {
         const card = cards[i];
-        const idMatch = card.id.match(/varCard_(\d+)/);
-        if (!idMatch) continue;
-        const id = parseInt(idMatch[1]);
 
-        const name = (document.getElementById('varName_' + id) || {value:''}).value.trim();
+        // Read variation name from text input inside this card
+        const nameInput = card.querySelector('input[type="text"]');
+        const name = nameInput ? nameInput.value.trim() : '';
         if (!name) continue;
 
-        // Upload images via FormData (we'll encode inline names to link them)
-        const files = variationFiles[id];
-        const fileKey = 'varImages_' + id;
-        if (files && files.length > 0) {
-          for (let f = 0; f < files.length; f++) {
-            formData.append(fileKey, files[f]);
+        // Read files directly from file input inside this card
+        const fileInput = card.querySelector('input[type="file"]');
+        const fileKey = 'varImages_' + (i + 1);
+        if (fileInput && fileInput.files && fileInput.files.length > 0) {
+          for (let f = 0; f < fileInput.files.length; f++) {
+            formData.append(fileKey, fileInput.files[f]);
           }
         }
 
-        // Collect sizeStock
-        const cat = categoriesList.find(c => c.name === document.getElementById('category').value);
-        const sizes = (cat && cat.sizes && cat.sizes.length > 0) ? cat.sizes : ['Tek Boyut'];
-        const sizeStock = sizes.map(size => {
-          const stockEl = document.getElementById('varStock_' + id + '_' + size.replace(/\s/g,'_'));
-          return { size, stock: stockEl ? (parseInt(stockEl.value) || 0) : 0 };
+        // Read size/stock directly from .var-size-item elements inside this card
+        const sizeItems = card.querySelectorAll('.var-size-item');
+        const sizeStock = [];
+        sizeItems.forEach(item => {
+          const labelEl = item.querySelector('label');
+          const inputEl = item.querySelector('input[type="number"]');
+          if (labelEl && inputEl) {
+            const sizeName = labelEl.textContent.trim();
+            const stockVal = parseInt(inputEl.value) || 0;
+            sizeStock.push({ size: sizeName, stock: stockVal });
+          }
         });
 
         variations.push({ name, images: [], sizeStock, _fileKey: fileKey });
