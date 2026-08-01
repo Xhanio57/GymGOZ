@@ -250,30 +250,29 @@
       card.className = 'var-card';
       card.id = 'varCard_' + id;
 
-      const sizeItems = sizes.map(size => `
-        <div class="var-size-item">
-          <label>${size}</label>
-          <input type="number" id="varStock_${id}_${size.replace(/\s/g,'_')}" placeholder="Stok" value="0" min="0">
-        </div>
-      `).join('');
+      const sizeItems = sizes.map(function(size) {
+        return '<div class="var-size-item">' +
+          '<label>' + size + '</label>' +
+          '<input type="number" id="varStock_' + id + '_' + size.replace(/\s/g,'_') + '" placeholder="Stok" value="0" min="0">' +
+        '</div>';
+      }).join('');
 
-      card.innerHTML = `
-        <button type="button" class="var-remove-btn" onclick="removeVariation(${id})">Kaldır</button>
-        <div class="var-card-title">🎨 Varyasyon ${id}</div>
-        <div style="margin-bottom:10px;">
-          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Varyasyon Adı (ör: Kırmızı, Mavi)</label>
-          <input type="text" id="varName_${id}" placeholder="Varyasyon adı" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box;margin:0;">
-        </div>
-        <div style="margin-bottom:8px;">
-          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Bu Varyasyona Ait Görseller</label>
-          <input type="file" id="varImages_${id}" accept="image/*" multiple style="font-size:12px;">
-          <div class="var-img-preview" id="varImgPreview_${id}"></div>
-        </div>
-        <div>
-          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Beden / Stok</label>
-          <div class="var-size-grid">${sizeItems}</div>
-        </div>
-      `;
+      card.innerHTML = 
+        '<button type="button" class="var-remove-btn" onclick="removeVariation(' + id + ')">Kaldır</button>' +
+        '<div class="var-card-title">🎨 Varyasyon ' + id + '</div>' +
+        '<div style="margin-bottom:10px;">' +
+          '<label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Varyasyon Adı (ör: Kırmızı, Mavi)</label>' +
+          '<input type="text" id="varName_' + id + '" placeholder="Varyasyon adı" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box;margin:0;">' +
+        '</div>' +
+        '<div style="margin-bottom:8px;">' +
+          '<label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Bu Varyasyona Ait Görseller</label>' +
+          '<input type="file" id="varImages_' + id + '" accept="image/*" multiple style="font-size:12px;">' +
+          '<div class="var-img-preview" id="varImgPreview_' + id + '"></div>' +
+        '</div>' +
+        '<div>' +
+          '<label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Beden / Stok</label>' +
+          '<div class="var-size-grid">' + sizeItems + '</div>' +
+        '</div>';
 
       document.getElementById('variationsList').appendChild(card);
 
