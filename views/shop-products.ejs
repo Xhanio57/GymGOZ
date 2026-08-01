@@ -424,6 +424,14 @@
     font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
     color: var(--gray-400); margin-bottom: 10px;
   }
+  .var-btn {
+    padding: 8px 16px; border: 1px solid var(--gray-200); font-size: 12px; font-weight: 700; cursor: pointer;
+    background: var(--white); color: var(--black); transition: all .15s; letter-spacing: 0.5px;
+    border-radius: 4px;
+  }
+  .var-btn:hover { border-color: var(--black); }
+  .var-btn.selected { background: var(--black); color: var(--accent); border-color: var(--black); }
+
   .size-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
   .size-btn {
     width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
@@ -940,6 +948,11 @@
 
         <ul class="popup-features" id="popup-features"></ul>
 
+        <div class="popup-variations" id="popup-variations" style="display:none;margin-bottom:16px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray-400);margin-bottom:8px;">Seçenek Seçin</div>
+          <div class="variation-buttons" id="variation-buttons" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+        </div>
+
         <div class="popup-sizes">
           <div class="popup-sizes-label">Beden Seçin</div>
           <div class="size-buttons" id="popup-sizes"></div>
@@ -1383,25 +1396,16 @@ function setStockStatus(inStock) {
   }
 }
 
-function openPopup(id) {
-  const p = products.find(x => x.id === id);
-  if (!p) return;
+let selectedVariation = null;
 
-  activeProduct = p;
-
-  p.views = (p.views || 0) + 1;
-  fetch('/api/products/' + id + '/view', { method: 'POST' }).catch(err => console.error('Error recording view:', err));
-
-  document.getElementById('popup-img').src = p.img;
-  document.getElementById('popup-cat').textContent = catLabel(p.cat);
-  document.getElementById('popup-name').textContent = p.name;
-  document.getElementById('popup-desc-main').textContent = p.longDesc;
-  document.getElementById('popup-price').textContent = p.price.toLocaleString('tr-TR') + ' TL';
-
-  // Multi-image carousel
+function renderPopupGallery(imagesArr) {
+  const mainImg = document.getElementById('popup-img');
   const thumbsContainer = document.getElementById('popup-thumbs');
   thumbsContainer.innerHTML = '';
-  const galleryImages = (p.images && p.images.length > 0) ? p.images : [p.img];
+
+  const galleryImages = (imagesArr && imagesArr.length > 0) ? imagesArr : ['/images/default-product.png'];
+  mainImg.src = galleryImages[0];
+
   if (galleryImages.length > 1) {
     thumbsContainer.style.display = 'flex';
     galleryImages.forEach(function(imgUrl, idx) {
@@ -1413,7 +1417,7 @@ function openPopup(id) {
       img.onerror = function() { this.src = '/images/default-product.png'; };
       thumb.appendChild(img);
       thumb.onclick = function() {
-        document.getElementById('popup-img').src = imgUrl;
+        mainImg.src = imgUrl;
         document.querySelectorAll('.popup-thumb').forEach(t => t.classList.remove('active'));
         thumb.classList.add('active');
       };
@@ -1422,20 +1426,10 @@ function openPopup(id) {
   } else {
     thumbsContainer.style.display = 'none';
   }
+}
 
-  const badgeEl = document.getElementById('popup-badge');
-  if (p.badge) {
-    badgeEl.textContent = p.badge;
-    badgeEl.className = 'popup-badge' + (p.badge === 'YENİ' ? ' yeni' : '');
-    badgeEl.style.display = 'block';
-  } else {
-    badgeEl.style.display = 'none';
-  }
-
-  document.getElementById('popup-features').innerHTML = p.features.map(f => `<li>${f}</li>`).join('');
-
-  // Filter out sizes with 0 stock
-  const sizeStockList = (p.sizeStock || []).filter(item => (item.stock || 0) > 0);
+function renderPopupSizes(sizeStockSource) {
+  const sizeStockList = (sizeStockSource || []).filter(item => (item.stock || 0) > 0);
   let selectedIndex = -1;
   let defaultSize = 'Tek Boyut';
 
@@ -1453,14 +1447,77 @@ function openPopup(id) {
     setStockStatus(true);
     defaultSize = sizeStockList[selectedIndex].size;
   } else {
-    const isOutOfStock = !p.stock;
-    document.getElementById('popup-sizes').innerHTML = `<div class="size-btn selected ${isOutOfStock ? 'out-of-stock' : ''}" 
-                 onclick="selectSize(this, 'Tek Boyut', ${isOutOfStock ? 0 : 10})">Tek Boyut</div>`;
-    setStockStatus(!isOutOfStock);
+    document.getElementById('popup-sizes').innerHTML = `<div class="size-btn selected out-of-stock" 
+                 onclick="selectSize(this, 'Tek Boyut', 0)">Tek Boyut</div>`;
+    setStockStatus(false);
   }
 
   selectedSize = defaultSize;
   updateWhatsAppLink(defaultSize);
+}
+
+function selectVariation(varObj, btnEl) {
+  selectedVariation = varObj;
+  document.querySelectorAll('.var-btn').forEach(b => b.classList.remove('selected'));
+  if (btnEl) btnEl.classList.add('selected');
+
+  // Update gallery for selected variation (or fall back to main product images)
+  const varImages = (varObj.images && varObj.images.length > 0) ? varObj.images : activeProduct.images;
+  renderPopupGallery(varImages);
+
+  // Update size buttons for selected variation
+  renderPopupSizes(varObj.sizeStock);
+}
+
+function openPopup(id) {
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+
+  activeProduct = p;
+  selectedVariation = null;
+
+  p.views = (p.views || 0) + 1;
+  fetch('/api/products/' + id + '/view', { method: 'POST' }).catch(err => console.error('Error recording view:', err));
+
+  document.getElementById('popup-cat').textContent = catLabel(p.cat);
+  document.getElementById('popup-name').textContent = p.name;
+  document.getElementById('popup-desc-main').textContent = p.longDesc;
+  document.getElementById('popup-price').textContent = p.price.toLocaleString('tr-TR') + ' TL';
+
+  const badgeEl = document.getElementById('popup-badge');
+  if (p.badge) {
+    badgeEl.textContent = p.badge;
+    badgeEl.className = 'popup-badge' + (p.badge === 'YENİ' ? ' yeni' : '');
+    badgeEl.style.display = 'block';
+  } else {
+    badgeEl.style.display = 'none';
+  }
+
+  document.getElementById('popup-features').innerHTML = p.features.map(f => `<li>${f}</li>`).join('');
+
+  // Variations handling
+  const varWrapper = document.getElementById('popup-variations');
+  const varButtonsContainer = document.getElementById('variation-buttons');
+  varButtonsContainer.innerHTML = '';
+
+  if (p.variations && p.variations.length > 0) {
+    varWrapper.style.display = 'block';
+    p.variations.forEach((v, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'var-btn' + (idx === 0 ? ' selected' : '');
+      btn.textContent = v.name;
+      btn.onclick = function() { selectVariation(v, btn); };
+      varButtonsContainer.appendChild(btn);
+    });
+
+    // Default select first variation
+    selectVariation(p.variations[0], varButtonsContainer.firstElementChild);
+  } else {
+    varWrapper.style.display = 'none';
+    const galleryImages = (p.images && p.images.length > 0) ? p.images : [p.img];
+    renderPopupGallery(galleryImages);
+    renderPopupSizes(p.sizeStock);
+  }
 
   document.getElementById('popup-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -1516,13 +1573,27 @@ async function loadProducts() {
         }
       }
       const sizeStock = Array.isArray(p.sizeStock) ? p.sizeStock : [];
-      const totalStock = sizeStock.reduce((total, item) => total + (item.stock || 0), 0);
+      let totalStock = sizeStock.reduce((total, item) => total + (item.stock || 0), 0);
+      if (Array.isArray(p.variations) && p.variations.length > 0) {
+        const varStock = p.variations.reduce((sum, v) => {
+          const vs = Array.isArray(v.sizeStock) ? v.sizeStock : [];
+          return sum + vs.reduce((s, item) => s + (item.stock || 0), 0);
+        }, 0);
+        totalStock = Math.max(totalStock, varStock);
+      }
       return totalStock > 0;
     });
     
     products = inStockDbProducts.map(p => {
       const sizeStock = Array.isArray(p.sizeStock) ? p.sizeStock : [];
-      const totalStock = sizeStock.reduce((total, item) => total + (item.stock || 0), 0);
+      let totalStock = sizeStock.reduce((total, item) => total + (item.stock || 0), 0);
+      if (Array.isArray(p.variations) && p.variations.length > 0) {
+        const varStock = p.variations.reduce((sum, v) => {
+          const vs = Array.isArray(v.sizeStock) ? v.sizeStock : [];
+          return sum + vs.reduce((s, item) => s + (item.stock || 0), 0);
+        }, 0);
+        totalStock = Math.max(totalStock, varStock);
+      }
       
       let finalPrice = p.price;
       if (p.discountType === 'percentage' && p.discountValue > 0) {
@@ -1542,6 +1613,7 @@ async function loadProducts() {
         features: Array.isArray(p.features) ? p.features : [],
         sizes: sizeStock.length > 0 ? sizeStock.map(s => s.size) : ['Tek Boyut'],
         sizeStock: sizeStock,
+        variations: Array.isArray(p.variations) ? p.variations : [],
         price: finalPrice,
         badge: p.badge || '',
         stock: totalStock > 0,
@@ -1723,7 +1795,17 @@ function addToCartClick() {
     return;
   }
   
-  addToCart(activeProduct.id, activeProduct.name, selectedSize, activeProduct.price, activeProduct.img);
+  let prodName = activeProduct.name;
+  let prodImg = activeProduct.img;
+
+  if (selectedVariation) {
+    prodName = `${activeProduct.name} - ${selectedVariation.name}`;
+    if (selectedVariation.images && selectedVariation.images.length > 0) {
+      prodImg = selectedVariation.images[0];
+    }
+  }
+  
+  addToCart(activeProduct.id, prodName, selectedSize, activeProduct.price, prodImg);
   closePopupDirect();
 }
 

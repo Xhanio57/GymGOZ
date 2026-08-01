@@ -227,7 +227,7 @@ router.get('/api/products', async (req, res) => {
     }
 
     const products = await Product.find(filter)
-      .select('name barcode price costPrice discountType discountValue discountLabel category sizeStock image images description brand shopierLink features subcat badge views vipVisible labelText createdAt')
+      .select('name barcode price costPrice discountType discountValue discountLabel category sizeStock variations image images description brand shopierLink features subcat badge views vipVisible labelText createdAt')
       .sort({ createdAt: -1 })
       .lean();
     res.json(products);
@@ -252,17 +252,19 @@ router.post('/api/products/:id/view', async (req, res) => {
   }
 });
 
-router.post('/api/products', upload.array('imageFiles', 10), async (req, res) => {
+router.post('/api/products', upload.any(), async (req, res) => {
   try {
-    const files = req.files || [];
-    for (const file of files) {
+    const allFiles = req.files || [];
+    const mainImageFiles = allFiles.filter(f => f.fieldname === 'imageFiles');
+    const varImageFiles = allFiles.filter(f => f.fieldname && f.fieldname.startsWith('varImages_'));
+
+    for (const file of allFiles) {
       await convertHeicToJpeg(file);
     }
     const { name, price, costPrice, category, barcode, image, description, brand, shopierLink, features, subcat, badge } = req.body;
 
     if (!name || !price || !category) {
-      // Clean up uploaded files on validation error
-      for (const file of files) {
+      for (const file of allFiles) {
         try { await fs.unlink(file.path); } catch (_) {}
       }
       return res.status(400).json({
@@ -271,14 +273,23 @@ router.post('/api/products', upload.array('imageFiles', 10), async (req, res) =>
       });
     }
 
-    // Upload all images
+    // Upload main product images
     const uploadedUrls = [];
-    for (const file of files) {
+    for (const file of mainImageFiles) {
       const url = await uploadToCloudinaryAndCleanup(file);
       if (url) uploadedUrls.push(url);
     }
 
-    // Primary image: first uploaded, or existing URL, or default
+    // Upload variation images grouped by fieldname
+    const varUploadedMap = {}; // { 'varImages_1': ['url1','url2'], ... }
+    for (const file of varImageFiles) {
+      const url = await uploadToCloudinaryAndCleanup(file);
+      if (url) {
+        if (!varUploadedMap[file.fieldname]) varUploadedMap[file.fieldname] = [];
+        varUploadedMap[file.fieldname].push(url);
+      }
+    }
+
     let imagePath = '/images/default-product.png';
     if (uploadedUrls.length > 0) {
       imagePath = uploadedUrls[0];
@@ -292,14 +303,30 @@ router.post('/api/products', upload.array('imageFiles', 10), async (req, res) =>
       sizeStock = sizesArray.map(size => {
         const stockKey = `stock_${size}`;
         const stockVal = req.body[stockKey] !== undefined ? parseInt(req.body[stockKey]) : 1;
-        return {
-          size,
-          stock: isNaN(stockVal) ? 0 : stockVal
-        };
+        return { size, stock: isNaN(stockVal) ? 0 : stockVal };
       });
     }
 
     const vipVisible = req.body.vipVisible !== 'false' && req.body.vipVisible !== false;
+
+    // Parse variations and inject uploaded image URLs
+    let parsedVariations = [];
+    if (req.body.variations) {
+      try {
+        parsedVariations = JSON.parse(req.body.variations);
+        if (!Array.isArray(parsedVariations)) parsedVariations = [];
+        parsedVariations = parsedVariations.map(v => {
+          const uploadedImgs = varUploadedMap[v._fileKey] || [];
+          return { name: v.name, images: uploadedImgs, sizeStock: v.sizeStock || [] };
+        });
+        // If variations exist, use first variation's first image as main product image
+        if (parsedVariations.length > 0 && parsedVariations[0].images.length > 0 && imagePath === '/images/default-product.png') {
+          imagePath = parsedVariations[0].images[0];
+        }
+      } catch (e) {
+        parsedVariations = [];
+      }
+    }
 
     const newProduct = new Product({
       name,
@@ -316,7 +343,8 @@ router.post('/api/products', upload.array('imageFiles', 10), async (req, res) =>
       subcat: subcat || '',
       badge: badge || '',
       vipVisible,
-      sizeStock: sizeStock.length > 0 ? sizeStock : undefined
+      sizeStock: sizeStock.length > 0 ? sizeStock : undefined,
+      variations: parsedVariations
     });
 
     await newProduct.save();
@@ -340,10 +368,13 @@ router.post('/api/products', upload.array('imageFiles', 10), async (req, res) =>
   }
 });
 
-router.put('/api/products/:id', upload.array('imageFiles', 10), async (req, res) => {
+router.put('/api/products/:id', upload.any(), async (req, res) => {
   try {
-    const files = req.files || [];
-    for (const file of files) {
+    const allFiles = req.files || [];
+    const mainImageFiles = allFiles.filter(f => f.fieldname === 'imageFiles');
+    const varImageFiles = allFiles.filter(f => f.fieldname && f.fieldname.startsWith('varImages_'));
+
+    for (const file of allFiles) {
       await convertHeicToJpeg(file);
     }
     const { name, price, costPrice, category, image, description, discountType, discountValue, discountLabel, labelText, brand, shopierLink, features, subcat, badge, vipVisible } = req.body;
@@ -367,14 +398,13 @@ router.put('/api/products/:id', upload.array('imageFiles', 10), async (req, res)
     };
     if (updateData.costPrice === undefined) delete updateData.costPrice;
 
-    // Handle new image uploads
-    if (files.length > 0) {
+    // Handle new main image uploads
+    if (mainImageFiles.length > 0) {
       const uploadedUrls = [];
-      for (const file of files) {
+      for (const file of mainImageFiles) {
         const url = await uploadToCloudinaryAndCleanup(file);
         if (url) uploadedUrls.push(url);
       }
-      // Merge with existing images that are being kept (sent as existingImages[])
       const existingImages = req.body.existingImages
         ? (Array.isArray(req.body.existingImages) ? req.body.existingImages : [req.body.existingImages])
         : [];
@@ -383,13 +413,22 @@ router.put('/api/products/:id', upload.array('imageFiles', 10), async (req, res)
       updateData.images = allImages;
     } else if (image !== undefined) {
       updateData.image = image || '/images/default-product.png';
-      // Also handle existingImages to update images array
       if (req.body.existingImages !== undefined) {
         const existingImages = Array.isArray(req.body.existingImages) ? req.body.existingImages : (req.body.existingImages ? [req.body.existingImages] : []);
         updateData.images = existingImages;
         if (!updateData.image && existingImages.length > 0) {
           updateData.image = existingImages[0];
         }
+      }
+    }
+
+    // Upload variation images
+    const varUploadedMap = {};
+    for (const file of varImageFiles) {
+      const url = await uploadToCloudinaryAndCleanup(file);
+      if (url) {
+        if (!varUploadedMap[file.fieldname]) varUploadedMap[file.fieldname] = [];
+        varUploadedMap[file.fieldname].push(url);
       }
     }
 
@@ -433,6 +472,28 @@ router.put('/api/products/:id', upload.array('imageFiles', 10), async (req, res)
         size,
         stock: 0
       }));
+    }
+
+    // Parse and update variations
+    if (req.body.variations !== undefined) {
+      try {
+        let parsedVariations = JSON.parse(req.body.variations);
+        if (Array.isArray(parsedVariations)) {
+          parsedVariations = parsedVariations.map(v => {
+            const uploadedImgs = varUploadedMap[v._fileKey] || [];
+            const existingImgs = Array.isArray(v.images) ? v.images : [];
+            const allImgs = [...existingImgs, ...uploadedImgs];
+            return {
+              name: v.name,
+              images: allImgs,
+              sizeStock: v.sizeStock || []
+            };
+          });
+          updateData.variations = parsedVariations;
+        }
+      } catch (e) {
+        console.error('Varyasyon listesi ayrıştırılamadı:', e);
+      }
     }
 
     const product = await Product.findByIdAndUpdate(

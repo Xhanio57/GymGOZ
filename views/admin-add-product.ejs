@@ -40,7 +40,20 @@
         <div id="sizeContainer" class="size-grid"></div>
       </div>
 
-      <div style="margin-bottom: 15px;">
+      <!-- ===== VARYASYON SİSTEMİ ===== -->
+      <div style="margin-bottom:15px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <input type="checkbox" id="useVariations" style="width:18px;height:18px;cursor:pointer;accent-color:#7c3aed;margin-bottom:0;">
+          <label for="useVariations" style="font-size:13px;font-weight:600;color:#1e293b;cursor:pointer;margin-bottom:0;">🎨 Varyasyon Ekle (Renk, Desen, Model vb.)</label>
+        </div>
+        <div id="variationsWrapper" style="display:none;border:1px solid #ede9fe;border-radius:8px;background:#faf5ff;padding:14px;">
+          <p style="font-size:12px;color:#6b7280;margin-bottom:12px;">Her varyasyon için ayrı isim, fotoğraf ve beden stoğu girebilirsiniz. Ana görsel ve beden bilgileri üstteki klasik alanlardan KALDIRILIR.</p>
+          <div id="variationsList"></div>
+          <button type="button" onclick="addVariation()" style="background:#7c3aed;color:white;border:none;padding:8px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;margin-top:6px;">+ Varyasyon Ekle</button>
+        </div>
+      </div>
+
+      <div id="classicImageSection" style="margin-bottom: 15px;">
         <label style="display:block;font-weight:600;margin-bottom:8px;color:#374151;">Ürün Görselleri (Birden fazla seçebilirsiniz)</label>
         <input type="file" id="imageFiles" accept="image/*" multiple style="padding: 8px 0; border: none; border-radius: 0; background: transparent; width: auto; margin-bottom: 8px;">
         <div id="imagePreview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;"></div>
@@ -62,6 +75,33 @@
   </div>
 
   <style>
+    .var-card {
+      background: white; border: 1px solid #ddd6fe; border-radius: 8px;
+      padding: 14px; margin-bottom: 12px; position: relative;
+    }
+    .var-card-title {
+      font-size: 13px; font-weight: 700; color: #5b21b6; margin-bottom: 10px;
+    }
+    .var-remove-btn {
+      position: absolute; top: 10px; right: 10px;
+      background: #fee2e2; color: #dc2626; border: none;
+      border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 12px;
+    }
+    .var-size-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px;
+      margin-top: 8px;
+    }
+    .var-size-item {
+      display: flex; flex-direction: column; gap: 4px;
+      border: 1px solid #dbeafe; border-radius: 6px; padding: 8px;
+      background: #f8fbff;
+    }
+    .var-size-item label { font-size: 12px; font-weight: 600; color: #1e3a8a; }
+    .var-size-item input[type=number] {
+      width: 100%; padding: 3px 6px; font-size: 12px; border: 1px solid #bfdbfe;
+      border-radius: 4px; box-sizing: border-box; margin: 0;
+    }
+    .var-img-preview { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
     .form-container{
       max-width:700px;
       margin:0 auto;
@@ -175,7 +215,130 @@
           });
         });
       }
+
+      // Varyasyon toggle
+      document.getElementById('useVariations').addEventListener('change', function() {
+        const wrapper = document.getElementById('variationsWrapper');
+        const classicImg = document.getElementById('classicImageSection');
+        const sizeWrapper = document.getElementById('sizeWrapper');
+        if (this.checked) {
+          wrapper.style.display = 'block';
+          classicImg.style.display = 'none';
+          sizeWrapper.style.display = 'none';
+        } else {
+          wrapper.style.display = 'none';
+          classicImg.style.display = 'block';
+          // Restore size wrapper if category selected
+          const cat = document.getElementById('category').value;
+          if (cat) renderSizes(cat);
+        }
+      });
     });
+
+    let variationCount = 0;
+    // variationFiles[varId] = FileList
+    const variationFiles = {};
+
+    function addVariation() {
+      variationCount++;
+      const id = variationCount;
+      const category = document.getElementById('category').value;
+      const cat = categoriesList.find(c => c.name === category);
+      const sizes = (cat && cat.sizes && cat.sizes.length > 0) ? cat.sizes : ['Tek Boyut'];
+
+      const card = document.createElement('div');
+      card.className = 'var-card';
+      card.id = 'varCard_' + id;
+
+      const sizeItems = sizes.map(size => `
+        <div class="var-size-item">
+          <label>${size}</label>
+          <input type="number" id="varStock_${id}_${size.replace(/\s/g,'_')}" placeholder="Stok" value="0" min="0">
+        </div>
+      `).join('');
+
+      card.innerHTML = `
+        <button type="button" class="var-remove-btn" onclick="removeVariation(${id})">Kaldır</button>
+        <div class="var-card-title">🎨 Varyasyon ${id}</div>
+        <div style="margin-bottom:10px;">
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Varyasyon Adı (ör: Kırmızı, Mavi)</label>
+          <input type="text" id="varName_${id}" placeholder="Varyasyon adı" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box;margin:0;">
+        </div>
+        <div style="margin-bottom:8px;">
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Bu Varyasyona Ait Görseller</label>
+          <input type="file" id="varImages_${id}" accept="image/*" multiple style="font-size:12px;">
+          <div class="var-img-preview" id="varImgPreview_${id}"></div>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Beden / Stok</label>
+          <div class="var-size-grid">${sizeItems}</div>
+        </div>
+      `;
+
+      document.getElementById('variationsList').appendChild(card);
+
+      // File preview for this variation
+      document.getElementById('varImages_' + id).addEventListener('change', function() {
+        variationFiles[id] = this.files;
+        const preview = document.getElementById('varImgPreview_' + id);
+        preview.innerHTML = '';
+        Array.from(this.files).forEach(function(file) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.cssText = 'width:60px;height:60px;object-fit:contain;background:#f9fafb;border:1px solid #ddd;border-radius:4px;';
+            preview.appendChild(img);
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+    }
+
+    function removeVariation(id) {
+      const card = document.getElementById('varCard_' + id);
+      if (card) card.remove();
+      delete variationFiles[id];
+    }
+
+    async function collectVariations(formData) {
+      const useVars = document.getElementById('useVariations').checked;
+      if (!useVars) return [];
+
+      const cards = document.querySelectorAll('.var-card');
+      const variations = [];
+
+      for (let i = 0; i < cards.length; i++) {
+        const card = cards[i];
+        const idMatch = card.id.match(/varCard_(\d+)/);
+        if (!idMatch) continue;
+        const id = parseInt(idMatch[1]);
+
+        const name = (document.getElementById('varName_' + id) || {value:''}).value.trim();
+        if (!name) continue;
+
+        // Upload images via FormData (we'll encode inline names to link them)
+        const files = variationFiles[id];
+        const fileKey = 'varImages_' + id;
+        if (files && files.length > 0) {
+          for (let f = 0; f < files.length; f++) {
+            formData.append(fileKey, files[f]);
+          }
+        }
+
+        // Collect sizeStock
+        const cat = categoriesList.find(c => c.name === document.getElementById('category').value);
+        const sizes = (cat && cat.sizes && cat.sizes.length > 0) ? cat.sizes : ['Tek Boyut'];
+        const sizeStock = sizes.map(size => {
+          const stockEl = document.getElementById('varStock_' + id + '_' + size.replace(/\s/g,'_'));
+          return { size, stock: stockEl ? (parseInt(stockEl.value) || 0) : 0 };
+        });
+
+        variations.push({ name, images: [], sizeStock, _fileKey: fileKey });
+      }
+
+      return variations;
+    }
 
     async function loadFormOptions() {
       try {
@@ -307,12 +470,14 @@
       const form = document.getElementById('productForm');
       const messageDiv = document.getElementById('message');
       const category = document.getElementById('category').value;
+      const useVars = document.getElementById('useVariations').checked;
+
       const selectedSizes = Array.from(document.querySelectorAll('input[name="sizes"]:checked')).map(function(el) {
         return el.value;
       });
 
       const selectedCategory = categoriesList.find(c => c.name === category);
-      if (selectedCategory && selectedCategory.sizes && selectedCategory.sizes.length > 0 && selectedSizes.length === 0) {
+      if (!useVars && selectedCategory && selectedCategory.sizes && selectedCategory.sizes.length > 0 && selectedSizes.length === 0) {
         messageDiv.className = 'error';
         messageDiv.textContent = '❌ Lütfen en az bir beden seçin';
         messageDiv.style.display = 'block';
@@ -334,16 +499,27 @@
         formData.append('features', (document.getElementById('features') || {value:''}).value);
         formData.append('vipVisible', document.getElementById('vipVisible').checked ? 'true' : 'false');
 
-        selectedSizes.forEach(size => {
-          formData.append('sizes', size);
-          const stockVal = document.getElementById('stock_' + size).value || '0';
-          formData.append('stock_' + size, stockVal);
-        });
+        if (useVars) {
+          const variationsList = await collectVariations(formData);
+          if (variationsList.length === 0) {
+            messageDiv.className = 'error';
+            messageDiv.textContent = '❌ Lütfen en az bir varyasyon ekleyin ve ismini girin';
+            messageDiv.style.display = 'block';
+            return;
+          }
+          formData.append('variations', JSON.stringify(variationsList));
+        } else {
+          selectedSizes.forEach(size => {
+            formData.append('sizes', size);
+            const stockVal = document.getElementById('stock_' + size).value || '0';
+            formData.append('stock_' + size, stockVal);
+          });
 
-        const fileInput = document.getElementById('imageFiles');
-        if (fileInput.files.length > 0) {
-          for (let i = 0; i < fileInput.files.length; i++) {
-            formData.append('imageFiles', fileInput.files[i]);
+          const fileInput = document.getElementById('imageFiles');
+          if (fileInput.files.length > 0) {
+            for (let i = 0; i < fileInput.files.length; i++) {
+              formData.append('imageFiles', fileInput.files[i]);
+            }
           }
         }
 

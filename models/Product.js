@@ -18,6 +18,12 @@ const sizeStockSchema = new mongoose.Schema({
   stock: { type: Number, default: 0, min: 0 }
 }, { _id: false });
 
+const variationSchema = new mongoose.Schema({
+  name: { type: String, required: true, trim: true }, // ör: "Kırmızı", "Mavi"
+  images: { type: [String], default: [] },             // Bu varyasyona ait görseller
+  sizeStock: [sizeStockSchema]                          // Bu varyasyona ait beden/stok
+}, { _id: false });
+
 const productSchema = new mongoose.Schema(
   {
     name: {
@@ -67,6 +73,10 @@ const productSchema = new mongoose.Schema(
       default: 'Diğer'
     },
     sizeStock: [sizeStockSchema],
+    variations: {
+      type: [variationSchema],
+      default: []
+    },
     image: {
       type: String,
       default: '/images/default-product.png'
