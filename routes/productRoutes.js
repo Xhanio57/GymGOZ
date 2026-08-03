@@ -151,8 +151,11 @@ function detectColor(productName, description) {
 }
 
 function generateLabelHtml(label, idx) {
-  const detectedColor = detectColor(label.name, label.labelNote || '');
+  // For variation products the variationName is passed as label.variationName
+  const colorHint = label.variationName || '';
+  const detectedColor = colorHint || detectColor(label.name, label.labelNote || '');
   const descText = label.labelNote || 'Spor ve outdoor giyim ekipmanı.';
+  const safeBarcode = (label.barcode && String(label.barcode).trim()) ? String(label.barcode).trim() : '';
 
   let priceHtml = '';
   if (label.oldPrice) {
@@ -216,8 +219,7 @@ function generateLabelHtml(label, idx) {
       
       <div class="label-bottom-row">
         <div class="label-barcode-col">
-          <svg id="barcode-${idx}"></svg>
-          <div class="label-barcode-text">${label.barcode}</div>
+          ${safeBarcode ? `<svg id="barcode-${idx}"></svg><div class="label-barcode-text">${safeBarcode}</div>` : '<div style="font-size:7pt;color:#aaa;margin-top:4mm;">—</div>'}
         </div>
         <div class="label-price-col">
           ${priceHtml}
@@ -888,35 +890,66 @@ router.get('/api/products/bulk-labels-pdf', async (req, res) => {
       }
 
       const sizeStockList = Array.isArray(product.sizeStock) ? product.sizeStock : [];
-      const allSizes = sizeStockList.map(s => s.size);
+      const productVariations = Array.isArray(product.variations) ? product.variations : [];
+      const isVarProduct = productVariations.length > 0;
+
+      // For variation products, collect all unique sizes from all variations
+      const allSizes = isVarProduct
+        ? [...new Set(productVariations.flatMap(v => (v.sizeStock || []).map(s => s.size)))]
+        : sizeStockList.map(s => s.size);
 
       if (useStock) {
-        sizeStockList.forEach(sizeItem => {
-          const stockQty = Number(sizeItem.stock) || 0;
-          if (stockQty <= 0) return;
-
-          // Çocuk Giyim vb. kategorilerde zaten 'Yaş' ibaresi veri tabanında bulunduğu için ekstra ekleme yapmıyoruz
-          const sizeLabel = sizeItem.size;
-
-          for (let i = 0; i < stockQty; i++) {
-            labels.push({
-              name: product.name,
-              category: product.category,
-              sizeLabel: sizeLabel,
-              allSizes: allSizes,
-              price: product.price,
-              finalPrice: finalPrice,
-              discountInfo: discountInfo,
-              barcode: product.barcode,
-              oldPrice: parsedOldPrice,
-              labelNote: labelNote || ''
+        if (isVarProduct) {
+          // Iterate through each variation and its sizeStock
+          productVariations.forEach(varItem => {
+            const varSizes = (varItem.sizeStock || []).map(s => s.size);
+            (varItem.sizeStock || []).forEach(sizeItem => {
+              const stockQty = Number(sizeItem.stock) || 0;
+              if (stockQty <= 0) return;
+              for (let i = 0; i < stockQty; i++) {
+                labels.push({
+                  name: product.name,
+                  category: product.category,
+                  variationName: varItem.name || '',
+                  sizeLabel: sizeItem.size,
+                  allSizes: varSizes,
+                  price: product.price,
+                  finalPrice: finalPrice,
+                  discountInfo: discountInfo,
+                  barcode: product.barcode,
+                  oldPrice: parsedOldPrice,
+                  labelNote: labelNote || ''
+                });
+              }
             });
-          }
-        });
+          });
+        } else {
+          sizeStockList.forEach(sizeItem => {
+            const stockQty = Number(sizeItem.stock) || 0;
+            if (stockQty <= 0) return;
+            const sizeLabel = sizeItem.size;
+            for (let i = 0; i < stockQty; i++) {
+              labels.push({
+                name: product.name,
+                category: product.category,
+                variationName: '',
+                sizeLabel: sizeLabel,
+                allSizes: allSizes,
+                price: product.price,
+                finalPrice: finalPrice,
+                discountInfo: discountInfo,
+                barcode: product.barcode,
+                oldPrice: parsedOldPrice,
+                labelNote: labelNote || ''
+              });
+            }
+          });
+        }
       } else {
         labels.push({
           name: product.name,
           category: product.category,
+          variationName: isVarProduct ? productVariations.map(v => v.name).join(' / ') : '',
           sizeLabel: '',
           allSizes: allSizes,
           price: product.price,
@@ -1220,23 +1253,58 @@ router.get('/api/products/:id/label-pdf', async (req, res) => {
     }
 
     const sizeStockList = Array.isArray(product.sizeStock) ? product.sizeStock : [];
-    const allSizes = sizeStockList.map(s => s.size);
+    const variations = Array.isArray(product.variations) ? product.variations : [];
+    const isVariationProduct = variations.length > 0;
+
+    // For variation products, collect all unique sizes from all variations
+    const allSizes = isVariationProduct
+      ? [...new Set(variations.flatMap(v => (v.sizeStock || []).map(s => s.size)))]
+      : sizeStockList.map(s => s.size);
 
     // Etiketleri oluştur
     let labels = [];
-    for (let i = 0; i < 20; i++) {
-      labels.push({
-        name: product.name,
-        category: product.category,
-        sizeLabel: activeSize,
-        allSizes: allSizes,
-        price: product.price,
-        finalPrice: finalPrice,
-        discountInfo: discountInfo,
-        barcode: product.barcode,
-        oldPrice: oldPrice,
-        labelNote: labelNote || ''
+    if (isVariationProduct) {
+      // Generate one set of 20 labels per variation (or per the activeSize if given)
+      variations.forEach(varItem => {
+        const varSizes = (varItem.sizeStock || []).map(s => s.size);
+        for (let i = 0; i < 20; i++) {
+          labels.push({
+            name: product.name,
+            category: product.category,
+            variationName: varItem.name || '',
+            sizeLabel: activeSize || '',
+            allSizes: varSizes.length > 0 ? varSizes : allSizes,
+            price: product.price,
+            finalPrice: finalPrice,
+            discountInfo: discountInfo,
+            barcode: product.barcode,
+            oldPrice: oldPrice,
+            labelNote: labelNote || ''
+          });
+        }
       });
+      // If somehow still empty, fall through to 20 plain labels
+      if (labels.length === 0) {
+        for (let i = 0; i < 20; i++) {
+          labels.push({ name: product.name, category: product.category, sizeLabel: activeSize, allSizes, price: product.price, finalPrice, discountInfo, barcode: product.barcode, oldPrice, labelNote: labelNote || '' });
+        }
+      }
+    } else {
+      for (let i = 0; i < 20; i++) {
+        labels.push({
+          name: product.name,
+          category: product.category,
+          variationName: '',
+          sizeLabel: activeSize,
+          allSizes: allSizes,
+          price: product.price,
+          finalPrice: finalPrice,
+          discountInfo: discountInfo,
+          barcode: product.barcode,
+          oldPrice: oldPrice,
+          labelNote: labelNote || ''
+        });
+      }
     }
 
     // HTML oluştur
@@ -1476,13 +1544,16 @@ router.get('/api/products/:id/label-pdf', async (req, res) => {
           
           for (let i = 0; i < labels.length; i++) {
             try {
-              JsBarcode('#barcode-' + i, labels[i].barcode, {
-                format: 'CODE128',
-                width: 1.1,
-                height: 26,
-                displayValue: false,
-                margin: 0
-              });
+              const bc = labels[i].barcode ? String(labels[i].barcode).trim() : '';
+              if (bc && document.querySelector('#barcode-' + i)) {
+                JsBarcode('#barcode-' + i, bc, {
+                  format: 'CODE128',
+                  width: 1.1,
+                  height: 26,
+                  displayValue: false,
+                  margin: 0
+                });
+              }
             } catch(e) {
               console.error('Barkod hatasi:', e);
             }
