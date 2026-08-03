@@ -1264,29 +1264,34 @@ router.get('/api/products/:id/label-pdf', async (req, res) => {
     // Etiketleri oluştur
     let labels = [];
     if (isVariationProduct) {
-      // Generate one set of 20 labels per variation (or per the activeSize if given)
+      // Generate labels per variation × size, only for sizes with stock > 0
       variations.forEach(varItem => {
         const varSizes = (varItem.sizeStock || []).map(s => s.size);
-        for (let i = 0; i < 20; i++) {
-          labels.push({
-            name: product.name,
-            category: product.category,
-            variationName: varItem.name || '',
-            sizeLabel: activeSize || '',
-            allSizes: varSizes.length > 0 ? varSizes : allSizes,
-            price: product.price,
-            finalPrice: finalPrice,
-            discountInfo: discountInfo,
-            barcode: product.barcode,
-            oldPrice: oldPrice,
-            labelNote: labelNote || ''
-          });
-        }
+        (varItem.sizeStock || []).forEach(sizeItem => {
+          const stockQty = Number(sizeItem.stock) || 0;
+          if (stockQty <= 0) return; // Skip zero-stock sizes
+          const count = Math.min(stockQty, 20); // Cap at 20 per size
+          for (let i = 0; i < count; i++) {
+            labels.push({
+              name: product.name,
+              category: product.category,
+              variationName: varItem.name || '',
+              sizeLabel: sizeItem.size,
+              allSizes: varSizes.length > 0 ? varSizes : allSizes,
+              price: product.price,
+              finalPrice: finalPrice,
+              discountInfo: discountInfo,
+              barcode: product.barcode,
+              oldPrice: oldPrice,
+              labelNote: labelNote || ''
+            });
+          }
+        });
       });
-      // If somehow still empty, fall through to 20 plain labels
+      // If all variations are 0-stock, generate 20 plain labels as fallback
       if (labels.length === 0) {
         for (let i = 0; i < 20; i++) {
-          labels.push({ name: product.name, category: product.category, sizeLabel: activeSize, allSizes, price: product.price, finalPrice, discountInfo, barcode: product.barcode, oldPrice, labelNote: labelNote || '' });
+          labels.push({ name: product.name, category: product.category, variationName: '', sizeLabel: activeSize, allSizes, price: product.price, finalPrice, discountInfo, barcode: product.barcode, oldPrice, labelNote: labelNote || '' });
         }
       }
     } else {
