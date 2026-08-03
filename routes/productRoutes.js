@@ -1330,20 +1330,44 @@ router.get('/api/products/:id/label-pdf', async (req, res) => {
         }
       }
     } else {
-      for (let i = 0; i < 20; i++) {
-        labels.push({
-          name: product.name,
-          category: product.category,
-          variationName: '',
-          sizeLabel: activeSize,
-          allSizes: allSizes,
-          price: product.price,
-          finalPrice: finalPrice,
-          discountInfo: discountInfo,
-          barcode: product.barcode,
-          oldPrice: oldPrice,
-          labelNote: labelNote || ''
-        });
+      // Generate labels per size, only for sizes with stock > 0
+      sizeStockList.forEach(sizeItem => {
+        const stockQty = Number(sizeItem.stock) || 0;
+        if (stockQty <= 0) return; // Skip zero-stock sizes
+        const count = Math.min(stockQty, 20); // Cap at 20 per size
+        for (let i = 0; i < count; i++) {
+          labels.push({
+            name: product.name,
+            category: product.category,
+            variationName: '',
+            sizeLabel: sizeItem.size,
+            allSizes: allSizes,
+            price: product.price,
+            finalPrice: finalPrice,
+            discountInfo: discountInfo,
+            barcode: product.barcode,
+            oldPrice: oldPrice,
+            labelNote: labelNote || ''
+          });
+        }
+      });
+      // Fallback: if all sizes are 0-stock, generate 20 plain labels
+      if (labels.length === 0) {
+        for (let i = 0; i < 20; i++) {
+          labels.push({
+            name: product.name,
+            category: product.category,
+            variationName: '',
+            sizeLabel: activeSize,
+            allSizes: allSizes,
+            price: product.price,
+            finalPrice: finalPrice,
+            discountInfo: discountInfo,
+            barcode: product.barcode,
+            oldPrice: oldPrice,
+            labelNote: labelNote || ''
+          });
+        }
       }
     }
 
