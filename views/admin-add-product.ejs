@@ -300,10 +300,10 @@
         });
 
         grid.innerHTML = sizes.map(size => {
-          const savedVal = currentStocks[size] !== undefined ? currentStocks[size] : '0';
+          const savedVal = currentStocks[size] !== undefined ? currentStocks[size] : '1';
           return '<div class="var-size-item">' +
             '<label>' + size + '</label>' +
-            '<input type="number" placeholder="Stok" value="' + savedVal + '" min="0">' +
+            '<input type="number" placeholder="Stok" value="' + savedVal + '" min="1" required>' +
           '</div>';
         }).join('');
       });
@@ -321,7 +321,7 @@
       const sizeItems = sizes.map(function(size) {
         return '<div class="var-size-item">' +
           '<label>' + size + '</label>' +
-          '<input type="number" id="varStock_' + id + '_' + size.replace(/\s/g,'_') + '" placeholder="Stok" value="0" min="0">' +
+          '<input type="number" id="varStock_' + id + '_' + size.replace(/\s/g,'_') + '" placeholder="Stok" value="1" min="1" required>' +
         '</div>';
       }).join('');
 
@@ -598,6 +598,35 @@
             formData.append('stock_' + size, stockVal);
           });
         }
+
+        // ─── Stok validasyonu ─────────────────────────────────────────────
+        if (useVars) {
+          let hasStock = false;
+          document.querySelectorAll('.var-card').forEach(card => {
+            card.querySelectorAll('.var-size-item input[type="number"]').forEach(inp => {
+              if (parseInt(inp.value) > 0) hasStock = true;
+            });
+          });
+          if (!hasStock) {
+            messageDiv.className = 'error';
+            messageDiv.textContent = '❌ En az bir varyasyonda stok 1 veya üzeri olmalıdır. Stoksuz ürün eklenemez.';
+            messageDiv.style.display = 'block';
+            return;
+          }
+        } else {
+          let hasStock = false;
+          selectedSizes.forEach(size => {
+            const val = parseInt((document.getElementById('stock_' + size) || {value:'0'}).value);
+            if (val > 0) hasStock = true;
+          });
+          if (selectedSizes.length > 0 && !hasStock) {
+            messageDiv.className = 'error';
+            messageDiv.textContent = '❌ Seçili bedenlerin en az birinde stok 1 veya üzeri girilmelidir. Stoksuz ürün eklenemez.';
+            messageDiv.style.display = 'block';
+            return;
+          }
+        }
+        // ──────────────────────────────────────────────────────────────────
 
         const response = await fetch('/api/products', {
           method: 'POST',

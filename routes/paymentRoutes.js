@@ -569,6 +569,16 @@ router.post('/api/checkout/callback', async (req, res) => {
                 sizeStockItem.stock = 0;
               }
               await product.save();
+
+              // Auto-delete product if all stock is zero
+              const totalStock =
+                (product.variations || []).reduce(
+                  (sum, v) => sum + (v.sizeStock || []).reduce((s2, ss) => s2 + (Number(ss.stock) || 0), 0), 0) +
+                (product.sizeStock || []).reduce((s, ss) => s + (Number(ss.stock) || 0), 0);
+              if (totalStock <= 0) {
+                await Product.findByIdAndDelete(product._id);
+                console.log(`[AutoDelete] Ürün sipariş sonrası stok=0, silindi: ${product.name}`);
+              }
             }
           }
         }

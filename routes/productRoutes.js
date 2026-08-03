@@ -135,6 +135,24 @@ async function uploadToCloudinaryAndCleanup(file) {
   return localUrl;
 }
 
+// ── Stock helpers ──────────────────────────────────────────────────────────
+function calcTotalStock(product) {
+  const varTotal = (product.variations || []).reduce(
+    (sum, v) => sum + (v.sizeStock || []).reduce((s2, ss) => s2 + (Number(ss.stock) || 0), 0), 0);
+  const baseTotal = (product.sizeStock || []).reduce((s, ss) => s + (Number(ss.stock) || 0), 0);
+  return varTotal + baseTotal;
+}
+
+async function deleteIfZeroStock(product) {
+  if (calcTotalStock(product) <= 0) {
+    await Product.findByIdAndDelete(product._id);
+    console.log(`[AutoDelete] Ürün silindi (stok=0): ${product.name} (${product._id})`);
+    return true;
+  }
+  return false;
+}
+// ──────────────────────────────────────────────────────────────────────────
+
 // Label rendering helper functions
 function detectColor(productName, description) {
   const commonColors = [
@@ -388,6 +406,15 @@ router.post('/api/products', upload.any(), async (req, res) => {
       variations: parsedVariations
     });
 
+    // Validate total stock > 0 before saving new product
+    const totalStockCheck = calcTotalStock(newProduct);
+    if (totalStockCheck <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Yeni ürün eklerken en az bir bedende stok girilmesi zorunludur. Stok değerini 1 veya üzeri yapın.'
+      });
+    }
+
     await newProduct.save();
 
     res.status(201).json({
@@ -618,10 +645,16 @@ router.patch('/api/products/:id/size-stock', async (req, res) => {
         sizeItem.stock += parseInt(quantity);
         if (sizeItem.stock < 0) sizeItem.stock = 0;
         await product.save();
+
+        // Auto-delete if total stock hits zero
+        const wasDeleted = await deleteIfZeroStock(product);
         return res.json({
           success: true,
-          message: `${variation.name} (${size}) stoku güncellendi: ${sizeItem.stock}`,
-          product
+          deleted: wasDeleted,
+          message: wasDeleted
+            ? `${product.name} stoğu bitti ve otomatik silindi.`
+            : `${variation.name} (${size}) stoku güncellendi: ${sizeItem.stock}`,
+          product: wasDeleted ? null : product
         });
       }
     }
@@ -633,17 +666,19 @@ router.patch('/api/products/:id/size-stock', async (req, res) => {
     }
 
     sizeItem.stock += parseInt(quantity);
-
-    if (sizeItem.stock < 0) {
-      sizeItem.stock = 0;
-    }
+    if (sizeItem.stock < 0) sizeItem.stock = 0;
 
     await product.save();
 
+    // Auto-delete if total stock hits zero
+    const wasDeleted = await deleteIfZeroStock(product);
     res.json({
       success: true,
-      message: `${size} bedeninin stoku güncellendi: ${sizeItem.stock}`,
-      product
+      deleted: wasDeleted,
+      message: wasDeleted
+        ? `${product.name} stoğu bitti ve otomatik silindi.`
+        : `${size} bedeninin stoku güncellendi: ${sizeItem.stock}`,
+      product: wasDeleted ? null : product
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Stok güncelleme hatası: ' + error.message });

@@ -434,9 +434,10 @@
 
   .size-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
   .size-btn {
-    width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+    min-width: 40px; min-height: 40px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
     border: 1px solid var(--gray-200); font-size: 12px; font-weight: 700; cursor: pointer;
-    transition: all .15s; text-transform: uppercase;
+    transition: all .15s; text-transform: uppercase; padding: 4px 6px;
     background: var(--white); color: var(--black);
   }
   .size-btn:hover, .size-btn.selected { background: var(--black); color: var(--white); border-color: var(--black); }
@@ -570,6 +571,18 @@
   }
   .popup-stock.in-stock::before { background: #2d8c40; }
   .popup-stock.out-of-stock-status::before { background: #dc2626; }
+  .low-stock-badge {
+    display: block;
+    font-size: 8px;
+    font-weight: 800;
+    color: #ef4444;
+    line-height: 1;
+    margin-top: 2px;
+    text-transform: none;
+    letter-spacing: 0;
+    white-space: nowrap;
+  }
+  .size-btn.selected .low-stock-badge { color: #fca5a5; }
   .btn-shopier.disabled {
     background: var(--gray-600) !important;
     color: var(--gray-400) !important;
@@ -1440,8 +1453,12 @@ function renderPopupSizes(sizeStockSource) {
         selectedIndex = idx;
         isSelectedClass = 'selected';
       }
+      const stock = item.stock || 0;
+      const lowStockBadge = (stock > 0 && stock <= 3)
+        ? `<span class="low-stock-badge">Son ${stock} adet</span>`
+        : '';
       return `<div class="size-btn ${isSelectedClass}" 
-                   onclick="selectSize(this, '${item.size}', ${item.stock || 0})">${item.size}</div>`;
+                   onclick="selectSize(this, '${item.size}', ${stock})">${item.size}${lowStockBadge}</div>`;
     }).join('');
 
     setStockStatus(true);
