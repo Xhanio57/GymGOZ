@@ -216,4 +216,17 @@ router.get('/obf', (req, res) => {
   res.render('obf', { title: 'Ön Bilgilendirme Formu' });
 });
 
+// PayTR zorunlu sayfalar
+router.get('/teslimat', (req, res) => {
+  res.render('teslimat', { title: 'Teslimat Koşulları' });
+});
+
+router.get('/satis-politikasi', (req, res) => {
+  res.render('satis-politikasi', { title: 'Satış Politikası' });
+});
+
+router.get('/iletisim', (req, res) => {
+  res.render('iletisim', { title: 'İletişim' });
+});
+
 module.exports = router;
